@@ -1,0 +1,130 @@
+name: f3
+version: 1
+description: 'f3 workflow: clarification, proposal, specs, Tres Amigos, interface design, technical design, tasks, design review, then implementation by the developer agent'
+artifacts:
+  - id: clarification
+    generates: clarification.md
+    description: Clarification of the need, written during the /f3-propose interview
+    template: clarification.md
+    instruction: |
+      Only /f3-propose writes this artifact, under the analyst agent, during its interview: each decision is written as soon as the user validates it. If you are not running /f3-propose, stop and tell the user to run /f3-propose <change-id> in a new session.
+    requires: []
+
+  - id: proposal
+    generates: proposal.md
+    description: Why the change is needed and what it changes
+    template: proposal.md
+    instruction: |
+      Only /f3-propose writes the proposal, under the analyst agent, from clarification.md; after the Tres Amigos step, it changes only through an amendment. If you are not running /f3-propose, stop and tell the user to run /f3-propose <change-id> in a new session.
+
+      - Why: one or two sentences on the problem it solves.
+      - What Changes: one bullet per behavior added, modified or removed; a breaking change is marked **BREAKING**. The scope comes from the Scope section of clarification.md, and nothing is decided that is not written there. The list ends with an "Out of scope" sub-list that repeats each out-of-scope item of clarification.md with its backlog entry.
+      - Capabilities: the contract with the specs; each capability listed gets its delta spec.
+        - New Capabilities: named after a durable behavior (`user-auth`), never after the work (`add-login-endpoint`); a cohesive boundary, not a catch-all; kebab-case path segments, following the existing organization of the specs.
+        - Modified Capabilities: the existing capabilities whose requirements change, with their exact path under openspec/specs/.
+        - Before filling it, run `openspec list --specs`, then `openspec show "<spec-id>" --type spec --json --no-scenarios` for the related capabilities, and read in full with `openspec show "<spec-id>" --type spec` each one you may modify. Reuse an existing path rather than a near-duplicate name.
+        - A change without behavior change lists no capability and sets `skip_specs: true` in its `.openspec.yaml`. Never invent a requirement to satisfy validation.
+      - Impact: the code, APIs, dependencies or systems affected.
+
+      One or two pages at most: the why and the what. The how belongs to design.md.
+    requires:
+      - clarification
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Delta specs of the change, written as executable scenarios
+    template: spec.md
+    instruction: |
+      Only /f3-propose writes the specs, under the analyst agent; after the Tres Amigos step, they change only through an amendment. Load the spec-practice skill: its rules apply to every requirement and every scenario, and its step format (GIVEN, WHEN, THEN, AND, BUT) is the only one.
+
+      - Every decision of clarification.md ends in a requirement or a scenario, or is explicitly out of scope.
+      - An appearance wish is not written in the specs. If the context of openspec/config.yaml names a design tool, load the ux-practice skill and write it in the change's ux.md, in its format: Intentions if it concerns this change, Proposed cross-cutting decisions if it holds for the whole product. Mention it in your closing message.
+
+      Files: one `specs/<capability-path>/spec.md` per capability of the proposal. A new capability uses the exact path of the proposal; a modified one uses its exact existing path under openspec/specs/, confirmed with `openspec list --specs`. Never move or rename a capability. Write one file at a time: start with the first capability that has no file, say in one line which one you write, never rewrite an existing file unless the user asks, and stop when every capability has its file. At least one file, unless `.openspec.yaml` sets `skip_specs: true`.
+
+      Delta operations, as `##` headers:
+      - `## ADDED Requirements`: new requirements; to add a concern without changing existing behavior, use ADDED.
+      - `## MODIFIED Requirements`: copy the whole existing block from openspec/specs/<capability-path>/spec.md, from `### Requirement:` through all its scenarios, with its header unchanged and every existing scenario name kept, then edit it. A partial block loses content at archiving.
+      - `## REMOVED Requirements`: each with **Reason** and **Migration**.
+      - `## RENAMED Requirements`: name changes only, as FROM:/TO:.
+
+      Format:
+      - `### Requirement: <name>`, then its text with SHALL or MUST, at most 500 characters before its first scenario: examples and edge cases go into scenarios, and a requirement with several behaviors is split. Under MODIFIED, never split or trim an existing text to fit; split an existing long requirement only when the user asks, in a change made for that purpose.
+      - Each scenario starts with `#### Scenario: <name>`, exactly four hashes. Every requirement has at least one scenario.
+      - A new capability starts with `## Purpose`, one or two sentences of 50 characters at least. Never for an existing capability: its Purpose is changed in openspec/specs/<capability-path>/spec.md directly.
+    requires:
+      - proposal
+
+  - id: amigos
+    generates: validations/amigos.md
+    description: 'Validation of the Tres Amigos step: the specs are complete and unambiguous'
+    template: validation.md
+    instruction: |
+      Validation of the Tres Amigos step. Only /f3-tres-amigos writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run /f3-tres-amigos <change-id> in a new session.
+    requires:
+      - specs
+
+  - id: ux
+    generates: validations/ux.md
+    description: Validation of the interface design of the change, or statement that the change has none
+    template: validation.md
+    instruction: |
+      Validation of the interface design step. Only /f3-ux-design writes it, when the user declares the step finished or not applicable. When it is the next artifact to produce, stop and tell the user to run /f3-ux-design <change-id> in a new session.
+    requires:
+      - amigos
+
+  - id: design
+    generates: design.md
+    description: Technical design of the change
+    template: design.md
+    instruction: |
+      Only /f3-design writes the design, under the architect agent. If you are not running /f3-design, stop and tell the user to run /f3-design <change-id> in a new session.
+
+      design.md is always created, with the sections of its template. It explains how, with the reason of each choice; it points to the proposal and the specs instead of restating them. A question that would change the specs, the approach or the tasks is asked now, never deferred.
+      - Context: only the current state and the constraints that explain the approach.
+      - Goals / Non-Goals: design-level boundaries only.
+      - Decisions: each key choice with its reason and the alternatives considered. Read arch/decisions.md before deciding anything: a choice that contradicts an active entry is not made, the contradiction is presented to the user. A decision that commits the following changes (a new technology, storage, external dependency or kind of entry point) is proposed to the user and, once validated, written in arch/decisions.md in the format of the f3-standards skill; design.md cites its number.
+      - Interface: if validations/ux.md states an interface impact, the views, components and tokens of the Impact section of the change's ux.md, with their exact names, which the code reuses unchanged. design.md never decides their split or their appearance again, and never lists them among the Non-Goals. Otherwise "None.".
+      - Volumetry: the orders of magnitude of the context of openspec/config.yaml that concern the change, and their consequences: pagination, background processing, indexes, limits. If the context gives none, say so and ask the user.
+      - Test strategy, without writing any test: the unit and integration tests of each part of the code, written by the developer; the capabilities whose scenarios the change adds, modifies or removes, whose feature files are regenerated at acceptance and whose step definitions and page objects are written by the tester; the test entry points the application must provide (defined in the e2e-practice skill), each built by the developer as a task; for each scenario of the change listed in tests/e2e/manual-scenarios.md, the unit or integration tests of its replacement coverage, written by the developer.
+      - Risks / Trade-offs: [Risk] → Mitigation.
+    requires:
+      - specs
+      - ux
+
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist, split by functional slice
+    template: tasks.md
+    instruction: |
+      Only /f3-design writes the tasks, under the architect agent. If you are not running /f3-design, stop and tell the user to run /f3-design <change-id> in a new session.
+
+      Format: groups under `## <n>. <name>`; each task is `- [ ] <n>.<m> <description>`, small enough for one session, ordered by dependency, and states how to verify it. A box holding only `x`, in any case and spacing, is done; any other marker is unfinished; a line without checkbox is not tracked.
+
+      - Split by functional slice, never by technical layer. Each group delivers one or more scenarios of the specs end to end, from storage to screen, with the unit and integration tests of its own code. Under its title, a line "Delivered scenarios:" cites each scenario as <capability> › <requirement> › <scenario>, separated by semicolons. Each scenario added or modified by the change is delivered by exactly one group.
+      - The first group builds what the tests need before any scenario, in this order: the views register, if the product has a user interface (the User interface subsection of the Stack section of AGENTS.md is not "None.") and ux/views.md does not exist or does not list every view of the code, with one task that builds or completes it following references/views-md.md of the f3-standards skill; then the test entry points of the Test strategy. If there is neither, this group does not exist. Its line "Delivered scenarios:" contains "none" when it delivers no scenario.
+      - No task writes or modifies an end-to-end test, a feature file, a step definition or a page object: the tester writes them with /f3-acceptance.
+      - A task that creates or modifies a view or a component names it exactly as the Interface section of design.md, and ends with "Screens:" followed by the design screens to open before coding, as <view>/<state>, or the component name. Its appearance comes from the design tool, never from the text of ux.md.
+      - If the Interface section lists tokens, one task carries them over into the code, where the User interface subsection of the Stack section says they live, with their names and values read in the design tool, before the tasks of the views and components that use them.
+      - A task is finished when its unit and integration tests and the verification command of the Stack section pass.
+      - The last group is titled "Verification": it runs the verification command and checks that it passes.
+    requires:
+      - specs
+      - design
+
+  - id: review
+    generates: validations/review.md
+    description: 'Validation of the design review: the design and the tasks are ready for implementation'
+    template: validation.md
+    instruction: |
+      Validation of the design review step. Only /f3-design-review writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run /f3-design-review <change-id> in a new session.
+    requires:
+      - tasks
+
+apply:
+  requires:
+    - review
+  tracks: tasks.md
+  instruction: |
+    Implementation is conducted by the developer agent, launched by /f3-dev <change-id>. If you are not the developer agent, stop and tell the user to run /f3-dev <change-id> in a new session.
+    Work through the pending tasks; groups titled "Acceptance fixes" or "Conformity fixes" come first. Mark each task complete as soon as it is finished and verified. Pause on a blocker or a decision to take.
