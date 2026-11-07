@@ -1,23 +1,24 @@
 diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 --- a/openspec/agents/architect.md
 +++ b/openspec/agents/architect.md
-@@ -13,8 +13,10 @@
+@@ -13,8 +13,11 @@
      "CLAUDE.md": allow
      ".mcp.json": allow
      ".claude/settings.json": allow
 +    "opencode.json": allow
++    ".gitignore": allow
      "ux/decisions.md": allow
      "tests/e2e/manual-scenarios.md": allow
 +    "~/.config/opencode/opencode.json": ask
  hooks:
    PreToolUse:
      - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-@@ -40,7 +42,8 @@
+@@ -40,7 +43,8 @@
  
  | File | When |
  |---|---|
 -| `AGENTS.md`, `openspec/config.yaml`, `CLAUDE.md`, `.mcp.json`, `.claude/settings.json` | f3 init |
-+| `AGENTS.md`, `openspec/config.yaml`, the project `opencode.json` | f3 init |
++| `AGENTS.md`, `openspec/config.yaml`, the files of each tool of the project (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `opencode.json`), `.gitignore` for `.f3/local` | f3 init |
 +| the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
  | design.md, tasks.md of a change | f3 design, f3 design-review |
  | review.md, validations/review.md of a change | f3 design-review |
@@ -25,11 +26,12 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
 --- a/openspec/agents/developer.md
 +++ b/openspec/agents/developer.md
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,8 @@
      "CLAUDE.md": deny
      ".mcp.json": deny
      ".claude/*": deny
 +    "opencode.json": deny
++    ".opencode/*": deny
  hooks:
    PreToolUse:
      - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
@@ -109,7 +111,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 @@ -1,5 +1,5 @@
  ---
 -description: "Frames a project with the f3 standards, through a short interview conducted one question at a time: product context, stack decision, code rules, vocabulary. Writes AGENTS.md, openspec/config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md and the Claude Code files of the project (CLAUDE.md, .mcp.json, .claude/settings.json). Three modes, chosen from the state of the repository: creation, adoption of an existing project, update of a framed project. Runs only on a repository without uncommitted changes."
-+description: "Frames a project with the f3 standards, through a short interview conducted one question at a time: product context, stack decision, code rules, vocabulary. Writes AGENTS.md, openspec/config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md and the workflow keys of the project opencode.json. Three modes, chosen from the state of the repository: creation, adoption of an existing project, update of a framed project. Runs only on a repository without uncommitted changes."
++description: "Frames a project with the f3 standards, through a short interview conducted one question at a time: product context, stack decision, code rules, vocabulary. Writes AGENTS.md, openspec/config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md and the files of each tool of the project (CLAUDE.md, .mcp.json and .claude/settings.json for Claude Code, the workflow keys of opencode.json for OpenCode). Three modes, chosen from the state of the repository: creation, adoption of an existing project, update of a framed project. Runs only on a repository without uncommitted changes."
  f3-agent: architect
  disable-model-invocation: true
  allowed-tools: Bash(f3 state:*)
@@ -122,16 +124,16 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 +
 +A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
-+Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of the project `opencode.json`.
++Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`; the files of each tool of the project, as the launch state lists them: for Claude Code `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, for OpenCode the workflow keys of the project `opencode.json`; the line `.f3/local` of `.gitignore`.
  
  ## Preconditions
  
-@@ -21,14 +25,14 @@
+@@ -21,15 +25,15 @@
  
  - A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
  - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
 -- If `openspec/` exists, the project has the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` in `.claude/skills/`. If it has none, run `openspec init --tools claude`: on an initialized project, it only adds the files of Claude Code. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, then run `openspec update`.
-+- If `openspec/` exists, the project has the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, then run `openspec update`.
++- If `openspec/` exists, the project has the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` in the skills folder of each tool of the project (`.claude/skills/`, `.opencode/skills/`). For a tool that has none, run `openspec init --tools <tool>`: on an initialized project, it only adds the files of that tool. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, then run `openspec update`.
  
  ## Mode
  
@@ -139,25 +141,29 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  - **Creation**: none of AGENTS.md, CONTEXT.md and openspec/config.yaml exists, or only empty files.
 -- **Adoption**: at least one exists, without the f3 marker. Read what exists first (AGENTS.md, config.yaml, CONTEXT.md, CLAUDE.md, .mcp.json, the README files of the modules, `openspec/specs/` by passages) and draw from it a first answer to each question: the interview covers only what is missing or contradictory.
-+- **Adoption**: at least one exists, without the f3 marker. Read what exists first (AGENTS.md, config.yaml, CONTEXT.md, opencode.json, the README files of the modules, `openspec/specs/` by passages) and draw from it a first answer to each question: the interview covers only what is missing or contradictory.
- - **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary.
+-- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary.
++- **Adoption**: at least one exists, without the f3 marker. Read what exists first (AGENTS.md, config.yaml, CONTEXT.md, CLAUDE.md, .mcp.json, opencode.json, the README files of the modules, `openspec/specs/` by passages) and draw from it a first answer to each question: the interview covers only what is missing or contradictory.
++- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary. If the launch state reports a tool of the project that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or an AGENTS.md marker in its former form, propose the theme Tools first. The theme Tools writes the missing files of the tools of the project, aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the AGENTS.md marker in its current form; it touches nothing else.
  
  ## Interview
-@@ -71,9 +75,10 @@
+ 
+@@ -71,9 +75,12 @@
  1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
  2. Write each file following its reference:
     - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
 -   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools claude`, then replace the config.yaml it created;
-+   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools opencode`, then replace the config.yaml it created;
++   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created;
     - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
     - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
 -   - `CLAUDE.md`, `.mcp.json` and `.claude/settings.json`: what the f3-standards skill gives for them, without touching any other content.
 -3. Run `openspec schema which f3` and `openspec validate --all`, and fix the errors in the files you wrote. In adoption, also run `node ~/.local/share/f3/scripts/f3-features.mjs --check` and fix nothing it reports; read a sample of the existing scenarios against the spec-practice rules. If the check fails or the scenarios break the rules, propose a backlog entry for a change that rewrites them without changing behavior.
 -4. Show `git diff --stat`, then state: the points To be clarified; that each developer, at the first f3 session in the project, trusts the folder and approves the servers of `.mcp.json`; if a design tool is kept and `ux/brief.md` does not exist, the commands to run once, each in a new session: `f3 ux-calibrate`, `f3 ux-direction`, `f3 ux-tokens`; in adoption, the gaps between the code and the invariant part, each proposed as a backlog entry, without fixing them; and that the next change starts with `f3 propose`.
-+   - the project `opencode.json`: the workflow keys, without touching any other key.
-+3. Propose to move the user preferences of the project `opencode.json` to `~/.config/opencode/opencode.json`, merged with what it contains; move them only with the user's agreement.
++   - `.gitignore`: the line `.f3/local`, unless the launch state says Git already ignores it;
++   - for Claude Code, `CLAUDE.md`, `.mcp.json` and `.claude/settings.json`: what the f3-standards skill gives for them, without touching any other content;
++   - for OpenCode, the project `opencode.json`: the workflow keys, without touching any other key.
++3. For OpenCode, propose to move the user preferences of the project `opencode.json` to `~/.config/opencode/opencode.json`, merged with what it contains; move them only with the user's agreement.
 +4. Run `openspec schema which f3` and `openspec validate --all`, and fix the errors in the files you wrote. In adoption, also run `node ~/.local/share/f3/scripts/f3-features.mjs --check` and fix nothing it reports; read a sample of the existing scenarios against the spec-practice rules. If the check fails or the scenarios break the rules, propose a backlog entry for a change that rewrites them without changing behavior.
-+5. Show `git diff --stat`, then state: the points To be clarified; that OpenCode must be restarted if `opencode.json` changed; if a design tool is kept and `ux/brief.md` does not exist, the commands to run once, each in a new session: `f3 ux-calibrate`, `f3 ux-direction`, `f3 ux-tokens`; in adoption, the gaps between the code and the invariant part, each proposed as a backlog entry, without fixing them; and that the next change starts with `f3 propose`.
++5. Show `git diff --stat`, then state: the points To be clarified; that OpenCode must be restarted if `opencode.json` changed; that under Claude Code each developer, at the first f3 session in the project, trusts the folder and approves the servers of `.mcp.json`; if a design tool is kept and `ux/brief.md` does not exist, the commands to run once, each in a new session: `f3 ux-calibrate`, `f3 ux-direction`, `f3 ux-tokens`; in adoption, the gaps between the code and the invariant part, each proposed as a backlog entry, without fixing them; and that the next change starts with `f3 propose`.
 diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 --- a/openspec/commands/f3-propose.md
 +++ b/openspec/commands/f3-propose.md
@@ -232,39 +238,56 @@ diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/
  ---
  name: f3-standards
 -description: "f3 standards for a project: the framing files (AGENTS.md, openspec/config.yaml, CONTEXT.md, BACKLOG.md, arch/decisions.md, the Claude Code files of the project) and the views register (ux/views.md), their role and their templates. Load before creating or modifying one of these files, in particular during f3 init."
-+description: "f3 standards for a project: the framing files (AGENTS.md, openspec/config.yaml, CONTEXT.md, BACKLOG.md, arch/decisions.md, the project opencode.json) and the views register (ux/views.md), their role and their templates. Load before creating or modifying one of these files, in particular during f3 init."
++description: "f3 standards for a project: the framing files (AGENTS.md, openspec/config.yaml, CONTEXT.md, BACKLOG.md, arch/decisions.md, the files of each tool of the project: CLAUDE.md, .mcp.json and .claude/settings.json for Claude Code, opencode.json for OpenCode) and the views register (ux/views.md), their role and their templates. Load before creating or modifying one of these files, in particular during f3 init."
  ---
  
  # f3 standards
-@@ -18,21 +18,16 @@
+@@ -18,21 +18,33 @@
  - `arch/decisions.md`: the register of structural decisions and their reasons (stack, storage, decisions that commit the following changes). AGENTS.md says what the code must do; this register says why, and which options were set aside. It is read when writing a design.md and during the design review. Template: `references/arch-decisions.md`.
  - `BACKLOG.md`: the only place for ideas that are not planned yet. Template: `references/backlog-md.md`.
  - `ux/views.md`: the register of the views present in the code, with their unit of code, their displays (route and kind) and the screens of the design tool seen through each. It gives each view its name for the agents that read neither the code nor the design tool. Written by the developer, in the commit that creates, renames or removes a view. Template: `references/views-md.md`.
 -- The Claude Code files of the project, `CLAUDE.md`, `.mcp.json` and `.claude/settings.json`: only what the workflow needs. Models, permission modes and other user preferences belong to the user's settings (`~/.claude/settings.json`) or to `.claude/settings.local.json`. Rules below.
-+- The project `opencode.json`: only the keys the workflow needs. Providers, models and other user preferences belong to the global configuration (`~/.config/opencode/opencode.json`): OpenCode merges both files, and the project file only wins on conflicting keys. Rules below.
++- The files of each tool of the project: `CLAUDE.md`, `.mcp.json` and `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode. Only what the workflow needs: models, permission modes, providers and other user preferences belong to the user's settings. Rules below.
  
 -## Claude Code files of the project
-+## Project opencode.json
++## Files of each tool of the project
  
 -They are versioned with the project and written by f3 init, each with only what the workflow needs. When one exists, f3 init adds or updates its own content and touches nothing else.
-+The project file contains only:
-+- `instructions`: `["CONTEXT.md"]`, so that every agent loads the vocabulary;
-+- under `mcp`, the server that lets an agent observe the running application, as decided in the Stack section of AGENTS.md (subsection Observing the running application);
-+- under `mcp`, the server of the design tool, if the context names one.
++f3 init writes the files of each tool of the project: each tool f3 is installed for, and each tool the project already has files of; the launch state of f3 init lists them. They are versioned with the project, so that each member of a team works with the tool of their choice. The tool of each user is in `.f3/local`, which is not versioned: f3 init adds `.f3/local` to `.gitignore`. When a file exists, f3 init adds or updates its own content and touches nothing else.
++
++The MCP servers are decided once, in the Stack section of AGENTS.md: the server that lets an agent observe the running application (subsection Observing the running application), and the server of the design tool, if the context names one. `.mcp.json` and `opencode.json` are two translations of this decision and name the same servers: `playwright` when it is Playwright, `penpot` for Penpot. The agents refuse the tools of a server by these names. An access token is never written in clear.
++
++### Claude Code
  
--- `CLAUDE.md`: the lines `@AGENTS.md` and `@CONTEXT.md`, so that every session loads the code rules and the vocabulary.
+ - `CLAUDE.md`: the lines `@AGENTS.md` and `@CONTEXT.md`, so that every session loads the code rules and the vocabulary.
 -- `.mcp.json`: under `mcpServers`, the server that lets an agent observe the running application, as decided in the Stack section of AGENTS.md (subsection Observing the running application), named `playwright` when it is Playwright; and the server of the design tool, if the context names one, named `penpot` for Penpot. The agents refuse the tools of a server by these names. An environment variable is written `${VAR}`; an access token is never written in clear.
--- `.claude/settings.json`: the hook that makes each f3 command run as its agent, under `hooks`:
--
--  ~~~json
--  "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "f3 guard-prompt" }] }]
--  ~~~
--
++- `.mcp.json`: under `mcpServers`, the servers of the Stack section, by the names above. An environment variable is written `${VAR}`.
+ - `.claude/settings.json`: the hook that makes each f3 command run as its agent, under `hooks`:
+ 
+   ~~~json
+   "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "f3 guard-prompt" }] }]
+   ~~~
+ 
 -Claude Code asks each developer, at the first session in the project, to trust the folder and to approve the servers of `.mcp.json`.
-+f3 init adds or updates these keys without touching any other key. Keys that are user preferences (`provider`, `model`, `small_model`, agent settings such as `reasoningEffort`) are proposed for a move to the global configuration; they are moved only with the user's agreement. OpenCode reads its configuration at startup: after a change, OpenCode must be restarted.
++Models, permission modes and other user preferences belong to the user's settings (`~/.claude/settings.json`) or to `.claude/settings.local.json`. Claude Code asks each developer, at the first session in the project, to trust the folder and to approve the servers of `.mcp.json`.
++
++### OpenCode
++
++The project `opencode.json` contains only:
++- `instructions`: `["CONTEXT.md"]`, so that every agent loads the vocabulary;
++- under `mcp`, the servers of the Stack section, by the names above.
++
++f3 init adds or updates these keys without touching any other key. Providers, models and other user preferences belong to the global configuration (`~/.config/opencode/opencode.json`): OpenCode merges both files, and the project file only wins on conflicting keys. Keys that are user preferences (`provider`, `model`, `small_model`, agent settings such as `reasoningEffort`) are proposed for a move to the global configuration; they are moved only with the user's agreement. OpenCode reads its configuration at startup: after a change, OpenCode must be restarted.
  
  ## Languages
  
+@@ -42,5 +54,5 @@
+ 
+ ## Markers
+ 
+-- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`.
++- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`. Its former form, `<!-- f3 standards: written by /f3-init. To change it, run /f3-init again. -->`, is also an f3 marker; f3 init rewrites it in the current form.
+ - `openspec/config.yaml` written by these standards starts with `schema: f3`.
 diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skills/f3-standards/references/agents-md.md
 --- a/openspec/skills/f3-standards/references/agents-md.md
 +++ b/openspec/skills/f3-standards/references/agents-md.md
@@ -273,7 +296,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  ### Observing the running application
  
 -The Playwright MCP server, declared as `playwright` in `.mcp.json`, opens the application started with `npm run start:test` at `http://127.0.0.1:4200`.
-+The Playwright MCP server, declared in `opencode.json`, opens the application started with `npm run start:test` at `http://127.0.0.1:4200`.
++The Playwright MCP server, named `playwright`, opens the application started with `npm run start:test` at `http://127.0.0.1:4200`.
  ~~~~
 diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 --- a/ux/commands/f3-ux-calibrate.md

@@ -21,7 +21,7 @@ The user is an experienced software architect: do not explain basic architecture
 
 | File | When |
 |---|---|
-| `AGENTS.md`, `openspec/config.yaml`, the project `opencode.json` | f3 init |
+| `AGENTS.md`, `openspec/config.yaml`, the files of each tool of the project (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `opencode.json`), `.gitignore` for `.f3/local` | f3 init |
 | the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
 | design.md, tasks.md of a change | f3 design, f3 design-review |
 | review.md, validations/review.md of a change | f3 design-review |

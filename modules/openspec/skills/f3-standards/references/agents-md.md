@@ -216,5 +216,5 @@ HTTP endpoints of `api`, in `apps/api/src/endpoints/<bounded-context>/`, one fil
 
 ### Observing the running application
 
-The Playwright MCP server, declared in `opencode.json`, opens the application started with `npm run start:test` at `http://127.0.0.1:4200`.
+The Playwright MCP server, named `playwright`, opens the application started with `npm run start:test` at `http://127.0.0.1:4200`.
 ~~~~

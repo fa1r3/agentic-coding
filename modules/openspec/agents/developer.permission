@@ -13,3 +13,4 @@ edit:
   ".mcp.json": deny
   ".claude/*": deny
   "opencode.json": deny
+  ".opencode/*": deny
