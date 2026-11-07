@@ -9,7 +9,7 @@ State at launch:
 
 - Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
 - Path of the spec-practice skill: !`echo "$HOME/.config/opencode/skills/spec-practice/SKILL.md"`
-- Step form check: !`node "$HOME/.config/opencode/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
+- Step form check: !`node "$HOME/.local/share/f3/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
 
 Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
 
@@ -33,6 +33,6 @@ Step catalog for the Test member: the output of the "export the step catalog" co
 - Natures of the rows: correction, decision. For a scenario that cannot be automated, the options are a rewording that makes it automatable, or an entry in `tests/e2e/manual-scenarios.md` with its replacement coverage.
 - A feature removed from the scope that the user keeps for later also updates the Out of scope section of clarification.md.
 - Application: a decision becomes a requirement or a scenario, following the spec-practice skill; a term goes into CONTEXT.md, in its format; a scenario the user agrees not to automate gets its entry in the register, in the format of the e2e-practice skill; an appearance wish removed from the specs goes to the place the specs artifact gives (`openspec instructions specs --change $ARGUMENTS`).
-- Checks: `node ~/.config/opencode/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
+- Checks: `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
 - Summary: the changes requirement by requirement, and the new steps still present.
 - Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `/f3-ux-design $ARGUMENTS`.

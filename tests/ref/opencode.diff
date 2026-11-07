@@ -1,0 +1,89 @@
+diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.md
+--- a/openspec/commands/f3-acceptance.md
++++ b/openspec/commands/f3-acceptance.md
+@@ -15,7 +15,7 @@
+ Produces: the files of `tests/e2e/`, the report `acceptance/pass-<NN>.md`, "Acceptance fixes" groups in tasks.md, `BACKLOG.md` entries with the origin `$ARGUMENTS, acceptance`, entries of `tests/e2e/manual-scenarios.md`, amendments.
+ 
+ 1. **Preconditions.** `validations/review.md` exists and no task is unchecked; otherwise `/f3-dev $ARGUMENTS` comes first. No file outside `tests/e2e/` is uncommitted: the application under test must match a commit.
+-2. **Feature files.** Run `node ~/.config/opencode/scripts/f3-features.mjs $ARGUMENTS`. An error in the specs is corrected by an amendment, or in a Tres Amigos session if the user prefers; an error in `tests/e2e/manual-scenarios.md` is corrected there with the user's agreement; then run it again. Keep its list of the delta, and look at `git diff --stat tests/e2e/features/` to see which scenarios changed.
++2. **Feature files.** Run `node ~/.local/share/f3/scripts/f3-features.mjs $ARGUMENTS`. An error in the specs is corrected by an amendment, or in a Tres Amigos session if the user prefers; an error in `tests/e2e/manual-scenarios.md` is corrected there with the user's agreement; then run it again. Keep its list of the delta, and look at `git diff --stat tests/e2e/features/` to see which scenarios changed.
+ 3. **Tests of the delta.** Read the Test strategy section of design.md and the Impact section of ux.md, if any. Run the "generate the tests" command of the Stack section: it lists the steps without definition. During a migration where such scenarios are skipped, list the steps of the delta without definition yourself, against the output of "export the step catalog". Then write the missing step definitions, adapt those of the requirements the delta modifies, write or adapt the page objects of the views the scenarios go through (impacted views first), discovering the interface on the running application, and delete the step definitions no scenario uses any more. Write none for a manual scenario.
+ 4. **Fidelity review.** Convene the built-in subagent `explore` through the task tool, with this prompt, `<files>` being the step definitions and page objects created or changed in this pass: "You review end-to-end test code. Read the e2e-practice skill at ~/.config/opencode/skills/e2e-practice/SKILL.md, the feature files of tests/e2e/features/, the views register ux/views.md, and these files: <files>. Modify no file. Check each step definition against the rules of Writing step definitions, and each page object against the rules of Writing page objects. Answer with one line per finding: the file, the step sentence or the method, the finding in one sentence, and the correction. If there is no finding, answer 'No finding.'." Correct each finding and note it for the report. If `explore` is not available or the call fails, stop and report it.
+ 5. **Run.** Run the whole suite. Correct each automation defect (locator, wait, test data badly prepared) without ever changing the expectation, three attempts at most per scenario, then run the scenarios concerned again.
+diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
+--- a/openspec/commands/f3-archive.md
++++ b/openspec/commands/f3-archive.md
+@@ -14,7 +14,7 @@
+ 1. **Preconditions.** No uncommitted file; otherwise ask the user to commit or set them aside. The last acceptance report concludes "green". `git diff --name-only <its tested commit> HEAD` lists only files of `tests/e2e/`, of `openspec/` and `BACKLOG.md`; otherwise the application changed since the acceptance: stop, `/f3-acceptance $ARGUMENTS` must run again.
+ 2. **Design decisions.** If the change has a ux.md, load the ux-practice skill and add each decision of its Proposed cross-cutting decisions section to `ux/decisions.md`, in the format of the skill. A decision that contradicts `ux/brief.md` or an active entry of the register is reported, not added.
+ 3. **Archiving.** Load the skill openspec-archive-change and follow it for the change, syncing its delta specs into `openspec/specs/`.
+-4. **Check of the merged specs.** Run `node ~/.config/opencode/scripts/f3-features.mjs` without argument, then `git status --porcelain tests/e2e/features/`. The regenerated feature files must be identical to the tested ones: if one differs, stop and show the difference, because the archived specs are not the tested ones.
++4. **Check of the merged specs.** Run `node ~/.local/share/f3/scripts/f3-features.mjs` without argument, then `git status --porcelain tests/e2e/features/`. The regenerated feature files must be identical to the tested ones: if one differs, stop and show the difference, because the archived specs are not the tested ones.
+ 5. **Backlog.** An entry with the status `in-progress $ARGUMENTS` becomes `done $ARGUMENTS`.
+ 6. **Git.** Commit the archiving as the last commit of the branch, `docs: archive $ARGUMENTS`, then merge the branch into the main branch with `git merge --no-ff`.
+ 7. **End.** Sum up what was archived and merged. Next change: `/f3-propose`, which offers the backlog.
+diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-review.md
+--- a/openspec/commands/f3-design-review.md
++++ b/openspec/commands/f3-design-review.md
+@@ -29,6 +29,6 @@
+ - Natures of the rows: correction, decision, specs. For a row of nature "specs", your recommendation is an amendment, with its proposed text; the user may prefer to bring it to a Tres Amigos session.
+ - A row "to bring to Tres Amigos" counts as pending when the session is resumed: present it again with its amendment, unless the user confirms that it goes to a Tres Amigos session.
+ - Application: in design.md, the tasks or arch/decisions.md, following `openspec instructions design --change $ARGUMENTS` and `openspec instructions tasks --change $ARGUMENTS`; a row of nature "specs" validated as an amendment follows the Amendments section of the spec-practice skill, then design.md and the tasks are updated with it; a row the user brings to Tres Amigos receives "to bring to Tres Amigos".
+-- Checks: `openspec validate $ARGUMENTS`, and `node ~/.config/opencode/scripts/f3-features.mjs --check $ARGUMENTS` if an amendment was applied.
++- Checks: `openspec validate $ARGUMENTS`, and `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` if an amendment was applied.
+ - Closing: if rows "to bring to Tres Amigos" remain, write no validation; say that `/f3-tres-amigos $ARGUMENTS` must reopen the specs, then `/f3-design $ARGUMENTS` redo the affected design.
+ - Validation: Record "review.md, sessions 1 to <last>"; Summary: what the review changed in the design and the tasks; Left open: the dismissed points of critical or high severity, and the rows brought to Tres Amigos, or "none". Next step: `/f3-dev $ARGUMENTS`.
+diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
+--- a/openspec/commands/f3-init.md
++++ b/openspec/commands/f3-init.md
+@@ -77,5 +77,5 @@
+    - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
+    - the project `opencode.json`: the workflow keys, without touching any other key.
+ 3. Propose to move the user preferences of the project `opencode.json` to `~/.config/opencode/opencode.json`, merged with what it contains; move them only with the user's agreement.
+-4. Run `openspec schema which f3` and `openspec validate --all`, and fix the errors in the files you wrote. In adoption, also run `node ~/.config/opencode/scripts/f3-features.mjs --check` and fix nothing it reports; read a sample of the existing scenarios against the spec-practice rules. If the check fails or the scenarios break the rules, propose a backlog entry for a change that rewrites them without changing behavior.
++4. Run `openspec schema which f3` and `openspec validate --all`, and fix the errors in the files you wrote. In adoption, also run `node ~/.local/share/f3/scripts/f3-features.mjs --check` and fix nothing it reports; read a sample of the existing scenarios against the spec-practice rules. If the check fails or the scenarios break the rules, propose a backlog entry for a change that rewrites them without changing behavior.
+ 5. Show `git diff --stat`, then state: the points To be clarified; that OpenCode must be restarted if `opencode.json` changed; if a design tool is kept and `ux/brief.md` does not exist, the commands to run once, each in a new session: `/f3-ux-calibrate`, `/f3-ux-direction`, `/f3-ux-tokens`; in adoption, the gaps between the code and the invariant part, each proposed as a backlog entry, without fixing them; and that the next change starts with `/f3-propose`.
+diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigos.md
+--- a/openspec/commands/f3-tres-amigos.md
++++ b/openspec/commands/f3-tres-amigos.md
+@@ -9,7 +9,7 @@
+ 
+ - Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
+ - Path of the spec-practice skill: !`echo "$HOME/.config/opencode/skills/spec-practice/SKILL.md"`
+-- Step form check: !`node "$HOME/.config/opencode/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
++- Step form check: !`node "$HOME/.local/share/f3/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
+ 
+ Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
+ 
+@@ -33,6 +33,6 @@
+ - Natures of the rows: correction, decision. For a scenario that cannot be automated, the options are a rewording that makes it automatable, or an entry in `tests/e2e/manual-scenarios.md` with its replacement coverage.
+ - A feature removed from the scope that the user keeps for later also updates the Out of scope section of clarification.md.
+ - Application: a decision becomes a requirement or a scenario, following the spec-practice skill; a term goes into CONTEXT.md, in its format; a scenario the user agrees not to automate gets its entry in the register, in the format of the e2e-practice skill; an appearance wish removed from the specs goes to the place the specs artifact gives (`openspec instructions specs --change $ARGUMENTS`).
+-- Checks: `node ~/.config/opencode/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
++- Checks: `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
+ - Summary: the changes requirement by requirement, and the new steps still present.
+ - Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `/f3-ux-design $ARGUMENTS`.
+diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/SKILL.md
+--- a/openspec/skills/e2e-practice/SKILL.md
++++ b/openspec/skills/e2e-practice/SKILL.md
+@@ -22,7 +22,7 @@
+ 
+ The end-to-end test project lives in `tests/e2e/`:
+ 
+-- `features/`: the feature files, one per capability, generated by `node ~/.config/opencode/scripts/f3-features.mjs <change-id>` and versioned. They are never edited by hand: a scenario changes in the specs, then the files are regenerated. The test code the runner generates from them is not versioned.
++- `features/`: the feature files, one per capability, generated by `node ~/.local/share/f3/scripts/f3-features.mjs <change-id>` and versioned. They are never edited by hand: a scenario changes in the specs, then the files are regenerated. The test code the runner generates from them is not versioned.
+ - `steps/`: the step definitions, one file per business concept of `CONTEXT.md`, named after its English term.
+ - `pages/`: one page object per view, in a file named after the view (`pages/invoice-editor.ts` for the view `invoice-editor`). Component objects are in `pages/components/`, named after the component.
+ - `support/`: the launch of the application in test mode, the test data builders that use the test entry points, and the fixtures that give step definitions their page objects.
+diff -ru a/openspec/skills/spec-practice/SKILL.md b/openspec/skills/spec-practice/SKILL.md
+--- a/openspec/skills/spec-practice/SKILL.md
++++ b/openspec/skills/spec-practice/SKILL.md
+@@ -35,7 +35,7 @@
+ 
+ ## Checks
+ 
+-After writing or amending specs, run `node ~/.config/opencode/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
++After writing or amending specs, run `node ~/.local/share/f3/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
+ 
+ ## Example
+ 

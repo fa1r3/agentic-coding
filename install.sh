@@ -7,13 +7,17 @@
 #   modules/*/agents/*.md    -> ~/.config/opencode/agents/
 #   modules/*/commands/*.md  -> ~/.config/opencode/commands/
 #   modules/*/skills/*/      -> ~/.config/opencode/skills/
-#   modules/*/scripts/*      -> ~/.config/opencode/scripts/
+#   modules/*/scripts/*      -> ~/.local/share/f3/scripts/
 #   modules/*/schemas/*/     -> ~/.local/share/openspec/schemas/
 set -euo pipefail
 
 TOOLKIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENCODE="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
-SCHEMAS="${XDG_DATA_HOME:-$HOME/.local/share}/openspec/schemas"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+SCRIPTS="$DATA/f3/scripts"
+SCHEMAS="$DATA/openspec/schemas"
+# Former location of the scripts: the links left there are removed.
+OLD_SCRIPTS="$OPENCODE/scripts"
 MODE="${1:-install}"
 
 if [[ "$MODE" != "install" && "$MODE" != "--remove" && "$MODE" != "--render" ]]; then
@@ -42,11 +46,11 @@ link() {
   ln -sfn "$source" "$target"
 }
 
-DIRS=("$OPENCODE/agents" "$OPENCODE/commands" "$OPENCODE/skills" "$OPENCODE/scripts" "$SCHEMAS")
+DIRS=("$OPENCODE/agents" "$OPENCODE/commands" "$OPENCODE/skills" "$SCRIPTS" "$SCHEMAS")
 shopt -s nullglob
 
 if [[ "$MODE" == "--remove" ]]; then
-  for dir in "${DIRS[@]}"; do
+  for dir in "${DIRS[@]}" "$OLD_SCRIPTS"; do
     for entry in "$dir"/*; do
       if [[ -L "$entry" && "$(readlink "$entry")" == "$TOOLKIT"/* ]]; then
         rm "$entry"
@@ -63,7 +67,7 @@ for module in "$TOOLKIT"/modules/*/; do
   for f in "$module"agents/*.md; do link "$f" "$OPENCODE/agents/$(basename "$f")"; done
   for f in "$module"commands/*.md; do link "$f" "$OPENCODE/commands/$(basename "$f")"; done
   for d in "$module"skills/*/; do link "${d%/}" "$OPENCODE/skills/$(basename "$d")"; done
-  for f in "$module"scripts/*; do link "$f" "$OPENCODE/scripts/$(basename "$f")"; done
+  for f in "$module"scripts/*; do link "$f" "$SCRIPTS/$(basename "$f")"; done
   for d in "$module"schemas/*/; do link "${d%/}" "$SCHEMAS/$(basename "$d")"; done
 done
 
@@ -74,6 +78,13 @@ for dir in "${DIRS[@]}"; do
       echo "Dead link removed: $entry"
     fi
   done
+done
+
+for entry in "$OLD_SCRIPTS"/*; do
+  if [[ -L "$entry" && "$(readlink "$entry")" == "$TOOLKIT"/* ]]; then
+    rm "$entry"
+    echo "Obsolete link removed: $entry"
+  fi
 done
 
 echo "Toolkit linked. Restart OpenCode to load the agents, commands and skills."

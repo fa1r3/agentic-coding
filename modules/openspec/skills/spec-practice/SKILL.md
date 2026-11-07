@@ -35,7 +35,7 @@ The f3-features script converts every scenario literally into Gherkin: the capab
 
 ## Checks
 
-After writing or amending specs, run `node ~/.config/opencode/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
+After writing or amending specs, run `node ~/.local/share/f3/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
 
 ## Example
 
