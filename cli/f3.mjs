@@ -4,6 +4,7 @@
 //   f3 state <command> [args]   launch state of a command (its single shell injection)
 //   f3 guard <agent>            PreToolUse hook of an agent: applies its permission table
 //   f3 guard-prompt             UserPromptSubmit hook of the project: an f3 command runs as its agent
+//   f3 render [tool] [--to dir] renders the agents and commands for one tool, or both, into build/
 import { spawnSync } from 'node:child_process';
 import { RESERVED, commands } from './lib/toolkit.mjs';
 
@@ -16,6 +17,7 @@ function usage() {
     `Steps: ${steps.join(', ')}`,
     'Each step starts a new Claude Code session as its agent and runs the command /f3-<step>.',
     'Other subcommands, used by the commands and hooks of the toolkit: state, guard, guard-prompt.',
+    'f3 render [claude|opencode] [--to <dir>] renders the toolkit for one tool, or both, into build/ (or as a full view into <dir>).',
   ].join('\n');
 }
 
@@ -27,6 +29,10 @@ async function main() {
   if (sub === 'state') {
     const { state } = await import('./lib/state.mjs');
     return state(rest[0], rest.slice(1).join(' '));
+  }
+  if (sub === 'render') {
+    const { renderCommand } = await import('./lib/render.mjs');
+    return renderCommand(rest);
   }
   if (sub === 'guard') {
     const { guard } = await import('./lib/guard.mjs');

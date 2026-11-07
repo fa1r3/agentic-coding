@@ -15,7 +15,7 @@ export const SCRIPTS_DIR = join(DATA_DIR, 'f3', 'scripts');
 export const SKILLS_DIR = join(CLAUDE_DIR, 'skills');
 
 // Subcommands of f3 that are not workflow steps: no command may be named /f3-<one of them>.
-export const RESERVED = ['state', 'guard', 'guard-prompt', 'help'];
+export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'render'];
 
 function unquote(value) {
   const v = value.trim();
