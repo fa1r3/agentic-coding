@@ -11,6 +11,8 @@ State at launch (from `f3 state ux-tokens`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Goal: create or adjust in the design tool the tokens of the project, compliant with `references/tokens.md` of the ux-practice skill and with the art direction of `ux/brief.md`, have the user validate them on a preview, then update their token board. This command creates no component and no screen.
 
 Preconditions: tool, brief.

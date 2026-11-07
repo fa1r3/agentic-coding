@@ -11,6 +11,8 @@ State at launch (from `f3 state ux-direction`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Goal: set the art direction of the project and write `ux/brief.md` in the format of the ux-practice skill, section by section as soon as they are validated; create `ux/decisions.md` if it does not exist.
 
 Preconditions: tool.

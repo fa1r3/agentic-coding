@@ -14,6 +14,8 @@ State at launch (from `f3 state acceptance`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Produces: the files of `tests/e2e/`, the report `acceptance/pass-<NN>.md`, "Acceptance fixes" groups in tasks.md, `BACKLOG.md` entries with the origin `$ARGUMENTS, acceptance`, entries of `tests/e2e/manual-scenarios.md`, amendments.
 
 1. **Preconditions.** `validations/review.md` exists and no task is unchecked; otherwise `f3 dev $ARGUMENTS` comes first. No file outside `tests/e2e/` is uncommitted: the application under test must match a commit.

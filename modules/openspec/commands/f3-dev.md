@@ -14,6 +14,8 @@ State at launch (from `f3 state dev`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 1. If files are uncommitted while you resume work, check whether they belong to a task in progress of this change; otherwise, stop and ask the user what to do with them before writing anything.
 2. Load the skill openspec-apply-change and follow it for the change $ARGUMENTS, with the method of your agent.
 3. End following your end-of-session instruction.

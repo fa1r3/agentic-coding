@@ -13,6 +13,8 @@ State at launch (from `f3 state init`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of the project `opencode.json`.
 
 ## Preconditions

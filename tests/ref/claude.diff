@@ -36,11 +36,13 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
 diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.md
 --- a/openspec/commands/f3-acceptance.md
 +++ b/openspec/commands/f3-acceptance.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state acceptance '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Produces: the files of `tests/e2e/`, the report `acceptance/pass-<NN>.md`, "Acceptance fixes" groups in tasks.md, `BACKLOG.md` entries with the origin `$ARGUMENTS, acceptance`, entries of `tests/e2e/manual-scenarios.md`, amendments.
  
@@ -48,11 +50,13 @@ diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.
 diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 --- a/openspec/commands/f3-archive.md
 +++ b/openspec/commands/f3-archive.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state archive '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  1. **Preconditions.** No uncommitted file; otherwise ask the user to commit or set them aside. The last acceptance report concludes "green". `git diff --name-only <its tested commit> HEAD` lists only files of `tests/e2e/`, of `openspec/` and `BACKLOG.md`; otherwise the application changed since the acceptance: stop, `f3 acceptance $ARGUMENTS` must run again.
  2. **Design decisions.** If the change has a ux.md, load the ux-practice skill and add each decision of its Proposed cross-cutting decisions section to `ux/decisions.md`, in the format of the skill. A decision that contradicts `ux/brief.md` or an active entry of the register is reported, not added.
@@ -60,11 +64,13 @@ diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-review.md
 --- a/openspec/commands/f3-design-review.md
 +++ b/openspec/commands/f3-design-review.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state design-review '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  If design.md or tasks.md is missing, stop: they are written with `f3 design $ARGUMENTS`.
  
@@ -72,11 +78,13 @@ diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-r
 diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 --- a/openspec/commands/f3-design.md
 +++ b/openspec/commands/f3-design.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state design '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments.
  
@@ -84,11 +92,13 @@ diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 diff -ru a/openspec/commands/f3-dev.md b/openspec/commands/f3-dev.md
 --- a/openspec/commands/f3-dev.md
 +++ b/openspec/commands/f3-dev.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state dev '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  1. If files are uncommitted while you resume work, check whether they belong to a task in progress of this change; otherwise, stop and ask the user what to do with them before writing anything.
  2. Load the skill openspec-apply-change and follow it for the change $ARGUMENTS, with the method of your agent.
@@ -103,18 +113,20 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  f3-agent: architect
  disable-model-invocation: true
  allowed-tools: Bash(f3 state:*)
-@@ -13,7 +13,9 @@
+@@ -13,7 +13,11 @@
  
  !`f3 state init`
  
 -Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the Claude Code files of the project: `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`.
 +If the launch state is missing, empty or reports an error, show it and stop.
 +
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
++
 +Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of the project `opencode.json`.
  
  ## Preconditions
  
-@@ -21,14 +23,14 @@
+@@ -21,14 +25,14 @@
  
  - A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
  - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
@@ -131,7 +143,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  - **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary.
  
  ## Interview
-@@ -71,9 +73,10 @@
+@@ -71,9 +75,10 @@
  1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
  2. Write each file following its reference:
     - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
@@ -149,23 +161,42 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 --- a/openspec/commands/f3-propose.md
 +++ b/openspec/commands/f3-propose.md
-@@ -14,6 +14,8 @@
+@@ -8,19 +8,23 @@
+ 
+ This command runs as the analyst agent, in a session started by `f3 propose`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 propose <arguments>`.
+ 
+-Request: "$ARGUMENTS".
++Request: "$ARGUMENTS", or the idea from the user at the end of the launch state.
+ 
+ State at launch (from `f3 state propose`):
  
  !`f3 state propose`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
 +
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
++
  Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
  
  ## 1. Subject
+ 
+ - **A change in progress:** resume it from the first section of clarification.md without content, then from the first missing artifact (proposal, then specs). If it has `validations/amigos.md`, stop: its specs are closed, and change only through an amendment.
+ - **An idea:** go to step 2.
+-- **No argument:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
++- **No argument and no idea:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
+ 
+ ## 2. Interview
+ 
 diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigos.md
 --- a/openspec/commands/f3-tres-amigos.md
 +++ b/openspec/commands/f3-tres-amigos.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state tres-amigos '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
  
@@ -247,11 +278,13 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
 diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 --- a/ux/commands/f3-ux-calibrate.md
 +++ b/ux/commands/f3-ux-calibrate.md
-@@ -11,6 +11,8 @@
+@@ -11,6 +11,10 @@
  
  !`f3 state ux-calibrate`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Goal: establish or check again `ux/cookbook.md`, on a fixed and minimal case, independent of the product. This command uses neither the brief, nor the specs, nor the tokens of the project.
  
@@ -259,11 +292,13 @@ diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
 --- a/ux/commands/f3-ux-design.md
 +++ b/ux/commands/f3-ux-design.md
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,10 @@
  
  !`f3 state ux-design '$ARGUMENTS'`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  If the mode is "conformity", follow only the section Conformity mode. Otherwise, follow the design mode.
  
@@ -271,11 +306,13 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
 diff -ru a/ux/commands/f3-ux-direction.md b/ux/commands/f3-ux-direction.md
 --- a/ux/commands/f3-ux-direction.md
 +++ b/ux/commands/f3-ux-direction.md
-@@ -11,6 +11,8 @@
+@@ -11,6 +11,10 @@
  
  !`f3 state ux-direction`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Goal: set the art direction of the project and write `ux/brief.md` in the format of the ux-practice skill, section by section as soon as they are validated; create `ux/decisions.md` if it does not exist.
  
@@ -283,11 +320,13 @@ diff -ru a/ux/commands/f3-ux-direction.md b/ux/commands/f3-ux-direction.md
 diff -ru a/ux/commands/f3-ux-tokens.md b/ux/commands/f3-ux-tokens.md
 --- a/ux/commands/f3-ux-tokens.md
 +++ b/ux/commands/f3-ux-tokens.md
-@@ -11,6 +11,8 @@
+@@ -11,6 +11,10 @@
  
  !`f3 state ux-tokens`
  
 +If the launch state is missing, empty or reports an error, show it and stop.
++
++A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
  Goal: create or adjust in the design tool the tokens of the project, compliant with `references/tokens.md` of the ux-practice skill and with the art direction of `ux/brief.md`, have the user validate them on a preview, then update their token board. This command creates no component and no screen.
  

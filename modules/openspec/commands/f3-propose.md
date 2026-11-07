@@ -6,7 +6,7 @@ agent: analyst
 
 This command runs as the analyst agent, in a session started by `f3 propose`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 propose <arguments>`.
 
-Request: "$ARGUMENTS".
+Request: "$ARGUMENTS", or the idea from the user at the end of the launch state.
 
 State at launch (from `f3 state propose`):
 
@@ -14,13 +14,15 @@ State at launch (from `f3 state propose`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
 
 ## 1. Subject
 
 - **A change in progress:** resume it from the first section of clarification.md without content, then from the first missing artifact (proposal, then specs). If it has `validations/amigos.md`, stop: its specs are closed, and change only through an amendment.
 - **An idea:** go to step 2.
-- **No argument:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
+- **No argument and no idea:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
 
 ## 2. Interview
 

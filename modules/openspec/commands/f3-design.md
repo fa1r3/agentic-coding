@@ -14,6 +14,8 @@ State at launch (from `f3 state design`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments.
 
 1. If `validations/ux.md` does not exist in the change, stop: the interface design step must first be closed with `f3 ux-design $ARGUMENTS`.

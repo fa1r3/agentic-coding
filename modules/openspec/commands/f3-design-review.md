@@ -14,6 +14,8 @@ State at launch (from `f3 state design-review`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 If design.md or tasks.md is missing, stop: they are written with `f3 design $ARGUMENTS`.
 
 Produces: the record `review.md`, titled "# Design review of change $ARGUMENTS"; the corrections of design.md and tasks.md; entries of `arch/decisions.md`; amendments; `BACKLOG.md` entries with the origin `$ARGUMENTS, design-review`; `validations/review.md` at closing.

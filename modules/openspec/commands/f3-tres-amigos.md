@@ -14,6 +14,8 @@ State at launch (from `f3 state tres-amigos`):
 
 If the launch state is missing, empty or reports an error, show it and stop.
 
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
 
 Files of the following steps, for a reopening: ux-design.md, ux.md, validations/ux.md, design.md, tasks.md, review.md, validations/review.md, acceptance/.
