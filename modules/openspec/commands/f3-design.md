@@ -3,6 +3,8 @@ description: "Writes the technical design (design.md) and the tasks (tasks.md) o
 agent: architect
 ---
 
+This command runs as the architect agent, in a session started by `f3 design`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design <arguments>`.
+
 Write the technical design and the tasks of the OpenSpec change $ARGUMENTS.
 
 State at launch (from `f3 state design`):

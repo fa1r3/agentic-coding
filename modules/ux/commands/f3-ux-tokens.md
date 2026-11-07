@@ -3,6 +3,8 @@ description: "Creates or adjusts the tokens of the project in the design tool, d
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-tokens`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-tokens`.
+
 State at launch (from `f3 state ux-tokens`):
 
 !`f3 state ux-tokens`

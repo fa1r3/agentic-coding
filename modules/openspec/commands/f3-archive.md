@@ -3,6 +3,8 @@ description: "Archives an OpenSpec change after a green acceptance: checks that 
 agent: architect
 ---
 
+This command runs as the architect agent, in a session started by `f3 archive`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 archive <arguments>`.
+
 Archive the OpenSpec change $ARGUMENTS. This command commits and merges.
 
 State at launch (from `f3 state archive`):

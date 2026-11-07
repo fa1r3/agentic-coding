@@ -3,6 +3,8 @@ description: "Frames a project with the f3 standards, through a short interview 
 agent: architect
 ---
 
+This command runs as the architect agent, in a session started by `f3 init`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 init`.
+
 You frame this project with the f3 standards. Load the f3-standards skill, and read each of its references when you write the file it describes.
 
 State at launch (from `f3 state init`):

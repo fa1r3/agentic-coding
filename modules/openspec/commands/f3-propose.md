@@ -3,6 +3,8 @@ description: "Starts or resumes an OpenSpec change. Without argument, offers to 
 agent: analyst
 ---
 
+This command runs as the analyst agent, in a session started by `f3 propose`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 propose <arguments>`.
+
 Request: "$ARGUMENTS".
 
 State at launch (from `f3 state propose`):

@@ -3,6 +3,8 @@ description: "Acceptance of an OpenSpec change by the tester, in a new session, 
 agent: tester
 ---
 
+This command runs as the tester agent, in a session started by `f3 acceptance`. If you are not the tester agent, stop and tell the user to run, in a terminal: `f3 acceptance <arguments>`.
+
 Acceptance of the change "$ARGUMENTS", following the e2e-practice skill. This command commits.
 
 State at launch (from `f3 state acceptance`):

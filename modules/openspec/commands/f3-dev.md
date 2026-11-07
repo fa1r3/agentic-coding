@@ -3,6 +3,8 @@ description: "Implements an OpenSpec change with the developer agent, through th
 agent: developer
 ---
 
+This command runs as the developer agent, in a session started by `f3 dev`. If you are not the developer agent, stop and tell the user to run, in a terminal: `f3 dev <arguments>`.
+
 Implement the OpenSpec change $ARGUMENTS.
 
 State at launch (from `f3 state dev`):

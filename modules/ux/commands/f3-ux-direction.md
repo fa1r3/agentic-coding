@@ -3,6 +3,8 @@ description: "Sets the art direction of the project. Two contrasting directions 
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-direction`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-direction`.
+
 State at launch (from `f3 state ux-direction`):
 
 !`f3 state ux-direction`

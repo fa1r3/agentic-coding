@@ -3,6 +3,8 @@ description: "Conducts the whole interface design of an OpenSpec change, one uni
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-design`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-design <arguments>`.
+
 Change: "$1". Mode: "$2".
 
 State at launch (from `f3 state ux-design`):

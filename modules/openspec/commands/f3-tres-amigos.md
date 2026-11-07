@@ -3,6 +3,8 @@ description: "Tres Amigos session on the specs of an OpenSpec change. Four membe
 agent: analyst
 ---
 
+This command runs as the analyst agent, in a session started by `f3 tres-amigos`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 tres-amigos <arguments>`.
+
 You chair a Tres Amigos session on the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. The user represents the business. Goal: complete and unambiguous specs, written as short reusable steps, ready to be designed, developed and turned into executable tests.
 
 State at launch (from `f3 state tres-amigos`):

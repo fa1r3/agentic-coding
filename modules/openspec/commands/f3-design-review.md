@@ -3,6 +3,8 @@ description: "Design review of an OpenSpec change, before implementation. Three 
 agent: architect
 ---
 
+This command runs as the architect agent, in a session started by `f3 design-review`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design-review <arguments>`.
+
 You chair the design review of the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. Goal: a design and tasks that deliver each scenario of the specs, comply with AGENTS.md and arch/decisions.md, and carry no identifiable security risk, before a line of code is written.
 
 State at launch (from `f3 state design-review`):

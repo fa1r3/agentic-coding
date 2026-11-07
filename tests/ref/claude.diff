@@ -129,7 +129,7 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
 diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.md
 --- a/openspec/commands/f3-acceptance.md
 +++ b/openspec/commands/f3-acceptance.md
-@@ -1,25 +1,22 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Acceptance of an OpenSpec change by the tester, in a new session, after the developer and the user's check: regenerates the feature files from the specs with the delta of the change, writes or adapts the step definitions and page objects, has them reviewed by an independent subagent, runs the whole suite, and submits each failure with its facts and a proposal (adapt the test, ticket for the developer, amendment of the spec, backlog). The user decides. Each run is a new pass. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -139,11 +139,8 @@ diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.
 +agent: tester
  ---
  
--This command runs as the tester agent, in a session started by `f3 acceptance`. If you are not the tester agent, stop and tell the user to run, in a terminal: `f3 acceptance <arguments>`.
--
- Acceptance of the change "$ARGUMENTS", following the e2e-practice skill. This command commits.
- 
- State at launch (from `f3 state acceptance`):
+ This command runs as the tester agent, in a session started by `f3 acceptance`. If you are not the tester agent, stop and tell the user to run, in a terminal: `f3 acceptance <arguments>`.
+@@ -14,12 +11,14 @@
  
  !`f3 state acceptance '$ARGUMENTS'`
  
@@ -162,7 +159,7 @@ diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.
 diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 --- a/openspec/commands/f3-archive.md
 +++ b/openspec/commands/f3-archive.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Archives an OpenSpec change after a green acceptance: checks that nothing in the application changed since the tested commit, merges the cross-cutting design decisions into ux/decisions.md, archives the change through the OpenSpec archive workflow, checks the merged specs by regenerating the feature files, closes the backlog entry and merges the branch. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -172,11 +169,8 @@ diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 +agent: architect
  ---
  
--This command runs as the architect agent, in a session started by `f3 archive`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 archive <arguments>`.
--
- Archive the OpenSpec change $ARGUMENTS. This command commits and merges.
- 
- State at launch (from `f3 state archive`):
+ This command runs as the architect agent, in a session started by `f3 archive`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 archive <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state archive '$ARGUMENTS'`
  
@@ -188,7 +182,7 @@ diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-review.md
 --- a/openspec/commands/f3-design-review.md
 +++ b/openspec/commands/f3-design-review.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Design review of an OpenSpec change, before implementation. Three members (architect, technical security, product) review the technical design and the tasks, each in their own subagent context; the chair sorts their objections into a grid the user decides, corrects design.md and the tasks, amends the specs when the user validates it, records the session and, when the user declares it finished, writes the validation that unlocks implementation. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -198,11 +192,8 @@ diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-r
 +agent: architect
  ---
  
--This command runs as the architect agent, in a session started by `f3 design-review`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design-review <arguments>`.
--
- You chair the design review of the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. Goal: a design and tasks that deliver each scenario of the specs, comply with AGENTS.md and arch/decisions.md, and carry no identifiable security risk, before a line of code is written.
- 
- State at launch (from `f3 state design-review`):
+ This command runs as the architect agent, in a session started by `f3 design-review`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design-review <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state design-review '$ARGUMENTS'`
  
@@ -214,7 +205,7 @@ diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-r
 diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 --- a/openspec/commands/f3-design.md
 +++ b/openspec/commands/f3-design.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Writes the technical design (design.md) and the tasks (tasks.md) of an OpenSpec change with the architect agent, through the OpenSpec continue workflow. Can be run again: it resumes from the first missing artifact. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -224,11 +215,8 @@ diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 +agent: architect
  ---
  
--This command runs as the architect agent, in a session started by `f3 design`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design <arguments>`.
--
- Write the technical design and the tasks of the OpenSpec change $ARGUMENTS.
- 
- State at launch (from `f3 state design`):
+ This command runs as the architect agent, in a session started by `f3 design`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state design '$ARGUMENTS'`
  
@@ -240,7 +228,7 @@ diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 diff -ru a/openspec/commands/f3-dev.md b/openspec/commands/f3-dev.md
 --- a/openspec/commands/f3-dev.md
 +++ b/openspec/commands/f3-dev.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Implements an OpenSpec change with the developer agent, through the OpenSpec apply workflow. Can be run again: each run resumes the unchecked tasks, acceptance and conformity fixes first. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -250,11 +238,8 @@ diff -ru a/openspec/commands/f3-dev.md b/openspec/commands/f3-dev.md
 +agent: developer
  ---
  
--This command runs as the developer agent, in a session started by `f3 dev`. If you are not the developer agent, stop and tell the user to run, in a terminal: `f3 dev <arguments>`.
--
- Implement the OpenSpec change $ARGUMENTS.
- 
- State at launch (from `f3 state dev`):
+ This command runs as the developer agent, in a session started by `f3 dev`. If you are not the developer agent, stop and tell the user to run, in a terminal: `f3 dev <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state dev '$ARGUMENTS'`
  
@@ -266,7 +251,7 @@ diff -ru a/openspec/commands/f3-dev.md b/openspec/commands/f3-dev.md
 diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 --- a/openspec/commands/f3-init.md
 +++ b/openspec/commands/f3-init.md
-@@ -1,19 +1,17 @@
+@@ -1,8 +1,6 @@
  ---
 -description: "Frames a project with the f3 standards, through a short interview conducted one question at a time: product context, stack decision, code rules, vocabulary. Writes AGENTS.md, openspec/config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md and the Claude Code files of the project (CLAUDE.md, .mcp.json, .claude/settings.json). Three modes, chosen from the state of the repository: creation, adoption of an existing project, update of a framed project. Runs only on a repository without uncommitted changes."
 -f3-agent: architect
@@ -276,11 +261,8 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 +agent: architect
  ---
  
--This command runs as the architect agent, in a session started by `f3 init`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 init`.
--
- You frame this project with the f3 standards. Load the f3-standards skill, and read each of its references when you write the file it describes.
- 
- State at launch (from `f3 state init`):
+ This command runs as the architect agent, in a session started by `f3 init`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 init`.
+@@ -13,7 +11,9 @@
  
  !`f3 state init`
  
@@ -291,7 +273,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  ## Preconditions
  
-@@ -21,14 +19,14 @@
+@@ -21,14 +21,14 @@
  
  - A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
  - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
@@ -308,7 +290,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  - **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary.
  
  ## Interview
-@@ -71,9 +69,10 @@
+@@ -71,9 +71,10 @@
  1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
  2. Write each file following its reference:
     - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
@@ -326,7 +308,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 --- a/openspec/commands/f3-propose.md
 +++ b/openspec/commands/f3-propose.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Starts or resumes an OpenSpec change. Without argument, offers to resume a clarification in progress or to pick the next change from the backlog. With an idea, clarifies it through functional questions asked one at a time, keeps the change focused and sends what is out of scope to the backlog, then writes the clarification, the proposal and the specs. Argument: nothing, an idea in a few words, or the identifier of a change to resume."
 -argument-hint: "[idea or change-id]"
@@ -336,11 +318,8 @@ diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 +agent: analyst
  ---
  
--This command runs as the analyst agent, in a session started by `f3 propose`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 propose <arguments>`.
--
- Request: "$ARGUMENTS".
- 
- State at launch (from `f3 state propose`):
+ This command runs as the analyst agent, in a session started by `f3 propose`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 propose <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state propose`
  
@@ -352,7 +331,7 @@ diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigos.md
 --- a/openspec/commands/f3-tres-amigos.md
 +++ b/openspec/commands/f3-tres-amigos.md
-@@ -1,19 +1,16 @@
+@@ -1,9 +1,6 @@
  ---
  description: "Tres Amigos session on the specs of an OpenSpec change. Four members (interface, system, test, security) review the specs, each in their own subagent context; the chair sorts their objections into a grid the user decides, applies each decision, records the session and, when the user declares it finished, writes the validation of the step. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
 -argument-hint: "<change-id>"
@@ -362,11 +341,8 @@ diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigo
 +agent: analyst
  ---
  
--This command runs as the analyst agent, in a session started by `f3 tres-amigos`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 tres-amigos <arguments>`.
--
- You chair a Tres Amigos session on the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. The user represents the business. Goal: complete and unambiguous specs, written as short reusable steps, ready to be designed, developed and turned into executable tests.
- 
- State at launch (from `f3 state tres-amigos`):
+ This command runs as the analyst agent, in a session started by `f3 tres-amigos`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 tres-amigos <arguments>`.
+@@ -14,6 +11,8 @@
  
  !`f3 state tres-amigos '$ARGUMENTS'`
  
@@ -484,7 +460,7 @@ diff -ru a/ux/agents/ux.md b/ux/agents/ux.md
 diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 --- a/ux/commands/f3-ux-calibrate.md
 +++ b/ux/commands/f3-ux-calibrate.md
-@@ -1,16 +1,14 @@
+@@ -1,8 +1,6 @@
  ---
  description: "Checks on a fixed and minimal case how to perform in the design tool each operation the design needs, and records the recipes in the project cookbook"
 -f3-agent: ux
@@ -493,9 +469,8 @@ diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 +agent: ux
  ---
  
--This command runs as the ux agent, in a session started by `f3 ux-calibrate`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-calibrate`.
--
- State at launch (from `f3 state ux-calibrate`):
+ This command runs as the ux agent, in a session started by `f3 ux-calibrate`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-calibrate`.
+@@ -11,6 +9,8 @@
  
  !`f3 state ux-calibrate`
  
@@ -507,7 +482,7 @@ diff -ru a/ux/commands/f3-ux-calibrate.md b/ux/commands/f3-ux-calibrate.md
 diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
 --- a/ux/commands/f3-ux-design.md
 +++ b/ux/commands/f3-ux-design.md
-@@ -1,19 +1,16 @@
+@@ -1,19 +1,18 @@
  ---
  description: "Conducts the whole interface design of an OpenSpec change, one unit of work per run: first the impact analysis (missing behaviors decided with the user, then views, components, icons, tokens and conflicts), then the icons, the components and the screens, one view at a time. Keeps a progress tracking in the change so that each run resumes where the previous one stopped, and writes the validation of the step when everything is approved, or states that the change has no interface. With the mode 'conformity', after implementation, compares the running application with the design screens and submits each deviation to the user. Arguments: the identifier of the change, then optionally 'conformity'."
 -argument-hint: "<change-id> [conformity]"
@@ -517,8 +492,8 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
 +agent: ux
  ---
  
--This command runs as the ux agent, in a session started by `f3 ux-design`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-design <arguments>`.
--
+ This command runs as the ux agent, in a session started by `f3 ux-design`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-design <arguments>`.
+ 
 -Change: "$0". Mode: "$1".
 +Change: "$1". Mode: "$2".
  
@@ -531,7 +506,7 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
  If the mode is "conformity", follow only the section Conformity mode. Otherwise, follow the design mode.
  
  # Design mode
-@@ -61,7 +58,7 @@
+@@ -61,7 +60,7 @@
  
  Check it first, in this order:
  
@@ -540,7 +515,7 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
  2. If `validations/ux.md` exists, the step is closed: start no unit of work. Say so, with the date of the validation, list the files of the following steps that exist (design.md, tasks.md, review.md, validations/review.md, acceptance/), and ask whether to reopen it and which element to review, knowing those files will have to be reviewed. On an explicit answer, set that element to `todo` and go on; otherwise, stop.
  3. If the context says "No design tool", propose to close the step as not-applicable, with the reason "the project has no design tool".
  4. If, from the proposal and the titles of the requirements, the change creates or modifies no view and no component, propose to close the step as not-applicable, with your reason.
-@@ -84,18 +81,18 @@
+@@ -84,18 +83,18 @@
     c. **Components,** by coherent group: those one view assembles, starting with the first view of the impact.
     d. **Screens of one view,** all its states, in the order of the views of the impact, once every component it assembles is `approved`. Before presenting a screen, check it against the specs: every action, piece of information and state they require for this view is present, nothing absent from them is added.
     Each component or screen is drawn once at its final place, exported, looked at, set to `drawn`, then presented with your presentation choices and their reasons; a limited choice inside it is shown as options in a preview. Apply the feedback, then set it to `approved`. A missing behavior follows rule 3, a contradiction with the brief or the register rule 2. A preference that holds for the whole product is proposed for the Proposed cross-cutting decisions section of ux.md.
@@ -566,7 +541,7 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
 diff -ru a/ux/commands/f3-ux-direction.md b/ux/commands/f3-ux-direction.md
 --- a/ux/commands/f3-ux-direction.md
 +++ b/ux/commands/f3-ux-direction.md
-@@ -1,16 +1,14 @@
+@@ -1,8 +1,6 @@
  ---
  description: "Sets the art direction of the project. Two contrasting directions drawn in the design tool, the user's choice, then the design brief, written section by section."
 -f3-agent: ux
@@ -575,9 +550,8 @@ diff -ru a/ux/commands/f3-ux-direction.md b/ux/commands/f3-ux-direction.md
 +agent: ux
  ---
  
--This command runs as the ux agent, in a session started by `f3 ux-direction`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-direction`.
--
- State at launch (from `f3 state ux-direction`):
+ This command runs as the ux agent, in a session started by `f3 ux-direction`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-direction`.
+@@ -11,6 +9,8 @@
  
  !`f3 state ux-direction`
  
@@ -589,7 +563,7 @@ diff -ru a/ux/commands/f3-ux-direction.md b/ux/commands/f3-ux-direction.md
 diff -ru a/ux/commands/f3-ux-tokens.md b/ux/commands/f3-ux-tokens.md
 --- a/ux/commands/f3-ux-tokens.md
 +++ b/ux/commands/f3-ux-tokens.md
-@@ -1,16 +1,14 @@
+@@ -1,8 +1,6 @@
  ---
  description: "Creates or adjusts the tokens of the project in the design tool, deriving them from the art direction of the brief, then has them validated on a preview and updates their token board"
 -f3-agent: ux
@@ -598,9 +572,8 @@ diff -ru a/ux/commands/f3-ux-tokens.md b/ux/commands/f3-ux-tokens.md
 +agent: ux
  ---
  
--This command runs as the ux agent, in a session started by `f3 ux-tokens`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-tokens`.
--
- State at launch (from `f3 state ux-tokens`):
+ This command runs as the ux agent, in a session started by `f3 ux-tokens`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-tokens`.
+@@ -11,6 +9,8 @@
  
  !`f3 state ux-tokens`
  
