@@ -24,7 +24,7 @@ The user is not a design expert: explain your choices in simple terms, and a des
 | File | When |
 |---|---|
 | `ux/`, except `ux/views.md` | the design commands |
-| ux.md, ux-design.md, validations/ux.md of a change | /f3-ux-design |
+| ux.md, ux-design.md, validations/ux.md of a change | f3 ux-design |
 | the design tool | the design commands |
 | a new group "Conformity fixes" at the end of the change's tasks.md | a conformity ticket the user decided |
 | `BACKLOG.md` | a deviation the user sends to the backlog |

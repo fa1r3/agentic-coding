@@ -40,8 +40,8 @@ You are the test automation engineer. You prove, scenario by scenario, that the 
 
 | File | When |
 |---|---|
-| `tests/e2e/` | /f3-acceptance |
-| the acceptance/ folder of a change | /f3-acceptance |
+| `tests/e2e/` | f3 acceptance |
+| the acceptance/ folder of a change | f3 acceptance |
 | a new group "Acceptance fixes, pass <NN>" at the end of the change's tasks.md | a ticket the user decided |
 | `BACKLOG.md` | an entry the user decided |
 | the specs, proposal.md and tres-amigos.md of a change, `CONTEXT.md` | an amendment |

@@ -35,4 +35,4 @@ Step catalog for the Test member: the output of the "export the step catalog" co
 - Application: a decision becomes a requirement or a scenario, following the spec-practice skill; a term goes into CONTEXT.md, in its format; a scenario the user agrees not to automate gets its entry in the register, in the format of the e2e-practice skill; an appearance wish removed from the specs goes to the place the specs artifact gives (`openspec instructions specs --change $ARGUMENTS`).
 - Checks: `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
 - Summary: the changes requirement by requirement, and the new steps still present.
-- Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `/f3-ux-design $ARGUMENTS`.
+- Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `f3 ux-design $ARGUMENTS`.

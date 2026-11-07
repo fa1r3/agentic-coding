@@ -2,7 +2,7 @@
 
 `arch/decisions.md` records the structural decisions of the project and their reasons: the stack chosen at framing, and every decision of a change that commits the following changes (a new technology, a new storage, a new external dependency, a new kind of entry point). AGENTS.md says what the code must do; this register says why, and which options were set aside.
 
-It is written by /f3-init for the stack, and by /f3-design or /f3-design-review when a change takes such a decision, always after the user's validation. It is read when writing a design.md and during the design review. Decisions that concern a single change stay in its design.md.
+It is written by f3 init for the stack, and by f3 design or f3 design-review when a change takes such a decision, always after the user's validation. It is read when writing a design.md and during the design review. Decisions that concern a single change stay in its design.md.
 
 ## File at creation
 

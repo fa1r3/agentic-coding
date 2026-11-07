@@ -1,6 +1,6 @@
 # ux/brief.md template
 
-The brief sets the art direction and the design direction of the project. It is written during the `/f3-ux-direction` command, each section as soon as the user validates it, then modified only on the user's decision. While that command is not finished, a section not yet validated contains only its title.
+The brief sets the art direction and the design direction of the project. It is written during the `f3 ux-direction` command, each section as soon as the user validates it, then modified only on the user's decision. While that command is not finished, a section not yet validated contains only its title.
 
 ## Rule on values
 

@@ -57,7 +57,7 @@ A step of the impact analysis is `todo` or `approved`. An icon, a component or a
 
 Check it first, in this order:
 
-1. `validations/amigos.md` exists; otherwise, stop: the specs must first be closed with `/f3-tres-amigos $1`.
+1. `validations/amigos.md` exists; otherwise, stop: the specs must first be closed with `f3 tres-amigos $1`.
 2. If `validations/ux.md` exists, the step is closed: start no unit of work. Say so, with the date of the validation, list the files of the following steps that exist (design.md, tasks.md, review.md, validations/review.md, acceptance/), and ask whether to reopen it and which element to review, knowing those files will have to be reviewed. On an explicit answer, set that element to `todo` and go on; otherwise, stop.
 3. If the context says "No design tool", propose to close the step as not-applicable, with the reason "the project has no design tool".
 4. If, from the proposal and the titles of the requirements, the change creates or modifies no view and no component, propose to close the step as not-applicable, with your reason.
@@ -80,7 +80,7 @@ A not-applicable closing writes the validation on the user's confirmation, then 
    c. **Components,** by coherent group: those one view assembles, starting with the first view of the impact.
    d. **Screens of one view,** all its states, in the order of the views of the impact, once every component it assembles is `approved`. Before presenting a screen, check it against the specs: every action, piece of information and state they require for this view is present, nothing absent from them is added.
    Each component or screen is drawn once at its final place, exported, looked at, set to `drawn`, then presented with your presentation choices and their reasons; a limited choice inside it is shown as options in a preview. Apply the feedback, then set it to `approved`. A missing behavior follows rule 3, a contradiction with the brief or the register rule 2. A preference that holds for the whole product is proposed for the Proposed cross-cutting decisions section of ux.md.
-4. **End of the unit.** Stop without starting the next unit. Say what was done and what remains (steps of the impact analysis, and the number of icons, components and views to do), and the amendments made; if one touches a sensitive point such as security or data, say the user can submit it to a new Tres Amigos session. If work remains, the next step is `/f3-ux-design $1` again. If everything is approved, present the summary of the step and ask whether the user declares it finished; if so, write `validations/ux.md` following `openspec instructions ux --change $1` (Decision "approved by the user", or "not-applicable: " and the reason; Record "ux.md and ux-design.md", or "none" if not applicable; Summary: the views, components and icons drawn and approved; Left open: elements `out-of-scope` still in the tool, and amendments to submit to a Tres Amigos session, or "none"), and name the next step, `/f3-design $1`.
+4. **End of the unit.** Stop without starting the next unit. Say what was done and what remains (steps of the impact analysis, and the number of icons, components and views to do), and the amendments made; if one touches a sensitive point such as security or data, say the user can submit it to a new Tres Amigos session. If work remains, the next step is `f3 ux-design $1` again. If everything is approved, present the summary of the step and ask whether the user declares it finished; if so, write `validations/ux.md` following `openspec instructions ux --change $1` (Decision "approved by the user", or "not-applicable: " and the reason; Record "ux.md and ux-design.md", or "none" if not applicable; Summary: the views, components and icons drawn and approved; Left open: elements `out-of-scope` still in the tool, and amendments to submit to a Tres Amigos session, or "none"), and name the next step, `f3 design $1`.
 
 # Conformity mode
 
@@ -94,4 +94,4 @@ Goal: after implementation, check that the running application conforms to the a
    - **design update**: update the screen in the tool, export it, look at it, present it for validation;
    - **backlog**: an entry with the origin `$1, conformity`, in the format of the f3-standards skill.
 5. **Tracking.** In its Conformity section, one line per screen, and one per display coded without design (its view and its route), with its status: `conform`, `ticket`, `design-updated`, `backlog`, or `not-captured` and the reason.
-6. **End.** With tickets: `/f3-dev $1`, then `/f3-ux-design $1 conformity` again. Otherwise: `/f3-acceptance $1`.
+6. **End.** With tickets: `f3 dev $1`, then `f3 ux-design $1 conformity` again. Otherwise: `f3 acceptance $1`.

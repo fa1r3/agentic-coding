@@ -11,7 +11,7 @@ State at launch:
 - Changes in progress and their files: !`for d in openspec/changes/*/; do n=$(basename "$d"); [ "$n" = archive ] && continue; s=""; for f in clarification.md proposal.md; do [ -f "$d$f" ] && s="$s $f"; done; [ -d "${d}specs" ] && s="$s specs/"; [ -f "${d}validations/amigos.md" ] && s="$s validations/amigos.md"; echo "- $n:${s:- (empty)}"; done 2>/dev/null`
 - Backlog entries: !`if [ -f BACKLOG.md ]; then grep -E '^## B-|^- Status:' BACKLOG.md | paste -d' ' - - | head -40; else echo "BACKLOG.md absent"; fi`
 
-If `openspec/config.yaml` does not start with `schema: f3`, stop: the project must first be framed with `/f3-init`.
+If `openspec/config.yaml` does not start with `schema: f3`, stop: the project must first be framed with `f3 init`.
 
 Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
 
@@ -43,4 +43,4 @@ Write proposal.md following `openspec instructions proposal --change <change-id>
 
 ## 4. End
 
-Present the requirements written with the names of their scenarios; the new steps, each with the existing sentences you considered; the backlog entries and terms added; the appearance wishes written in ux.md. Next step: `/f3-tres-amigos <change-id>`.
+Present the requirements written with the names of their scenarios; the new steps, each with the existing sentences you considered; the backlog entries and terms added; the appearance wishes written in ux.md. Next step: `f3 tres-amigos <change-id>`.

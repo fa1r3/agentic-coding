@@ -10,7 +10,7 @@ State at launch:
 - Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
 - Progress of OpenSpec: !`openspec status --change "$ARGUMENTS" 2>&1 | tail -12`
 
-If design.md or tasks.md is missing, stop: they are written with `/f3-design $ARGUMENTS`.
+If design.md or tasks.md is missing, stop: they are written with `f3 design $ARGUMENTS`.
 
 Produces: the record `review.md`, titled "# Design review of change $ARGUMENTS"; the corrections of design.md and tasks.md; entries of `arch/decisions.md`; amendments; `BACKLOG.md` entries with the origin `$ARGUMENTS, design-review`; `validations/review.md` at closing.
 
@@ -30,5 +30,5 @@ Review named in the prompt: "a design review before implementation". "High": wou
 - A row "to bring to Tres Amigos" counts as pending when the session is resumed: present it again with its amendment, unless the user confirms that it goes to a Tres Amigos session.
 - Application: in design.md, the tasks or arch/decisions.md, following `openspec instructions design --change $ARGUMENTS` and `openspec instructions tasks --change $ARGUMENTS`; a row of nature "specs" validated as an amendment follows the Amendments section of the spec-practice skill, then design.md and the tasks are updated with it; a row the user brings to Tres Amigos receives "to bring to Tres Amigos".
 - Checks: `openspec validate $ARGUMENTS`, and `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` if an amendment was applied.
-- Closing: if rows "to bring to Tres Amigos" remain, write no validation; say that `/f3-tres-amigos $ARGUMENTS` must reopen the specs, then `/f3-design $ARGUMENTS` redo the affected design.
-- Validation: Record "review.md, sessions 1 to <last>"; Summary: what the review changed in the design and the tasks; Left open: the dismissed points of critical or high severity, and the rows brought to Tres Amigos, or "none". Next step: `/f3-dev $ARGUMENTS`.
+- Closing: if rows "to bring to Tres Amigos" remain, write no validation; say that `f3 tres-amigos $ARGUMENTS` must reopen the specs, then `f3 design $ARGUMENTS` redo the affected design.
+- Validation: Record "review.md, sessions 1 to <last>"; Summary: what the review changed in the design and the tasks; Left open: the dismissed points of critical or high severity, and the rows brought to Tres Amigos, or "none". Next step: `f3 dev $ARGUMENTS`.

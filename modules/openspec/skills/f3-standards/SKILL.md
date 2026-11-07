@@ -1,6 +1,6 @@
 ---
 name: f3-standards
-description: "f3 standards for a project: the framing files (AGENTS.md, openspec/config.yaml, CONTEXT.md, BACKLOG.md, arch/decisions.md, the project opencode.json) and the views register (ux/views.md), their role and their templates. Load before creating or modifying one of these files, in particular during /f3-init."
+description: "f3 standards for a project: the framing files (AGENTS.md, openspec/config.yaml, CONTEXT.md, BACKLOG.md, arch/decisions.md, the project opencode.json) and the views register (ux/views.md), their role and their templates. Load before creating or modifying one of these files, in particular during f3 init."
 ---
 
 # f3 standards
@@ -8,10 +8,10 @@ description: "f3 standards for a project: the framing files (AGENTS.md, openspec
 ## Three layers, each piece of information in one place
 
 - **The product**: the `context` of `openspec/config.yaml`. What the product does, for whom, its volumes, its constraints. OpenSpec injects it into every artifact. Template: `references/config-yaml.md`.
-- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Stack section is written for the project during /f3-init. Template: `references/agents-md.md`.
+- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Stack section is written for the project during f3 init. Template: `references/agents-md.md`.
 - **The business vocabulary**: `CONTEXT.md`, loaded with AGENTS.md. Template: `references/context-md.md`.
 
-The workflow is in none of these files: it is carried by the OpenSpec schema `f3` (order of the steps and rules of the artifacts), the `/f3-*` commands, the agents `analyst`, `architect`, `developer`, `tester` and `ux`, and their skills.
+The workflow is in none of these files: it is carried by the OpenSpec schema `f3` (order of the steps and rules of the artifacts), the f3 commands (`f3 <step>`), the agents `analyst`, `architect`, `developer`, `tester` and `ux`, and their skills.
 
 ## Auxiliary files
 
@@ -27,7 +27,7 @@ The project file contains only:
 - under `mcp`, the server that lets an agent observe the running application, as decided in the Stack section of AGENTS.md (subsection Observing the running application);
 - under `mcp`, the server of the design tool, if the context names one.
 
-/f3-init adds or updates these keys without touching any other key. Keys that are user preferences (`provider`, `model`, `small_model`, agent settings such as `reasoningEffort`) are proposed for a move to the global configuration; they are moved only with the user's agreement. OpenCode reads its configuration at startup: after a change, OpenCode must be restarted.
+f3 init adds or updates these keys without touching any other key. Keys that are user preferences (`provider`, `model`, `small_model`, agent settings such as `reasoningEffort`) are proposed for a move to the global configuration; they are moved only with the user's agreement. OpenCode reads its configuration at startup: after a change, OpenCode must be restarted.
 
 ## Languages
 
@@ -37,5 +37,5 @@ The project file contains only:
 
 ## Markers
 
-- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by /f3-init. To change it, run /f3-init again. -->`.
+- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`.
 - `openspec/config.yaml` written by these standards starts with `schema: f3`.

@@ -24,4 +24,4 @@ Preconditions: tool.
 7. Conduct the interview on the sections still empty, in the order of the template. For each, propose a first version with your recommendation, show in a preview what is judged by eye, ask one question at a time, and write the section in the brief as soon as the user validates it. Apply the rule of the template on behavior: any behavior idea is reported as a requirement to have written in the specs.
 8. Review the complete brief against the rules of its template and the consistency between its sections. If you find a problem, propose the correction, and write it as soon as it is validated.
 9. Delete the previews created by this command.
-10. End by listing what was written in the files and in the design tool, and say that the next step is `/f3-ux-tokens`.
+10. End by listing what was written in the files and in the design tool, and say that the next step is `f3 ux-tokens`.

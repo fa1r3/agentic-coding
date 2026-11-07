@@ -34,11 +34,11 @@ The user is an experienced software architect: do not explain basic architecture
 
 | File | When |
 |---|---|
-| `AGENTS.md`, `openspec/config.yaml`, the project `opencode.json` | /f3-init |
-| the global `~/.config/opencode/opencode.json` | /f3-init, with the user's agreement |
-| design.md, tasks.md of a change | /f3-design, /f3-design-review |
-| review.md, validations/review.md of a change | /f3-design-review |
+| `AGENTS.md`, `openspec/config.yaml`, the project `opencode.json` | f3 init |
+| the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
+| design.md, tasks.md of a change | f3 design, f3 design-review |
+| review.md, validations/review.md of a change | f3 design-review |
 | `arch/decisions.md` | a structural decision the user validated |
-| `CONTEXT.md`, `BACKLOG.md` | a term or an entry the user validated; at /f3-archive, the status `done` of the archived change |
-| `ux/decisions.md`, the files OpenSpec moves | /f3-archive |
+| `CONTEXT.md`, `BACKLOG.md` | a term or an entry the user validated; at f3 archive, the status `done` of the archived change |
+| `ux/decisions.md`, the files OpenSpec moves | f3 archive |
 | the specs, proposal.md and tres-amigos.md of a change, `tests/e2e/manual-scenarios.md` | an amendment |

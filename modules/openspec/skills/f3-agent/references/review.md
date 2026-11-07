@@ -1,6 +1,6 @@
 # Review sessions
 
-A review session has its viewpoints held by members, each reviewing alone in its own subagent context; the agent that runs the command chairs; the user decides. It is used by /f3-tres-amigos and /f3-design-review. The command gives what is specific to it: the record file and its title, the validation file, the files of the following steps, the members, the meaning of "high", the natures of the rows, how a row is applied, the checks, and the content of the validation.
+A review session has its viewpoints held by members, each reviewing alone in its own subagent context; the agent that runs the command chairs; the user decides. It is used by f3 tres-amigos and f3 design-review. The command gives what is specific to it: the record file and its title, the validation file, the files of the following steps, the members, the meaning of "high", the natures of the rows, how a row is applied, the checks, and the content of the validation.
 
 ## Record
 

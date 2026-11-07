@@ -3,8 +3,8 @@
 `AGENTS.md` of an f3 project has three parts, in this order:
 
 1. **The invariant part**: the exact copy of the block below. It is identical in every project and is never adapted to the stack or to the product.
-2. **The Stack section**: `## Stack`, written for the project during /f3-init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
-3. **The project-specific rules**, only if the user validated some during /f3-init: a section `## Project-specific rules`, numbered after the invariant rules (14, 15, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
+2. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
+3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (14, 15, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
 
 A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written.
 
@@ -13,7 +13,7 @@ A rule belongs to the invariant part when it follows from the architecture style
 ~~~~markdown
 # AGENTS.md
 
-<!-- f3 standards: written by /f3-init. To change it, run /f3-init again. -->
+<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->
 
 Rules for all the code of this repository. They take precedence over your general habits. If a request conflicts with them, report the conflict instead of deciding alone.
 
@@ -147,7 +147,7 @@ Angle brackets in the Git section (`<type>`, `<scope>`, `<summary>`, `<body>`, `
 
 ## Stack section
 
-The Stack section is written by the architect during /f3-init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
+The Stack section is written by the architect during f3 init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
 
 1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree.
 2. `### Dependency enforcement`: the tool that enforces the Dependencies table and the independence of bounded contexts, and how (tags, constraints, configuration file).
