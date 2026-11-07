@@ -1,5 +1,6 @@
 ---
 description: "Starts or resumes an OpenSpec change. Without argument, offers to resume a clarification in progress or to pick the next change from the backlog. With an idea, clarifies it through functional questions asked one at a time, keeps the change focused and sends what is out of scope to the backlog, then writes the clarification, the proposal and the specs. Argument: nothing, an idea in a few words, or the identifier of a change to resume."
+argument-hint: "[idea or change-id]"
 agent: analyst
 ---
 

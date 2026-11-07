@@ -1,9 +1,7 @@
 ---
 description: "Design review of an OpenSpec change, before implementation. Three members (architect, technical security, product) review the technical design and the tasks, each in their own subagent context; the chair sorts their objections into a grid the user decides, corrects design.md and the tasks, amends the specs when the user validates it, records the session and, when the user declares it finished, writes the validation that unlocks implementation. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
 argument-hint: "<change-id>"
-f3-agent: architect
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: architect
 ---
 
 This command runs as the architect agent, in a session started by `f3 design-review`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design-review <arguments>`.

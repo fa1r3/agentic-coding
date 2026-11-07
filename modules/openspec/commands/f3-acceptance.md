@@ -1,5 +1,6 @@
 ---
 description: "Acceptance of an OpenSpec change by the tester, in a new session, after the developer and the user's check: regenerates the feature files from the specs with the delta of the change, writes or adapts the step definitions and page objects, has them reviewed by an independent subagent, runs the whole suite, and submits each failure with its facts and a proposal (adapt the test, ticket for the developer, amendment of the spec, backlog). The user decides. Each run is a new pass. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: tester
 ---
 

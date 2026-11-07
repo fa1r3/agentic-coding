@@ -1,9 +1,7 @@
 ---
 description: "Writes the technical design (design.md) and the tasks (tasks.md) of an OpenSpec change with the architect agent, through the OpenSpec continue workflow. Can be run again: it resumes from the first missing artifact. Argument: the identifier of the change."
 argument-hint: "<change-id>"
-f3-agent: architect
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: architect
 ---
 
 This command runs as the architect agent, in a session started by `f3 design`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design <arguments>`.

@@ -1,5 +1,6 @@
 ---
 description: "Implements an OpenSpec change with the developer agent, through the OpenSpec apply workflow. Can be run again: each run resumes the unchecked tasks, acceptance and conformity fixes first. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: developer
 ---
 

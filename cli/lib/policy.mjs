@@ -1,20 +1,20 @@
-// Permission table of an agent (key f3-permission of its frontmatter) and its evaluation.
+// Permission table of an agent (<agent>.permission, beside its source in modules/) and its evaluation.
 // Semantics of OpenCode: wildcard globs ("*" matches any text, "/" included), the last matching rule wins.
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { HOME, agentFile, readFrontmatter } from './toolkit.mjs';
+import { HOME, parseYaml, permissionFile } from './toolkit.mjs';
 
 const KEYS = ['edit', 'read', 'shell_read_programs', 'subagent'];
 const VALUES = ['allow', 'ask', 'deny'];
 
 export function loadPolicy(agent) {
-  const file = agentFile(agent);
+  const file = permissionFile(agent);
   if (!file) throw new Error(`unknown agent "${agent}"`);
-  const table = readFrontmatter(file)['f3-permission'] || {};
+  const table = parseYaml(readFileSync(file, 'utf8'));
   for (const [key, value] of Object.entries(table)) {
-    if (!KEYS.includes(key)) throw new Error(`unknown key "${key}" in f3-permission of ${agent}`);
+    if (!KEYS.includes(key)) throw new Error(`unknown key "${key}" in ${agent}.permission`);
     const values = typeof value === 'string' ? [value] : Object.values(value);
-    for (const v of values) if (!VALUES.includes(v)) throw new Error(`unknown value "${v}" for ${key} in f3-permission of ${agent}`);
+    for (const v of values) if (!VALUES.includes(v)) throw new Error(`unknown value "${v}" for ${key} in ${agent}.permission`);
   }
   return table;
 }

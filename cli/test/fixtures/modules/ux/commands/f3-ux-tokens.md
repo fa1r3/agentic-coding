@@ -1,8 +1,6 @@
 ---
 description: "Creates or adjusts the tokens of the project in the design tool, deriving them from the art direction of the brief, then has them validated on a preview and updates their token board"
-f3-agent: ux
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: ux
 ---
 
 This command runs as the ux agent, in a session started by `f3 ux-tokens`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-tokens`.

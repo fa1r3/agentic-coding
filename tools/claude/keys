@@ -1,0 +1,5 @@
+# Frontmatter keys of the sources as Claude Code names them: "key=name" renames, "key=" leaves out.
+# agent: "agent" has another meaning in a Claude Code command (W3); f3 launches the agent itself.
+agent=f3-agent
+# mode: OpenCode only (primary, or all for an agent also called as a subagent).
+mode=

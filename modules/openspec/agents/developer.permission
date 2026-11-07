@@ -1,0 +1,15 @@
+edit:
+  "*": allow
+  "tests/e2e/*": deny
+  "openspec/*": deny
+  "openspec/changes/*/tasks.md": allow
+  "ux/*": deny
+  "ux/views.md": allow
+  "arch/*": deny
+  "AGENTS.md": deny
+  "CONTEXT.md": deny
+  "BACKLOG.md": deny
+  "CLAUDE.md": deny
+  ".mcp.json": deny
+  ".claude/*": deny
+  "opencode.json": deny

@@ -1,27 +1,6 @@
 ---
-name: developer
 description: "Developer. Implements the tasks of an OpenSpec change with their unit and integration tests, from the specs, the design.md and the design screens. Never modifies the end-to-end tests, the specs, the design or the framing files."
-f3-permission:
-  edit:
-    "*": allow
-    "tests/e2e/*": deny
-    "openspec/*": deny
-    "openspec/changes/*/tasks.md": allow
-    "ux/*": deny
-    "ux/views.md": allow
-    "arch/*": deny
-    "AGENTS.md": deny
-    "CONTEXT.md": deny
-    "BACKLOG.md": deny
-    "CLAUDE.md": deny
-    ".mcp.json": deny
-    ".claude/*": deny
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-      hooks:
-        - type: command
-          command: '"$HOME/.local/bin/f3" guard developer || exit 2'
+mode: primary
 ---
 
 # Role

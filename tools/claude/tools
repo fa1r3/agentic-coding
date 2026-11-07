@@ -1,0 +1,6 @@
+# Refused tools of an agent (deny-tools), for Claude Code.
+# A built-in tool: "name=Claude Code name". Any other name is an MCP server, written through "mcp".
+bash=Bash
+mcp=mcp__<server>__*
+# All the refused tools on one line, joined by ", ".
+deny=disallowedTools: <tools>

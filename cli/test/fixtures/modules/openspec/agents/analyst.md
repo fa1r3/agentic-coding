@@ -1,20 +1,7 @@
 ---
-name: analyst
 description: "Analyst. Clarifies a need with the user through functional questions, keeps the backlog, and writes the clarification, the proposal and the specs of an OpenSpec change; chairs the Tres Amigos session. Works on what the product does, never on how it is built. Never writes code."
-disallowedTools: mcp__penpot__*, mcp__searxng__*, mcp__playwright__*
-f3-permission:
-  edit:
-    "*": deny
-    "openspec/changes/*": allow
-    "CONTEXT.md": allow
-    "BACKLOG.md": allow
-    "tests/e2e/manual-scenarios.md": allow
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-      hooks:
-        - type: command
-          command: '"$HOME/.local/bin/f3" guard analyst || exit 2'
+mode: primary
+deny-tools: penpot searxng playwright
 ---
 
 # Role

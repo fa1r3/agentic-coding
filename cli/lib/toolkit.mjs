@@ -30,9 +30,14 @@ export function parseFrontmatter(text) {
   if (lines[0] !== '---') throw new Error('no frontmatter');
   const end = lines.indexOf('---', 1);
   if (end < 0) throw new Error('unterminated frontmatter');
+  return parseYaml(lines.slice(1, end).join('\n'));
+}
+
+// The same YAML subset, for a whole file: the permission table of an agent (<agent>.permission).
+export function parseYaml(text) {
   const root = {};
   const stack = [{ indent: -1, node: root }];
-  for (const raw of lines.slice(1, end)) {
+  for (const raw of text.split(/\r?\n/)) {
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
     const indent = raw.length - raw.trimStart().length;
     const line = raw.trim();
@@ -75,7 +80,7 @@ export function commands() {
       const m = /^f3-([a-z-]+)\.md$/.exec(name);
       if (!m) continue;
       const fm = readFrontmatter(join(cdir, name));
-      result[m[1]] = { file: join(cdir, name), agent: fm['f3-agent'], argumentHint: fm['argument-hint'] || '' };
+      result[m[1]] = { file: join(cdir, name), agent: fm.agent, argumentHint: fm['argument-hint'] || '' };
     }
   }
   return result;
@@ -88,4 +93,10 @@ export function agentFile(name) {
     if (existsSync(file)) return file;
   }
   return null;
+}
+
+// Permission table of an agent, common to both tools (D15): <agent>.permission beside its source.
+export function permissionFile(name) {
+  const file = agentFile(name);
+  return file && file.replace(/\.md$/, '.permission');
 }

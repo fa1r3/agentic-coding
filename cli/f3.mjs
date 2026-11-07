@@ -48,7 +48,7 @@ async function main() {
     return 1;
   }
   if (!step.agent) {
-    console.error(`f3: the command /f3-${sub} declares no agent (key f3-agent).`);
+    console.error(`f3: the command /f3-${sub} declares no agent (key agent).`);
     return 1;
   }
   const prompt = `/f3-${sub}${rest.length ? ' ' + rest.join(' ') : ''}`;

@@ -1,9 +1,7 @@
 ---
 description: "Implements an OpenSpec change with the developer agent, through the OpenSpec apply workflow. Can be run again: each run resumes the unchecked tasks, acceptance and conformity fixes first. Argument: the identifier of the change."
 argument-hint: "<change-id>"
-f3-agent: developer
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: developer
 ---
 
 This command runs as the developer agent, in a session started by `f3 dev`. If you are not the developer agent, stop and tell the user to run, in a terminal: `f3 dev <arguments>`.

@@ -1,0 +1,3 @@
+# Frontmatter keys of the sources as OpenCode names them: "key=name" renames, "key=" leaves out.
+# argument-hint: Claude Code only, not checked under OpenCode.
+argument-hint=

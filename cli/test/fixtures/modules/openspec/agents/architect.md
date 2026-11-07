@@ -1,26 +1,7 @@
 ---
-name: architect
 description: "Architect. Frames the project (product context, stack, code rules), writes the technical design and the tasks of an OpenSpec change, chairs the design review and archives the change. Decides how the product is built, within the architecture of AGENTS.md and the decisions of arch/decisions.md. Never writes application code."
-disallowedTools: mcp__penpot__*, mcp__playwright__*
-f3-permission:
-  edit:
-    "*": deny
-    "openspec/*": allow
-    "arch/*": allow
-    "AGENTS.md": allow
-    "CONTEXT.md": allow
-    "BACKLOG.md": allow
-    "CLAUDE.md": allow
-    ".mcp.json": allow
-    ".claude/settings.json": allow
-    "ux/decisions.md": allow
-    "tests/e2e/manual-scenarios.md": allow
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-      hooks:
-        - type: command
-          command: '"$HOME/.local/bin/f3" guard architect || exit 2'
+mode: primary
+deny-tools: penpot playwright
 ---
 
 # Role

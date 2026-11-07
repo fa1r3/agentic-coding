@@ -1,4 +1,8 @@
 // f3 render: renders the agents and commands of the toolkit for one tool (analysis, 4.4 and 4.5).
+// Each one is assembled from its common source, the head of the tool (tools/<tool>/agent.head or
+// command.head), its keys as the tool names them (keys), its refused tools (deny-tools, through
+// tools) and, for an agent, its permission table (<agent>.permission); the variables of the tool
+// (vars) fill the body. No condition: concatenation, substitution and translation only.
 // The render is built in memory and fingerprinted (SHA-256 of its paths and contents). It is written
 // in build/.tmp.<pid>/, then renamed build/<tool>.<fingerprint>.<pid>/, so that a directory has its
 // final name only once complete; build/<tool> is a link switched atomically to it (D17).
@@ -54,18 +58,89 @@ function substitute(text, vars) {
   return text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (all, name) => (Object.hasOwn(vars, name) ? vars[name] : all));
 }
 
-// Rendered files of a tool, sorted by path: [{ path: "<module>/<kind>/<file>", content }].
+// Splits a source into its frontmatter lines ("key: value", one per line) and its body.
+function splitSource(text, path) {
+  const lines = text.split('\n');
+  const end = lines.indexOf('---', 1);
+  if (lines[0] !== '---' || end < 0) throw new Error(`${path}: no frontmatter`);
+  const keys = lines.slice(1, end).map((line) => {
+    const m = /^([a-z][a-z-]*): (.+)$/.exec(line);
+    if (!m) throw new Error(`${path}: unreadable frontmatter line: ${line}`);
+    return { key: m[1], line };
+  });
+  return { keys, body: lines.slice(end + 1).join('\n') };
+}
+
+// The frontmatter keys of a source as the tool names them (tools/<tool>/keys): a key mapped to a
+// name is renamed, a key mapped to nothing is left out, any other key is kept.
+function frontmatterLines(keys, table) {
+  return keys.flatMap(({ key, line }) => {
+    if (!Object.hasOwn(table, key)) return [line];
+    return table[key] ? [table[key] + line.slice(key.length)] : [];
+  });
+}
+
+// Lines of the refused tools of an agent (deny-tools) for a tool (tools/<tool>/tools): a built-in tool
+// by its name in the table, any other name as an MCP server through the "mcp" pattern; "deny" writes
+// them on one line with <tools> (joined by ", "), or one line per tool with <tool>. No tool, no line.
+function denyLines(names, table, path) {
+  for (const k of ['mcp', 'deny']) if (!table[k]) throw new Error(`${path}: the key "${k}" is missing from the tools table`);
+  const tools = names.map((n) => (Object.hasOwn(table, n) && !['mcp', 'deny'].includes(n) ? table[n] : table.mcp.replace('<server>', n)));
+  if (!tools.length) return [];
+  if (table.deny.includes('<tools>')) return [table.deny.replace('<tools>', tools.join(', '))];
+  return tools.map((t) => table.deny.replace('<tool>', t));
+}
+
+// Fills a head (tools/<tool>/agent.head or command.head): {{NAME}} anywhere, and {{FRONTMATTER}},
+// {{PERMISSION}} and {{DENY}} each alone on its line, replaced by zero or more lines.
+function fillHead(head, values) {
+  return head.replace(/\n$/, '').split('\n').flatMap((line) => {
+    const m = /^\{\{(FRONTMATTER|PERMISSION|DENY)\}\}$/.exec(line);
+    if (m) return values[m[1]];
+    return [line.replaceAll('{{NAME}}', values.NAME)];
+  }).join('\n');
+}
+
+// One agent or command of a tool: the head of the tool, filled from the common frontmatter (and, for
+// an agent, from <agent>.permission), then the common body with the variables of the tool.
+function assemble(tool, root, mod, kind, file, tables) {
+  const path = `${mod}/${kind}/${file}`;
+  const { keys, body } = splitSource(readFileSync(join(root, 'modules', path), 'utf8'), path);
+  const name = file.replace(/\.md$/, '');
+  const values = { NAME: name, PERMISSION: [], DENY: [] };
+  let common = keys;
+  if (kind === 'agents') {
+    const deny = keys.find((k) => k.key === 'deny-tools');
+    common = keys.filter((k) => k.key !== 'deny-tools');
+    values.DENY = denyLines(deny ? deny.line.slice('deny-tools: '.length).trim().split(/\s+/) : [], tables.tools, path);
+    const permission = join(root, 'modules', mod, kind, `${name}.permission`);
+    if (!existsSync(permission)) throw new Error(`${path}: no permission table ${name}.permission`);
+    values.PERMISSION = readFileSync(permission, 'utf8').replace(/\n$/, '').split('\n').map((l) => (l ? `  ${l}` : l));
+  }
+  values.FRONTMATTER = frontmatterLines(common, tables.keys);
+  const head = kind === 'agents' ? tables.agentHead : tables.commandHead;
+  return `${fillHead(head, values)}\n${substitute(body, tables.vars)}`;
+}
+
+// Rendered files of a tool, sorted by path: [{ path: "<module>/<kind>/<file>", content }]. Only the
+// .md files are rendered; an agent's <agent>.permission goes into its frontmatter.
 export function renderFiles(tool, root = ROOT) {
   checkTool(tool);
-  const vars = readTable(root, tool, 'vars');
+  const tables = {
+    vars: readTable(root, tool, 'vars'),
+    keys: readTable(root, tool, 'keys'),
+    tools: readTable(root, tool, 'tools'),
+    agentHead: readFileSync(join(root, 'tools', tool, 'agent.head'), 'utf8'),
+    commandHead: readFileSync(join(root, 'tools', tool, 'command.head'), 'utf8'),
+  };
   const files = [];
   for (const mod of modules(root)) {
     for (const kind of RENDERED) {
       const dir = join(root, 'modules', mod, kind);
       if (!existsSync(dir)) continue;
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        if (!entry.isFile()) continue;
-        files.push({ path: `${mod}/${kind}/${entry.name}`, content: substitute(readFileSync(join(dir, entry.name), 'utf8'), vars) });
+        if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+        files.push({ path: `${mod}/${kind}/${entry.name}`, content: assemble(tool, root, mod, kind, entry.name, tables) });
       }
     }
   }

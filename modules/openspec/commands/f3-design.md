@@ -1,5 +1,6 @@
 ---
 description: "Writes the technical design (design.md) and the tasks (tasks.md) of an OpenSpec change with the architect agent, through the OpenSpec continue workflow. Can be run again: it resumes from the first missing artifact. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: architect
 ---
 

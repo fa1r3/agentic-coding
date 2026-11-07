@@ -1,0 +1,6 @@
+edit:
+  "*": deny
+  "openspec/changes/*": allow
+  "CONTEXT.md": allow
+  "BACKLOG.md": allow
+  "tests/e2e/manual-scenarios.md": allow

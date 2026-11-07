@@ -28,7 +28,10 @@ const build = (root) => join(root, 'build');
 const entries = (root) => readdirSync(build(root)).sort();
 const target = (root, tool) => readlinkSync(join(build(root), tool));
 const name = (tool, hash, pid = process.pid) => `${tool}.${hash}.${pid}`;
-const change = (root, text = 'changed\n') => writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), text);
+// Replaces the source of the ux agent, keeping a valid frontmatter; text is its body.
+const change = (root, text = 'changed\n') => writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), `---\ndescription: "ux"\nmode: primary\n---\n${text}`);
+const body = (content) => content.slice(content.lastIndexOf('\n---\n') + 5);
+const source = (root, path, text) => writeFileSync(join(root, 'modules', path), text);
 const pointAt = (root, tool, dirName) => {
   const next = join(build(root), 'next-link');
   symlinkSync(dirName, next);
@@ -38,16 +41,56 @@ const pointAt = (root, tool, dirName) => {
 const endedPid = () => spawnSync('true').pid;
 const runningProcess = () => spawn('sleep', ['30'], { stdio: 'ignore' });
 
-test('the render of each tool is a copy of the agents and commands, and nothing else', () => {
+test('the render holds the agents and commands, and not the permission tables', () => {
   const root = toolkit();
   for (const tool of TOOLS) {
     const files = renderFiles(tool, root);
     assert.equal(files.length, 17);
-    for (const { path, content } of files) {
-      assert.match(path, /^(openspec|ux)\/(agents|commands)\/[a-z0-9-]+\.md$/);
-      assert.equal(content, readFileSync(join(root, 'modules', path), 'utf8'));
-    }
+    for (const { path } of files) assert.match(path, /^(openspec|ux)\/(agents|commands)\/[a-z0-9-]+\.md$/);
   }
+});
+
+test('an agent is assembled from its frontmatter, its permission table and the head of the tool', () => {
+  const root = toolkit();
+  source(root, 'ux/agents/ux.md', '---\ndescription: "d"\nmode: all\ndeny-tools: bash penpot\n---\n\nBody {{GENERAL}}.\n');
+  source(root, 'ux/agents/ux.permission', 'edit:\n  "*": ask\n');
+  const agent = (tool) => renderFiles(tool, root).find((f) => f.path === 'ux/agents/ux.md').content;
+  assert.equal(agent('claude'), [
+    '---', 'name: ux', 'description: "d"', 'disallowedTools: Bash, mcp__penpot__*', 'f3-permission:', '  edit:', '    "*": ask',
+    'hooks:', '  PreToolUse:', '    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"', '      hooks:',
+    '        - type: command', `          command: '"$HOME/.local/bin/f3" guard ux || exit 2'`, '---', '', 'Body general-purpose.', '',
+  ].join('\n'));
+  assert.equal(agent('opencode'), [
+    '---', 'description: "d"', 'mode: all', 'permission:', '  edit:', '    "*": ask', '  bash: deny', '  penpot_*: deny', '---',
+    '', 'Body general.', '',
+  ].join('\n'));
+});
+
+test('an agent without refused tools gets no line for them', () => {
+  const root = toolkit();
+  source(root, 'ux/agents/ux.md', '---\ndescription: "d"\nmode: primary\n---\nBody\n');
+  const agent = (tool) => renderFiles(tool, root).find((f) => f.path === 'ux/agents/ux.md').content;
+  assert.doesNotMatch(agent('claude'), /disallowedTools/);
+  assert.match(agent('opencode'), /^---\ndescription: "d"\nmode: primary\npermission:\n  edit: ask\n---\nBody\n$/);
+});
+
+test('a command is assembled from its frontmatter and the head of the tool, keys renamed or left out', () => {
+  const root = toolkit();
+  source(root, 'ux/commands/f3-ux-tokens.md', '---\ndescription: "c"\nargument-hint: "<x>"\nagent: ux\n---\n\nBody "{{ARG1}}".\n');
+  const command = (tool) => renderFiles(tool, root).find((f) => f.path === 'ux/commands/f3-ux-tokens.md').content;
+  assert.equal(command('claude'), '---\ndescription: "c"\nargument-hint: "<x>"\nf3-agent: ux\ndisable-model-invocation: true\nallowed-tools: Bash(f3 state:*)\n---\n\nBody "$0".\n');
+  assert.equal(command('opencode'), '---\ndescription: "c"\nagent: ux\n---\n\nBody "$1".\n');
+});
+
+test('a source without frontmatter, with an unreadable frontmatter line or without permission table fails the render', () => {
+  const root = toolkit();
+  source(root, 'ux/commands/f3-ux-tokens.md', 'no frontmatter\n');
+  assert.throws(() => renderFiles('claude', root), /ux\/commands\/f3-ux-tokens\.md: no frontmatter/);
+  source(root, 'ux/commands/f3-ux-tokens.md', '---\ndescription: "c"\npermission:\n  edit: ask\n---\n');
+  assert.throws(() => renderFiles('claude', root), /f3-ux-tokens\.md: unreadable frontmatter line: permission:/);
+  source(root, 'ux/commands/f3-ux-tokens.md', '---\ndescription: "c"\nagent: ux\n---\n');
+  rmSync(join(root, 'modules', 'ux', 'agents', 'ux.permission'));
+  assert.throws(() => renderFiles('opencode', root), /ux\/agents\/ux\.md: no permission table ux\.permission/);
 });
 
 test('render writes build/<tool>.<fingerprint>.<pid>/ and points the link build/<tool> at it', () => {
@@ -59,7 +102,7 @@ test('render writes build/<tool>.<fingerprint>.<pid>/ and points the link build/
   assert.ok(lstatSync(join(build(root), 'claude')).isSymbolicLink());
   assert.equal(target(root, 'claude'), name('claude', r.fingerprint));
   assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'),
-    readFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), 'utf8'));
+    renderFiles('claude', root).find((f) => f.path === 'ux/agents/ux.md').content);
   assert.deepEqual(entries(root), ['claude', name('claude', r.fingerprint)]);
 });
 
@@ -102,8 +145,8 @@ test('the variables of each tool are substituted in the agents and commands', ()
   const root = toolkit();
   change(root, 'Delegate to `{{GENERAL}}` through {{SUBAGENT_TOOL}}: change "{{ARG1}}", mode "{{ARG2}}"; {{EXPLORE}}.\n');
   const text = (tool) => renderFiles(tool, root).find((f) => f.path === 'ux/agents/ux.md').content;
-  assert.equal(text('claude'), 'Delegate to `general-purpose` through the Agent tool: change "$0", mode "$1"; Explore.\n');
-  assert.equal(text('opencode'), 'Delegate to `general` through the subagent tool: change "$1", mode "$2"; explore.\n');
+  assert.equal(body(text('claude')), 'Delegate to `general-purpose` through the Agent tool: change "$0", mode "$1"; Explore.\n');
+  assert.equal(body(text('opencode')), 'Delegate to `general` through the subagent tool: change "$1", mode "$2"; explore.\n');
 });
 
 test('a variable a tool does not define is left, and fails the render', () => {
@@ -147,7 +190,7 @@ test('a renamed or removed source changes the render', () => {
 test('"{{" left in the render fails it, before any write or switch', () => {
   const root = toolkit();
   const first = render('claude', { root });
-  writeFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), '---\nf3-agent: developer\n---\nUse {{UNKNOWN}}.\n');
+  writeFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), '---\ndescription: "d"\nagent: developer\n---\nUse {{UNKNOWN}}.\n');
   assert.throws(() => render('claude', { root }), /"\{\{" left in the render of claude: openspec\/commands\/f3-dev\.md/);
   assert.equal(target(root, 'claude'), name('claude', first.fingerprint));
   assert.deepEqual(entries(root), ['claude', name('claude', first.fingerprint)]);
@@ -225,7 +268,7 @@ test('sources that keep changing fail the render, the link on a complete render'
   const root = toolkit();
   assert.throws(() => render('claude', { root, afterSwitch: (round) => change(root, `round ${round}\n`) }),
     /the sources of claude changed during each of 3 renders/);
-  assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'), 'round 2\n');
+  assert.equal(body(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8')), 'round 2\n');
 });
 
 test('renders running at the same time leave a valid link on the current sources, then a single directory', async () => {
@@ -240,7 +283,7 @@ test('renders running at the same time leave a valid link on the current sources
     child.on('close', (code) => resolve({ code, err }));
   }));
   for (const r of await Promise.all(runs)) assert.equal(r.code, 0, r.err);
-  assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'), 'changed\n');
+  assert.equal(body(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8')), 'changed\n');
   assert.deepEqual(entries(root).filter((n) => n.startsWith('.tmp.')), []);
   render('claude', { root }); // every earlier render has ended: only the target remains
   assert.match(target(root, 'claude'), RENDER_DIR);
@@ -262,7 +305,8 @@ test('the full view holds the rendered files and a copy of the other files, and 
   assert.equal(out, join(to, 'opencode'));
   assert.equal(readFileSync(join(out, 'ux', 'skills', 'ux-practice', 'SKILL.md'), 'utf8'), '# ux-practice\n');
   assert.equal(readFileSync(join(out, 'openspec', 'commands', 'f3-dev.md'), 'utf8'),
-    readFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), 'utf8'));
+    renderFiles('opencode', root).find((f) => f.path === 'openspec/commands/f3-dev.md').content);
+  assert.ok(!existsSync(join(out, 'openspec', 'agents', 'tester.permission')));
   assert.ok(!existsSync(build(root)));
   assert.throws(() => renderView('opencode', to, { root }), /already exists/);
 });

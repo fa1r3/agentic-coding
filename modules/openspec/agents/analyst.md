@@ -1,16 +1,7 @@
 ---
 description: "Analyst. Clarifies a need with the user through functional questions, keeps the backlog, and writes the clarification, the proposal and the specs of an OpenSpec change; chairs the Tres Amigos session. Works on what the product does, never on how it is built. Never writes code."
 mode: primary
-permission:
-  edit:
-    "*": deny
-    "openspec/changes/*": allow
-    "CONTEXT.md": allow
-    "BACKLOG.md": allow
-    "tests/e2e/manual-scenarios.md": allow
-  penpot_*: deny
-  searxng_*: deny
-  playwright_*: deny
+deny-tools: penpot searxng playwright
 ---
 
 # Role

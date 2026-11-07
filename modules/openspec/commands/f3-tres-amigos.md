@@ -1,5 +1,6 @@
 ---
 description: "Tres Amigos session on the specs of an OpenSpec change. Four members (interface, system, test, security) review the specs, each in their own subagent context; the chair sorts their objections into a grid the user decides, applies each decision, records the session and, when the user declares it finished, writes the validation of the step. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: analyst
 ---
 

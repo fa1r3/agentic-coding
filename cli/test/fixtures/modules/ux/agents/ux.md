@@ -1,15 +1,7 @@
 ---
-name: ux
 description: "Art director and product designer. Sets the art direction and conducts the design work (brief, tokens, components, screens) following the ux-practice skill and the skill of the project's design tool, then checks that the implemented interface conforms to the design."
-disallowedTools: Bash, mcp__playwright__*
-f3-permission:
-  edit: ask
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-      hooks:
-        - type: command
-          command: '"$HOME/.local/bin/f3" guard ux || exit 2'
+mode: primary
+deny-tools: bash playwright
 ---
 
 # Role

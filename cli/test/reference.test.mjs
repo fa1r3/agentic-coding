@@ -5,9 +5,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
+import { renderFiles } from '../lib/render.mjs';
 
 const TOOLKIT = resolve(import.meta.dirname, '..', '..');
 const REFERENCES = { claude: 'ref/claude-code', opencode: 'ref/opencode' };
@@ -44,3 +45,17 @@ for (const [tool, tag] of Object.entries(REFERENCES)) {
     }
   });
 }
+
+// The fixtures are the agents and commands of ref/claude-code converted to the format of the sources:
+// rendered for Claude Code with the tools/ of the toolkit, they must give back those files exactly.
+test('the Claude Code render of the fixtures gives back the agents and commands of ref/claude-code', () => {
+  const root = mkdtempSync(join(tmpdir(), 'f3-roundtrip-'));
+  cpSync(join(import.meta.dirname, 'fixtures', 'modules'), join(root, 'modules'), { recursive: true });
+  cpSync(join(TOOLKIT, 'tools'), join(root, 'tools'), { recursive: true });
+  const files = renderFiles('claude', root);
+  assert.equal(files.length, 17);
+  for (const { path, content } of files) {
+    const reference = execFileSync('git', ['-C', TOOLKIT, 'show', `ref/claude-code:modules/${path}`], { encoding: 'utf8' });
+    assert.equal(content, reference, path);
+  }
+});

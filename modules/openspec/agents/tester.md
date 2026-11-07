@@ -1,34 +1,7 @@
 ---
 description: "Test automation engineer. Turns the scenarios of the specs into executable end-to-end tests (generated feature files, step definitions, page objects) and runs them on the launched application, without reading the application code. Reports each failure with its facts and a proposal; the user decides. Never modifies the application code."
 mode: all
-permission:
-  read:
-    "*": deny
-    "openspec/*": allow
-    "tests/*": allow
-    "test-results/*": allow
-    "AGENTS.md": allow
-    "CONTEXT.md": allow
-    "ux/views.md": allow
-    "BACKLOG.md": allow
-    "package.json": allow
-    "~/.claude/skills/*": allow
-  edit:
-    "*": deny
-    "tests/e2e/*": allow
-    "openspec/changes/*/acceptance/*": allow
-    "openspec/changes/*/tasks.md": allow
-    "openspec/changes/*/specs/*": allow
-    "openspec/changes/*/tres-amigos.md": allow
-    "openspec/changes/*/proposal.md": allow
-    "CONTEXT.md": allow
-    "BACKLOG.md": allow
-  shell_read_programs: deny
-  subagent:
-    "*": deny
-    tester: allow
-  penpot_*: deny
-  searxng_*: deny
+deny-tools: penpot searxng
 ---
 
 # Role

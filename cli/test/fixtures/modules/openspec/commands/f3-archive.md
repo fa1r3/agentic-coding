@@ -1,9 +1,7 @@
 ---
 description: "Archives an OpenSpec change after a green acceptance: checks that nothing in the application changed since the tested commit, merges the cross-cutting design decisions into ux/decisions.md, archives the change through the OpenSpec archive workflow, checks the merged specs by regenerating the feature files, closes the backlog entry and merges the branch. Argument: the identifier of the change."
 argument-hint: "<change-id>"
-f3-agent: architect
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: architect
 ---
 
 This command runs as the architect agent, in a session started by `f3 archive`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 archive <arguments>`.

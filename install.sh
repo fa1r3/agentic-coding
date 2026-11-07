@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Links the f3 toolkit to OpenCode and OpenSpec, then removes the dead links it left behind.
+# Renders the f3 toolkit for OpenCode, links it to OpenCode and OpenSpec, then removes the dead links
+# it left behind. If the render fails, no link is touched.
 # Usage: ./install.sh                  create or refresh the links
 #        ./install.sh --remove         remove every link created by this repository
 #        ./install.sh --render <dir>   render each tool into <dir>/<tool>/, laid out like modules/,
 #                                      without installing anything (comparison with the references)
-#   modules/*/agents/*.md    -> ~/.config/opencode/agents/
-#   modules/*/commands/*.md  -> ~/.config/opencode/commands/
+#   build/opencode/*/agents/*.md    -> ~/.config/opencode/agents/    (rendered by f3 render opencode)
+#   build/opencode/*/commands/*.md  -> ~/.config/opencode/commands/
 #   modules/*/skills/*/      -> ~/.config/opencode/skills/
 #   modules/*/scripts/*      -> ~/.local/share/f3/scripts/
 #   modules/*/schemas/*/     -> ~/.local/share/openspec/schemas/
@@ -63,11 +64,21 @@ if [[ "$MODE" == "--remove" ]]; then
   exit 0
 fi
 
+if ! command -v node >/dev/null 2>&1; then
+  echo "Missing prerequisite: node is not in the PATH." >&2
+  exit 1
+fi
+# The agents and commands are rendered into build/opencode, a link to the last complete render: the
+# links below go through it and never change.
+node "$TOOLKIT/cli/f3.mjs" render opencode
+RENDER="$TOOLKIT/build/opencode"
+
 mkdir -p "${DIRS[@]}"
 
 for module in "$TOOLKIT"/modules/*/; do
-  for f in "$module"agents/*.md; do link "$f" "$OPENCODE/agents/$(basename "$f")"; done
-  for f in "$module"commands/*.md; do link "$f" "$OPENCODE/commands/$(basename "$f")"; done
+  rendered="$RENDER/$(basename "$module")/"
+  for f in "$rendered"agents/*.md; do link "$f" "$OPENCODE/agents/$(basename "$f")"; done
+  for f in "$rendered"commands/*.md; do link "$f" "$OPENCODE/commands/$(basename "$f")"; done
   for d in "$module"skills/*/; do link "${d%/}" "$OPENCODE/skills/$(basename "$d")"; done
   for f in "$module"scripts/*; do link "$f" "$SCRIPTS/$(basename "$f")"; done
   for d in "$module"schemas/*/; do link "${d%/}" "$SCHEMAS/$(basename "$d")"; done

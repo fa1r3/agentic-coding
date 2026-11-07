@@ -1,5 +1,6 @@
 ---
 description: "Archives an OpenSpec change after a green acceptance: checks that nothing in the application changed since the tested commit, merges the cross-cutting design decisions into ux/decisions.md, archives the change through the OpenSpec archive workflow, checks the merged specs by regenerating the feature files, closes the backlog entry and merges the branch. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: architect
 ---
 

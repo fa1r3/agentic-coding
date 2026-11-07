@@ -1,8 +1,6 @@
 ---
 description: "Frames a project with the f3 standards, through a short interview conducted one question at a time: product context, stack decision, code rules, vocabulary. Writes AGENTS.md, openspec/config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md and the Claude Code files of the project (CLAUDE.md, .mcp.json, .claude/settings.json). Three modes, chosen from the state of the repository: creation, adoption of an existing project, update of a framed project. Runs only on a repository without uncommitted changes."
-f3-agent: architect
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: architect
 ---
 
 This command runs as the architect agent, in a session started by `f3 init`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 init`.

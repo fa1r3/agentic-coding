@@ -1,9 +1,7 @@
 ---
 description: "Conducts the whole interface design of an OpenSpec change, one unit of work per run: first the impact analysis (missing behaviors decided with the user, then views, components, icons, tokens and conflicts), then the icons, the components and the screens, one view at a time. Keeps a progress tracking in the change so that each run resumes where the previous one stopped, and writes the validation of the step when everything is approved, or states that the change has no interface. With the mode 'conformity', after implementation, compares the running application with the design screens and submits each deviation to the user. Arguments: the identifier of the change, then optionally 'conformity'."
 argument-hint: "<change-id> [conformity]"
-f3-agent: ux
-disable-model-invocation: true
-allowed-tools: Bash(f3 state:*)
+agent: ux
 ---
 
 This command runs as the ux agent, in a session started by `f3 ux-design`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-design <arguments>`.

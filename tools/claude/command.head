@@ -1,0 +1,5 @@
+---
+{{FRONTMATTER}}
+disable-model-invocation: true
+allowed-tools: Bash(f3 state:*)
+---
