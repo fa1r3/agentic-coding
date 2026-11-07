@@ -9,6 +9,9 @@ permission:
     "AGENTS.md": allow
     "CONTEXT.md": allow
     "BACKLOG.md": allow
+    "CLAUDE.md": allow
+    ".mcp.json": allow
+    ".claude/settings.json": allow
     "opencode.json": allow
     "ux/decisions.md": allow
     "tests/e2e/manual-scenarios.md": allow

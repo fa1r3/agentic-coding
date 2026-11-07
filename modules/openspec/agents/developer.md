@@ -13,6 +13,9 @@ permission:
     "AGENTS.md": deny
     "CONTEXT.md": deny
     "BACKLOG.md": deny
+    "CLAUDE.md": deny
+    ".mcp.json": deny
+    ".claude/*": deny
     "opencode.json": deny
 ---
 

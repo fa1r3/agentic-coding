@@ -12,6 +12,7 @@ permission:
     "ux/views.md": allow
     "BACKLOG.md": allow
     "package.json": allow
+    "~/.claude/skills/*": allow
   edit:
     "*": deny
     "tests/e2e/*": allow
@@ -22,6 +23,10 @@ permission:
     "openspec/changes/*/proposal.md": allow
     "CONTEXT.md": allow
     "BACKLOG.md": allow
+  shell_read_programs: deny
+  subagent:
+    "*": deny
+    tester: allow
   penpot_*: deny
   searxng_*: deny
 ---

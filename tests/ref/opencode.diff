@@ -16,7 +16,17 @@ diff -ru a/openspec/agents/analyst.md b/openspec/agents/analyst.md
 diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 --- a/openspec/agents/architect.md
 +++ b/openspec/agents/architect.md
-@@ -34,11 +34,11 @@
+@@ -9,6 +9,9 @@
+     "AGENTS.md": allow
+     "CONTEXT.md": allow
+     "BACKLOG.md": allow
++    "CLAUDE.md": allow
++    ".mcp.json": allow
++    ".claude/settings.json": allow
+     "opencode.json": allow
+     "ux/decisions.md": allow
+     "tests/e2e/manual-scenarios.md": allow
+@@ -34,11 +37,11 @@
  
  | File | When |
  |---|---|
@@ -37,7 +47,17 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
 --- a/openspec/agents/developer.md
 +++ b/openspec/agents/developer.md
-@@ -31,7 +31,7 @@
+@@ -13,6 +13,9 @@
+     "AGENTS.md": deny
+     "CONTEXT.md": deny
+     "BACKLOG.md": deny
++    "CLAUDE.md": deny
++    ".mcp.json": deny
++    ".claude/*": deny
+     "opencode.json": deny
+ ---
+ 
+@@ -31,7 +34,7 @@
  
  # End of session
  
@@ -49,7 +69,26 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
 diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
 --- a/openspec/agents/tester.md
 +++ b/openspec/agents/tester.md
-@@ -40,8 +40,8 @@
+@@ -12,6 +12,7 @@
+     "ux/views.md": allow
+     "BACKLOG.md": allow
+     "package.json": allow
++    "~/.claude/skills/*": allow
+   edit:
+     "*": deny
+     "tests/e2e/*": allow
+@@ -22,6 +23,10 @@
+     "openspec/changes/*/proposal.md": allow
+     "CONTEXT.md": allow
+     "BACKLOG.md": allow
++  shell_read_programs: deny
++  subagent:
++    "*": deny
++    tester: allow
+   penpot_*: deny
+   searxng_*: deny
+ ---
+@@ -40,8 +45,8 @@
  
  | File | When |
  |---|---|

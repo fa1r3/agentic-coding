@@ -41,13 +41,10 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
    edit:
      "*": deny
      "openspec/*": allow
-@@ -10,17 +9,12 @@
-     "AGENTS.md": allow
-     "CONTEXT.md": allow
-     "BACKLOG.md": allow
--    "CLAUDE.md": allow
--    ".mcp.json": allow
--    ".claude/settings.json": allow
+@@ -13,14 +12,12 @@
+     "CLAUDE.md": allow
+     ".mcp.json": allow
+     ".claude/settings.json": allow
 +    "opencode.json": allow
      "ux/decisions.md": allow
      "tests/e2e/manual-scenarios.md": allow
@@ -63,7 +60,7 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
  ---
  
  # Role
-@@ -40,7 +34,8 @@
+@@ -40,7 +37,8 @@
  
  | File | When |
  |---|---|
@@ -86,13 +83,10 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
    edit:
      "*": allow
      "tests/e2e/*": deny
-@@ -13,15 +13,7 @@
-     "AGENTS.md": deny
-     "CONTEXT.md": deny
-     "BACKLOG.md": deny
--    "CLAUDE.md": deny
--    ".mcp.json": deny
--    ".claude/*": deny
+@@ -16,12 +16,7 @@
+     "CLAUDE.md": deny
+     ".mcp.json": deny
+     ".claude/*": deny
 -hooks:
 -  PreToolUse:
 -    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
@@ -117,22 +111,10 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
    read:
      "*": deny
      "openspec/*": allow
-@@ -13,7 +12,6 @@
-     "ux/views.md": allow
-     "BACKLOG.md": allow
-     "package.json": allow
--    "~/.claude/skills/*": allow
-   edit:
+@@ -28,12 +27,8 @@
+   subagent:
      "*": deny
-     "tests/e2e/*": allow
-@@ -24,16 +22,8 @@
-     "openspec/changes/*/proposal.md": allow
-     "CONTEXT.md": allow
-     "BACKLOG.md": allow
--  shell_read_programs: deny
--  subagent:
--    "*": deny
--    tester: allow
+     tester: allow
 -hooks:
 -  PreToolUse:
 -    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
