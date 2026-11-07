@@ -11,12 +11,15 @@ import { TOOLS, fingerprint, render, renderFiles, renderView } from '../lib/rend
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'modules');
+const TOOLS_DIR = join(import.meta.dirname, '..', '..', 'tools');
 const RENDER_DIR = /^(claude|opencode)\.[0-9a-f]{64}\.[0-9]+$/;
 
-// A toolkit of its own for each test: the agents and commands of the fixtures, plus a skill.
+// A toolkit of its own for each test: the agents and commands of the fixtures, the tools/ of the
+// toolkit, plus a skill.
 function toolkit() {
   const root = mkdtempSync(join(tmpdir(), 'f3-render-'));
   cpSync(FIXTURES, join(root, 'modules'), { recursive: true });
+  cpSync(TOOLS_DIR, join(root, 'tools'), { recursive: true });
   mkdirSync(join(root, 'modules', 'ux', 'skills', 'ux-practice'), { recursive: true });
   writeFileSync(join(root, 'modules', 'ux', 'skills', 'ux-practice', 'SKILL.md'), '# ux-practice\n');
   return root;
@@ -95,6 +98,23 @@ test('a directory of the same fingerprint that is not the target is not reused',
   assert.ok(!existsSync(join(build(root), theirs)));
 });
 
+test('the variables of each tool are substituted in the agents and commands', () => {
+  const root = toolkit();
+  change(root, 'Delegate to `{{GENERAL}}` through {{SUBAGENT_TOOL}}: change "{{ARG1}}", mode "{{ARG2}}"; {{EXPLORE}}.\n');
+  const text = (tool) => renderFiles(tool, root).find((f) => f.path === 'ux/agents/ux.md').content;
+  assert.equal(text('claude'), 'Delegate to `general-purpose` through the Agent tool: change "$0", mode "$1"; Explore.\n');
+  assert.equal(text('opencode'), 'Delegate to `general` through the subagent tool: change "$1", mode "$2"; explore.\n');
+});
+
+test('a variable a tool does not define is left, and fails the render', () => {
+  const root = toolkit();
+  writeFileSync(join(root, 'tools', 'opencode', 'vars'), '# no GENERAL here\nEXPLORE=explore\n');
+  change(root, 'Use {{GENERAL}} and {{EXPLORE}}.\n');
+  assert.throws(() => renderFiles('opencode', root), /"\{\{" left in the render of opencode: ux\/agents\/ux\.md/);
+  writeFileSync(join(root, 'tools', 'opencode', 'vars'), 'GENERAL general\n');
+  assert.throws(() => renderFiles('opencode', root), /unreadable line 1 of tools\/opencode\/vars/);
+});
+
 test('the fingerprint covers the paths as well as the contents', () => {
   const files = [{ path: 'm/agents/a.md', content: 'x' }];
   assert.notEqual(fingerprint(files), fingerprint([{ path: 'm/agents/b.md', content: 'x' }]));
@@ -127,7 +147,7 @@ test('a renamed or removed source changes the render', () => {
 test('"{{" left in the render fails it, before any write or switch', () => {
   const root = toolkit();
   const first = render('claude', { root });
-  writeFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), '---\nf3-agent: developer\n---\nUse {{EXPLORE}}.\n');
+  writeFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), '---\nf3-agent: developer\n---\nUse {{UNKNOWN}}.\n');
   assert.throws(() => render('claude', { root }), /"\{\{" left in the render of claude: openspec\/commands\/f3-dev\.md/);
   assert.equal(target(root, 'claude'), name('claude', first.fingerprint));
   assert.deepEqual(entries(root), ['claude', name('claude', first.fingerprint)]);
@@ -266,7 +286,7 @@ test('f3 render renders both tools by default, one when named, and fails on an u
 
 test('f3 render reports a failed render with exit code 1', () => {
   const root = toolkit();
-  change(root, '{{GENERAL}}\n');
+  change(root, '{{NOPE}}\n');
   const r = spawnSync('node', [F3, 'render', 'claude'], { env: { ...process.env, F3_TOOLKIT_ROOT: root }, encoding: 'utf8' });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /^f3: "\{\{" left in the render of claude: ux\/agents\/ux\.md/);

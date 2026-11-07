@@ -36,10 +36,28 @@ function checkTool(tool) {
   if (!TOOLS.includes(tool)) throw new Error(`unknown tool "${tool}" (expected: ${TOOLS.join(', ')})`);
 }
 
+// Reads tools/<tool>/<name>: "KEY=value" lines; blank lines and lines starting with "#" are skipped.
+function readTable(root, tool, name) {
+  const file = join(root, 'tools', tool, name);
+  const table = {};
+  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+    if (!line.trim() || line.startsWith('#')) return;
+    const at = line.indexOf('=');
+    if (at <= 0) throw new Error(`unreadable line ${i + 1} of tools/${tool}/${name}: ${line}`);
+    table[line.slice(0, at)] = line.slice(at + 1);
+  });
+  return table;
+}
+
+// The fixed set of variables of a tool (tools/<tool>/vars), substituted as {{NAME}} (analysis, 4.5).
+function substitute(text, vars) {
+  return text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (all, name) => (Object.hasOwn(vars, name) ? vars[name] : all));
+}
+
 // Rendered files of a tool, sorted by path: [{ path: "<module>/<kind>/<file>", content }].
-// At this step the sources do not change: the render of each tool is a copy.
 export function renderFiles(tool, root = ROOT) {
   checkTool(tool);
+  const vars = readTable(root, tool, 'vars');
   const files = [];
   for (const mod of modules(root)) {
     for (const kind of RENDERED) {
@@ -47,7 +65,7 @@ export function renderFiles(tool, root = ROOT) {
       if (!existsSync(dir)) continue;
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (!entry.isFile()) continue;
-        files.push({ path: `${mod}/${kind}/${entry.name}`, content: readFileSync(join(dir, entry.name), 'utf8') });
+        files.push({ path: `${mod}/${kind}/${entry.name}`, content: substitute(readFileSync(join(dir, entry.name), 'utf8'), vars) });
       }
     }
   }

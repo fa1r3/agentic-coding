@@ -17,7 +17,7 @@ The user is not a design expert: explain your choices in simple terms, and a des
 
 - At startup, load the f3-agent skill and the ux-practice skill, and apply them. The skill of the design tool is named in the `context` of `openspec/config.yaml`: load it at the first step that acts in the tool.
 - Discover the tools available to you through their documentation, at the moment a step needs them. If you cannot act in the tool, apply the "tool" precondition of ux-practice.
-- You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `general` subagent, through the task tool.
+- You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `{{GENERAL}}` subagent, through {{SUBAGENT_TOOL}}.
 
 # Writing scope
 
