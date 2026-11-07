@@ -1,6 +1,6 @@
 ---
 name: f3-agent
-description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments and language. Load at startup."
+description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments, language, and the rules of an agent consulted as a subagent. Load at startup."
 ---
 
 # f3 working rules
@@ -28,8 +28,8 @@ description: "Working rules shared by every agent of the f3 workflow: the user d
 
 ## Commands and sessions
 
-10. Each command runs in a new session, and ends by naming the next step and its command.
-11. A command whose change identifier is empty, or names no folder of `openspec/changes/`, lists the changes in progress with `openspec list` and stops.
+10. Each command runs in a new session, and ends by naming the next step and its command. The user runs a command in a terminal as `f3 <step> <arguments>`, which starts a new session of their tool (Claude Code or OpenCode) as the agent of the step: always name a command in that form, never as `/f3-<step>`.
+11. A command whose change identifier is empty, or names no folder of `openspec/changes/`, does not start: its launch state lists the changes in progress.
 12. If OpenSpec says an artifact or the implementation is blocked, show its message and stop: never work around a block.
 13. Commit nothing, unless your agent or your command says otherwise: the user reviews the diff and commits.
 
@@ -40,3 +40,14 @@ description: "Working rules shared by every agent of the f3 workflow: the user d
 ## Language
 
 15. Answer in the language the user writes in. The prose you write in files follows the Language part of the context of `openspec/config.yaml`. Headings, field labels, statuses and file names stay in English, as the templates write them. Code, comments and commit messages are in English.
+
+## Consulted as a subagent
+
+These rules apply when you were not started by an f3 command but called as a subagent, by a session or by another agent. You cannot ask the user anything: the calling session presents your report to the user.
+
+16. Analyze within your domain, with your skills, as usual.
+17. Instead of asking your questions, return them in your report: each with its options, their consequences and your recommendation, as rules 2 and 3 say.
+18. Write nothing in the project: you analyze and propose. The calling session presents your proposals to the user, then writes them itself or runs the f3 step concerned.
+19. Run no step of the workflow: create no change, validate no step, archive nothing. If the request belongs to a step, say so and name its command (`f3 <step> <arguments>`).
+20. Convene no review session (Tres Amigos, design review): those reviews are steps of the workflow, chaired in a session of their own.
+21. A command that convenes you as a subagent, such as the fidelity review of `f3 acceptance`, gives you your task in its prompt: follow it, within rules 16 to 20.

@@ -385,6 +385,43 @@ diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/
  - `steps/`: the step definitions, one file per business concept of `CONTEXT.md`, named after its English term.
  - `pages/`: one page object per view, in a file named after the view (`pages/invoice-editor.ts` for the view `invoice-editor`). Component objects are in `pages/components/`, named after the component.
  - `support/`: the launch of the application in test mode, the test data builders that use the test entry points, and the fixtures that give step definitions their page objects.
+diff -ru a/openspec/skills/f3-agent/SKILL.md b/openspec/skills/f3-agent/SKILL.md
+--- a/openspec/skills/f3-agent/SKILL.md
++++ b/openspec/skills/f3-agent/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: f3-agent
+-description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments and language. Load at startup."
++description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments, language, and the rules of an agent consulted as a subagent. Load at startup."
+ ---
+ 
+ # f3 working rules
+@@ -28,8 +28,8 @@
+ 
+ ## Commands and sessions
+ 
+-10. Each command runs in a new session, and ends by naming the next step and its command.
+-11. A command whose change identifier is empty, or names no folder of `openspec/changes/`, lists the changes in progress with `openspec list` and stops.
++10. Each command runs in a new session, and ends by naming the next step and its command. The user runs a command in a terminal as `f3 <step> <arguments>`, which starts a new session of their tool (Claude Code or OpenCode) as the agent of the step: always name a command in that form, never as `/f3-<step>`.
++11. A command whose change identifier is empty, or names no folder of `openspec/changes/`, does not start: its launch state lists the changes in progress.
+ 12. If OpenSpec says an artifact or the implementation is blocked, show its message and stop: never work around a block.
+ 13. Commit nothing, unless your agent or your command says otherwise: the user reviews the diff and commits.
+ 
+@@ -40,3 +40,14 @@
+ ## Language
+ 
+ 15. Answer in the language the user writes in. The prose you write in files follows the Language part of the context of `openspec/config.yaml`. Headings, field labels, statuses and file names stay in English, as the templates write them. Code, comments and commit messages are in English.
++
++## Consulted as a subagent
++
++These rules apply when you were not started by an f3 command but called as a subagent, by a session or by another agent. You cannot ask the user anything: the calling session presents your report to the user.
++
++16. Analyze within your domain, with your skills, as usual.
++17. Instead of asking your questions, return them in your report: each with its options, their consequences and your recommendation, as rules 2 and 3 say.
++18. Write nothing in the project: you analyze and propose. The calling session presents your proposals to the user, then writes them itself or runs the f3 step concerned.
++19. Run no step of the workflow: create no change, validate no step, archive nothing. If the request belongs to a step, say so and name its command (`f3 <step> <arguments>`).
++20. Convene no review session (Tres Amigos, design review): those reviews are steps of the workflow, chaired in a session of their own.
++21. A command that convenes you as a subagent, such as the fidelity review of `f3 acceptance`, gives you your task in its prompt: follow it, within rules 16 to 20.
 diff -ru a/openspec/skills/f3-agent/references/review.md b/openspec/skills/f3-agent/references/review.md
 --- a/openspec/skills/f3-agent/references/review.md
 +++ b/openspec/skills/f3-agent/references/review.md
@@ -396,6 +433,15 @@ diff -ru a/openspec/skills/f3-agent/references/review.md b/openspec/skills/f3-ag
  
  ## Record
  
+@@ -36,7 +36,7 @@
+ 1. **Opening.**
+    - If the validation file exists, the step is closed: start no session. Say so, with the date of the validation, list the files of the following steps that exist, and ask whether the user wants to reopen the step, knowing those files will have to be reviewed. If what they want to change concerns a few requirements of the specs, propose an amendment instead. Go on only on an explicit answer.
+    - If the record does not exist, create it with its title. Then look at its last session: rows still "pending", resume at step 5 for those rows; every report but no grid, step 3; missing reports and no grid, step 2 for the missing members; otherwise, or without session, a new session, numbered next and dated today, then step 2.
+-2. **Convening.** Convene the members whose report is missing, one after the other, never two at the same time, through the task tool with the built-in subagent `explore`. As soon as a report arrives, write it unchanged in the session, under the title of its member. Go on only when every report is written. If `explore` is not available, or a call fails, stop and report it: never play a member, never review in place of a member.
++2. **Convening.** Convene the members whose report is missing, one after the other, never two at the same time, through your subagent tool (the Agent tool under Claude Code, the subagent tool under OpenCode) with the built-in exploration subagent: `Explore` under Claude Code, `explore` under OpenCode. As soon as a report arrives, write it unchanged in the session, under the title of its member. Go on only when every report is written. If the exploration subagent is not available, or a call fails, stop and report it: never play a member, never review in place of a member.
+ 3. **Sorting.** Merge the objections about the same point, keeping the names of the members who raise them. Set the information items apart. Order the rest by severity, then by dependency: a point others depend on comes first. For each point that requires a choice, prepare two or three options, each with its consequence, and your recommendation.
+ 4. **Grid.** Present one row per point: number, severity, members, subject, nature, your recommendation with a short reason, the other options, and "depends on" with the number concerned. Then the information items, as a short list. Write the grid in the session with "pending" in the Decision column. If no point is to be decided, write "None." in the grid section and go to step 7.
+ 5. **Arbitration.** The user validates the grid as a whole, or changes rows. Re-evaluate and present again the rows that depend on a changed row. A critical or high point dismissed without a reason is defended once, saying what would have to be guessed or redone without it, then the user's choice is accepted. Each dismissed point goes to the Dismissed points section, with "dismissed" in its row; one the user keeps for later becomes a `BACKLOG.md` entry, with the origin given by the command.
 diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/SKILL.md
 --- a/openspec/skills/f3-standards/SKILL.md
 +++ b/openspec/skills/f3-standards/SKILL.md
