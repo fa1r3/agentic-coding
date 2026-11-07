@@ -2,7 +2,7 @@
 
 Document de travail, en français, à supprimer ou à verser dans la documentation à la fin des travaux. Branche `feat/multi-harness`, tirée de `main` (`a33b9d3`).
 
-**État au 2026-11-07.** Décisions D1 à D13 prises (section 7), D4 révisée après la revue des risques. Vérifications V-O1 à V-O7 faites (section 6). Risques R1 à R16 revus et leurs parades décidées (section 9). Prochaine étape : l'étape 2 de la section 8, le rendu et la comparaison avec les deux références.
+**État au 2026-11-07.** Décisions D1 à D20 prises (section 7), D4 révisée après la revue des risques. Vérifications V-O1 à V-O7 faites (section 6). Risques R1 à R17 revus et leurs parades décidées (section 9). L'étape 2, commencée puis annulée, a été reprise après la revue de cohérence (`revue-analyse-multi-outil.md`), dont les constats sont tranchés par D2 révisée, D7 révisée et D14 à D20. Prochaine étape : l'étape 2 de la section 8, la reprise de `cli/`, le rendu et la comparaison avec les deux références.
 
 Dans ce document, **outil** désigne l'outil qui fait tourner les agents (Claude Code, OpenCode), pour ne pas le confondre avec les **agents** f3 (analyst, architect, developer, tester, ux).
 
@@ -13,8 +13,8 @@ Dans ce document, **outil** désigne l'outil qui fait tourner les agents (Claude
 3. [Ce qui diffère vraiment entre les deux versions](#3-ce-qui-diffère-vraiment-entre-les-deux-versions)
 4. [Challenge de la proposition](#4-challenge-de-la-proposition)
 5. [Architecture proposée](#5-architecture-proposée)
-6. [Vérifications à faire avant de construire](#6-vérifications-à-faire-avant-de-construire)
-7. [Décisions à prendre](#7-décisions-à-prendre)
+6. [Vérifications](#6-vérifications)
+7. [Décisions](#7-décisions)
 8. [Étapes proposées](#8-étapes-proposées)
 9. [Risques](#9-risques)
 
@@ -25,14 +25,14 @@ Dans ce document, **outil** désigne l'outil qui fait tourner les agents (Claude
 - Préserver absolument le workflow f3.
 - L'outil (dans un premier temps Claude Code ou OpenCode) est un choix de l'utilisateur ; OpenSpec reste dans tous les cas.
 - Mettre en commun tout ce qui peut l'être, et assembler les fichiers propres à chaque outil à l'installation.
-- Un installateur aussi simple que possible, en script sh.
+- Un installateur aussi simple que possible, en script bash (« sh » dans la demande d'origine ; `install.sh` est déjà en bash, retenu par D16).
 
 ## 2. État des lieux
 
 | Source | Où | Contenu |
 |---|---|---|
 | Version OpenCode | ce dépôt, `main` (`a33b9d3`) | le toolkit d'origine |
-| Version Claude Code | ce dépôt, `feat/claude-code` (`ef8c84a`, poussée sur `origin`) | portage complet : 42 fichiers des modules modifiés, plus la commande `f3` (`cli/`, 112 tests) ; vérifiée en vraies sessions, sauf l'étape 9 (déroulé complet et V1). Son plan de travail : `/home/theo/Documents/poc/agentic-toolkit-claude/docs/plan-claude-code.md` (décisions C1 à C12, vérifications W1 à W11) |
+| Version Claude Code | ce dépôt, `feat/claude-code` (`ef8c84a`, poussée sur `origin`) | portage complet : 30 des 42 fichiers des modules modifiés (12 identiques), plus la commande `f3` (`cli/`, 112 tests) ; vérifiée en vraies sessions, sauf l'étape 9 (déroulé complet et V1). Son plan de travail : `/home/theo/Documents/poc/agentic-toolkit-claude/docs/plan-claude-code.md` (décisions C1 à C12, vérifications W1 à W11) |
 | Proposition multi-outil antérieure | `docs/multi-tool-install.md` (691 lignes), non disponible | sources neutres rendues par outil, adaptateurs locaux générés par `f3 setup`, garde partagé (hook Claude Code, plugin OpenCode). Connue seulement par le message de son commit et le résumé du plan de travail ci-dessus |
 
 ## 3. Ce qui diffère vraiment entre les deux versions
@@ -45,9 +45,11 @@ Mesure faite fichier par fichier sur les 42 fichiers de `modules/`, après deux 
 |---|---|---|
 | 5 agents | frontmatter entier (OpenCode : `mode`, `permission` ; Claude Code : `name`, `disallowedTools`, `f3-permission`, `hooks`) ; une ligne du corps de `ux` (sous-agent `general` / `general-purpose`, task tool / Agent tool ; sous OpenCode 2.2.5, l'outil s'appelle `subagent`, V-O3) | propre à l'outil |
 | 12 commandes | frontmatter (`agent:` / `f3-agent:`, `argument-hint`, `disable-model-invocation`, `allowed-tools`) ; ligne de garde « This command runs as… » ; injections (29 injections shell / une seule `f3 state`) ; `$1`, `$2` / `$0`, `$1` dans `f3-ux-design` ; `explore` / tester en sous-agent dans `f3-acceptance` ; `f3-init` (fichiers du projet, `openspec init --tools`) | propre à l'outil, sauf les injections, qui peuvent devenir communes (4.6) |
-| `f3-standards/SKILL.md` et `references/agents-md.md` | section des fichiers du projet (`opencode.json` / `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`) | propre à l'outil |
+| `f3-standards/SKILL.md` et `references/agents-md.md` | section des fichiers du projet (`opencode.json` / `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`) | commun avec D2 : la section décrit les fichiers des deux outils (D20) |
 | `f3-agent/SKILL.md` | règles 10 et 11 ; section « Consulted as a subagent » | commun possible : cette section vaut aussi sous OpenCode |
-| `f3-agent/references/review.md` | `explore` / `Explore`, task tool / Agent tool (`subagent` sous OpenCode 2.2.5) | un mot par outil |
+| `f3-agent/references/review.md` | `explore` / `Explore`, task tool / Agent tool (`subagent` sous OpenCode 2.2.5) | commun, écrit de façon neutre (« the built-in exploration subagent: `Explore` under Claude Code, `explore` under OpenCode ») (D20) |
+
+Avec D20, **aucune skill n'est rendue** : les skills restent des liens directs vers les sources, et OpenCode charge la même skill quel que soit le dossier où il la trouve (V-O6).
 
 Conclusion : **l'écart est petit et localisé**, à une condition : que les deux outils nomment les commandes de la même façon et que le script soit au même endroit. Sinon les renvois aux commandes (116 occurrences dans 27 fichiers) obligent à rendre presque tous les fichiers.
 
@@ -57,8 +59,8 @@ Conclusion : **l'écart est petit et localisé**, à une condition : que les deu
 
 Votre proposition met en commun ce qui peut l'être et assemble le reste. La mesure de la section 3 montre qu'il faut d'abord **neutraliser**, puis seulement assembler :
 
-1. **Neutraliser** : écrire une seule fois tout ce qui peut s'écrire de la même façon pour les deux outils : nom des commandes (4.2), chemin du script, injection `f3 state` (4.6), section « Consulted as a subagent ». Ces fichiers ne passent par aucun rendu et restent des liens symboliques.
-2. **Assembler** seulement ce qui ne peut pas être commun : le frontmatter des agents et des commandes, la section des fichiers du projet, une poignée de mots (noms des sous-agents intégrés).
+1. **Neutraliser** : écrire une seule fois tout ce qui peut s'écrire de la même façon pour les deux outils : nom des commandes (4.2), chemin du script, injection `f3 state` (4.6), section « Consulted as a subagent », toutes les skills (D20), la table de permissions (D15). Ces fichiers ne passent par aucun rendu et restent des liens symboliques.
+2. **Assembler** seulement ce qui ne peut pas être commun : le frontmatter des agents et des commandes, la section des fichiers du projet dans `f3-init`, une poignée de mots (noms des sous-agents intégrés) dans les agents et les commandes.
 
 Pourquoi : chaque fichier rendu coûte. Il faut réinstaller après chaque modification (4.4), un fichier rendu ne se relit pas tel quel dans le dépôt, et une variable mal substituée ne se voit qu'à l'exécution. Le bon indicateur est le nombre de fichiers rendus, à garder le plus bas possible.
 
@@ -95,7 +97,7 @@ C'est le point que votre proposition ne tranche pas, et il a deux niveaux :
 - **Sur la machine**, l'utilisateur installe le toolkit pour un outil, ou pour les deux. Rien ne s'y oppose : les cibles sont distinctes (`~/.claude/` et `~/.config/opencode/`). Seul point de contact, constaté par W11 : OpenCode lit aussi `~/.claude/skills/`, mais donne la priorité aux siennes. Les deux installations peuvent donc coexister.
 - **Dans le projet**, `/f3-init` écrit des fichiers **versionnés** propres à l'outil (`opencode.json`, ou `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`). Un projet partagé par une équipe mixte en a besoin pour chaque outil. La proposition antérieure avait choisi des adaptateurs locaux non versionnés (`f3 setup`) ; le portage est revenu à des fichiers versionnés (C2), plus simples.
 
-Recommandation : `/f3-init` écrit les fichiers de **chaque outil installé sur la machine**, et ceux d'un outil déjà présents dans le projet. Les serveurs MCP restent décidés une seule fois, dans la section Stack d'AGENTS.md : `opencode.json` et `.mcp.json` en sont deux traductions, pas deux sources. Décision D2.
+Recommandation : `/f3-init` écrit les fichiers de **chaque outil installé sur la machine**, et ceux d'un outil déjà présents dans le projet. Un outil est **installé** quand f3 l'est pour lui : les liens posés par `install.sh` (par exemple `~/.claude/agents/analyst.md` ou `~/.config/opencode/agents/analyst.md`) pointent vers le dépôt du toolkit. C'est le critère de `install.sh --remove`, lu par une seule fonction de `cli/` (`installedTools()`), sans manifeste ; un outil présent dans le `PATH` sans f3 ne reçoit aucun fichier de projet (D19). Ces fichiers comprennent ceux d'OpenSpec : `/f3-init` lance `openspec init --tools <outils installés>`, liste séparée par des virgules (`--tools claude,opencode`, accepté par OpenSpec 1.16.0), et `f3 state init` liste les fichiers de cadrage et les skills OpenSpec des deux outils. Les serveurs MCP restent décidés une seule fois, dans la section Stack d'AGENTS.md : `opencode.json` et `.mcp.json` en sont deux traductions, pas deux sources. Décision D2.
 
 ### 4.4 La perte des liens symboliques
 
@@ -110,26 +112,31 @@ Pourquoi pas une comparaison de dates (première version de D4) : une source sup
 
 Conséquences de D4 :
 - le rendu doit pouvoir être appelé par le lanceur et par `f3 state` : il est écrit une seule fois, en Node.js (`f3 render`), et `install.sh` l'appelle. C'est le « Node.js au besoin » de D7 : le rendu passe en Node.js dès maintenant, et `install.sh` garde le choix de l'outil, les prérequis, les liens et `--remove` ;
-- **bascule atomique d'un lien** (R9, R10) : chaque rendu est écrit dans un dossier neuf au nom unique, `build/<outil>.<id>/`, puis `build/<outil>` (un lien symbolique) est remplacé d'un coup : un nouveau lien est créé à côté, puis renommé par-dessus l'ancien (`rename()` est atomique sur un lien). Les rendus précédents sont supprimés ensuite. Une session ouverte dans un autre terminal ne lit jamais un rendu à moitié écrit, et deux rendus simultanés ne se mélangent pas : le dernier lien posé gagne, et les deux rendus sont complets. Pas de verrou ;
+- **dossiers nommés par l'empreinte du contenu, et bascule atomique d'un lien** (R9, R10, D17) : le rendu se fait en mémoire, et son empreinte (SHA-256 des chemins et des contenus) donne le nom du dossier, `build/<outil>.<empreinte>/`. Si ce dossier existe déjà, rien n'est écrit. Sinon, le rendu est écrit dans `build/.tmp.<pid>/`, puis renommé vers son nom final : un dossier n'a son nom final qu'une fois complet. Deux rendus simultanés du même contenu convergent vers le même dossier (le second renommage échoue, et son dossier temporaire est supprimé). Ensuite, `build/<outil>` (un lien symbolique) est remplacé d'un coup s'il ne vise pas déjà ce dossier : un nouveau lien est créé à côté, puis renommé par-dessus l'ancien (`rename()` est atomique sur un lien). Une session ouverte dans un autre terminal ne lit jamais un rendu à moitié écrit. Pas de verrou ;
+- **nettoyage sûr** : il ne supprime que les dossiers `build/<outil>.<empreinte>/` qui ne sont pas la cible du lien, et les `build/.tmp.*` de plus d'une heure (rendus interrompus). Il ne touche jamais un rendu en cours, et `build/` ne grossit pas à chaque lancement ;
+- **rendu en échec** (D18, R17) : une source en cours d'édition avec un `{{` inconnu, un frontmatter illisible, un toolkit en lecture seule ou un disque plein font échouer le rendu. Il n'y a alors aucune bascule, et le lien garde le dernier rendu complet ; le lanceur affiche l'erreur et ne lance pas l'outil ; `f3 state` écrit l'erreur dans l'état de lancement, ce qui arrête la commande (consigne commune, R12). Lancer sur l'ancien rendu reproduirait l'écart silencieux que D4 combat. Un toolkit en lecture seule marche tant que le dossier de l'empreinte existe déjà, puisque rien n'est alors écrit ; sinon, l'erreur dit de relancer `install.sh` avec les droits ;
 - les liens d'installation (`~/.claude/…`, `~/.config/opencode/…`) pointent vers `build/<outil>/…`, chemin qui traverse le lien basculé : ils ne changent jamais après l'installation ;
 - si `build/` a disparu (`git clean -fdX`, nouveau clone), le prochain `f3` le reconstruit (R11) ;
 - `f3 state` écrit donc dans `build/` du dépôt du toolkit : la promesse du README et du GUIDE (15.4) « les injections ne font que lire » devient « elles ne font que lire le projet ; `f3 state` refait le rendu du toolkit dans son dossier `build/` » (étape 7) ;
-- limite : sous OpenCode, `/f3-<étape>` tapé directement dans une session ne passe pas par le lanceur. L'injection `f3 state` refait le rendu, donc les skills chargées ensuite sont à jour ; mais l'agent et la commande, chargés à l'ouverture de la session, peuvent être périmés. Si le rendu a changé un fichier, `f3 state` le signale en une ligne de l'état de lancement : c'est un avertissement, pas un blocage (R1).
+- limite : sous OpenCode, `/f3-<étape>` tapé directement dans une session ne passe pas par le lanceur. L'injection `f3 state` refait le rendu, donc les skills chargées ensuite sont à jour ; mais l'agent et la commande, chargés à l'ouverture de la session, peuvent être périmés. Si l'empreinte du rendu diffère de la cible du lien avant la bascule, `f3 state` le signale en une ligne de l'état de lancement : c'est un avertissement, pas un blocage (R1).
 
-### 4.5 « Un installateur simple en sh » : tenable, à condition de limiter le rendu
+### 4.5 Un installateur simple en bash, un rendu limité en Node.js
 
-**Décidé le 2026-11-07 :** Node.js est permis au besoin, puisqu'OpenSpec l'impose déjà. `install.sh` reste le point d'entrée en sh (choix de l'outil, prérequis, liens, `--remove`). Le rendu passe en Node.js (par exemple `f3 render`, testé avec `node --test` comme le reste de `cli/`) dès qu'il dépasse les limites ci-dessous, sans nouvelle discussion.
+**Décidé le 2026-11-07 :** Node.js est permis, puisqu'OpenSpec l'impose déjà. Avec D4 révisée, le rendu est appelé par le lanceur et par `f3 state` : il est écrit en Node.js (`f3 render`, testé avec `node --test` comme le reste de `cli/`) (D7). `install.sh` reste le point d'entrée, en bash, sans contrainte de version (D16).
 
-Le rendu en sh reste simple et sûr s'il se limite à deux mécanismes :
+Le rendu reste simple et sûr s'il se limite à trois mécanismes :
 
 1. **la concaténation** : `frontmatter de l'outil` + `corps commun` (+ un fragment propre à l'outil inséré à un repère) ;
-2. **la substitution d'un jeu fixe de variables**, définies une seule fois par outil (`tools/<outil>/vars`) et toutes listées : `{{EXPLORE}}`, `{{GENERAL}}`, `{{SUBAGENT_TOOL}}`, `{{ARG1}}`, `{{ARG2}}`. Une variable inconnue ou non substituée fait échouer l'installation (contrôle par `grep '{{'` sur `build/`).
+2. **la substitution d'un jeu fixe de variables**, définies une seule fois par outil (`tools/<outil>/vars`) et toutes listées : `{{EXPLORE}}`, `{{GENERAL}}`, `{{SUBAGENT_TOOL}}`, `{{ARG1}}`, `{{ARG2}}`. La table de permissions, commune (D15), n'en demande aucune autre ;
+3. **la traduction de la liste `deny-tools`** de chaque agent (D15) : les noms d'outils intégrés passent par une table de correspondance par outil (`tools/<outil>/tools`, par exemple `bash` → `Bash`), les serveurs MCP par un modèle (`penpot_*` ou `mcp__penpot__*`).
 
-Interdits : les conditions, les boucles et les transformations de YAML dans le rendu. Dès qu'il en faudrait, c'est le signe qu'un fragment par outil doit être écrit. Avec ces limites, le rendu tient en une cinquantaine de lignes de sh POSIX (`sed`, `cat`) ; au-delà, c'est un deuxième programme déguisé en installateur.
+Une variable inconnue, ou un `{{` restant dans le rendu, fait échouer `f3 render` avant toute bascule (R3).
 
-Node.js reste de toute façon requis (OpenSpec, `f3-features.mjs`, la commande `f3`). Au-delà de ces limites, le rendu passe en Node.js (voir la décision en tête de cette section).
+Interdits : les conditions et les transformations de YAML dans le rendu. Dès qu'il en faudrait, c'est le signe qu'un fragment par outil doit être écrit.
 
 Ce qui reste dans `install.sh` : le choix de l'outil (question interactive sans argument, ou `./install.sh claude|opencode|all` pour un script : D9), les prérequis par outil, `--remove`, et le nettoyage des liens morts. Pour ne jamais supprimer un fichier qu'il n'a pas créé, il reconnaît ses propres liens comme aujourd'hui (`readlink` vers le dépôt) : c'est un avantage de garder des liens vers `build/` plutôt que des copies, et on évite ainsi un manifeste.
+
+**Ordre des opérations de `install.sh`** : (1) `f3 render` ; (2) les liens ; (3) le nettoyage des liens morts. Si (1) échoue, `install.sh` s'arrête avant de toucher aux liens. Dans l'autre ordre, après un `git clean -fdX` (R11), le nettoyage supprimerait tous les liens, que le rendu aurait réparés.
 
 ### 4.6 La commande `f3` : commune, sauf le garde
 
@@ -146,7 +153,7 @@ Le lanceur est aujourd'hui écrit pour Claude Code seulement (`spawnSync('claude
 - un fichier `.f3/local` à la racine du projet, qui contient pour l'instant une seule clé : `tool=claude` ou `tool=opencode`. Le dossier `.f3/` est réservé aux réglages locaux de f3 : D4 ou la vérification de version pourront y ajouter des clés, sans nouveau fichier ;
 - `/f3-init` ajoute `.f3/local` au `.gitignore` du projet ;
 - le lanceur lit `.f3/local`. Si le fichier est absent et qu'un seul outil est installé, il prend cet outil et écrit le fichier. Si les deux sont installés, il demande une fois, dans le terminal, puis écrit le fichier ;
-- pour changer d'outil, on modifie le fichier, ou on lance `f3 tool opencode` (sous-commande réservée, à ajouter à `RESERVED`).
+- pour changer d'outil, on modifie le fichier, ou on lance `f3 tool opencode` (sous-commande réservée). `RESERVED` passe de `state`, `guard`, `guard-prompt`, `help` à `state`, `guard`, `guard-prompt`, `help`, `tool`, `render`.
 
 Validé le 2026-11-07 : `.f3/local` et `f3 tool`. Il n'y a pas de variable `F3_TOOL` : la configuration du projet est la seule source. L'outil choisi n'a pas d'effet sur les fichiers versionnés du projet : `/f3-init` écrit toujours ceux de chaque outil installé (D2).
 
@@ -154,7 +161,7 @@ Validé le 2026-11-07 : `.f3/local` et `f3 tool`. Il n'y a pas de variable `F3_T
 
 Le workflow (étapes, artefacts, schéma, revues, décisions de l'utilisateur) est le même. Les **mécanismes** de contrôle diffèrent, et la section 12 du GUIDE doit le dire outil par outil :
 
-- **Tester.** Sous Claude Code, le garde l'empêche de lire le code par le shell et par un sous-agent. Sous OpenCode, la règle de lecture ne couvre que l'outil read (drift log du portage : « Still on main ») ; en revanche, la restriction des sous-agents y est native (V-O2). Fermer cet écart sous OpenCode demande un plugin (piste de la proposition antérieure), donc du code et des vérifications : hors du premier périmètre (D5, retenue) ; l'écart est documenté.
+- **Tester.** Sous Claude Code, le garde l'empêche de lire le code par le shell et par un sous-agent. Sous OpenCode, la règle de lecture ne couvre que l'outil read : glob, grep et le shell peuvent encore lire le code de l'application (drift log de `ref/claude-code`, ligne 82 : « Still on `main` ») ; en revanche, la restriction des sous-agents y est native (V-O2). Fermer cet écart sous OpenCode demande un plugin (piste de la proposition antérieure), donc du code et des vérifications : hors du premier périmètre (D5, retenue) ; l'écart est documenté.
 - **Relecture de fidélité de `/f3-acceptance`.** Sous OpenCode, `main` la confie au sous-agent `explore`, qui peut lire le code ; sous Claude Code, c'est le tester lui-même en sous-agent. C'est une différence de workflow, pas seulement de syntaxe. V-O3 montre qu'un agent OpenCode en `mode: all` peut s'appeler lui-même en sous-agent, et V-O2 que la permission `subagent` le limite à lui-même : la relecture est donc unifiée sur le tester en sous-agent sous les deux outils (D5).
 - **Commandes lancées sous le mauvais agent.** Sous Claude Code, `guard-prompt` les bloque ; sous OpenCode, la commande bascule elle-même sur le bon agent.
 
@@ -194,30 +201,34 @@ Ce qui me ferait changer d'avis : un changement de format des fichiers existants
 
 ```
 modules/<module>/
-├── agents/<agent>.md            corps commun (rôle, méthode, périmètre d'écriture), sans frontmatter
-├── agents/<agent>.permission    table de permissions commune, sémantique OpenCode (dernière règle gagnante)
+├── agents/<agent>.md            frontmatter commun (description, deny-tools) + corps commun (rôle, méthode, périmètre d'écriture)
+├── agents/<agent>.permission    table de permissions commune, union des fichiers des deux outils, sémantique OpenCode (dernière règle gagnante)
 ├── commands/f3-<étape>.md       frontmatter commun (description, agent, argument-hint) + corps commun
-├── skills/, schemas/, scripts/  communs, liés tels quels
+├── skills/, schemas/, scripts/  communs, liés tels quels (aucune skill rendue, D20)
 tools/
 ├── claude/
 │   ├── vars                     EXPLORE=Explore, GENERAL=general-purpose, SUBAGENT_TOOL=the Agent tool, ARG1=$0, ARG2=$1
+│   ├── tools                    noms des outils intégrés (bash=Bash) et modèle MCP (mcp__<serveur>__*)
 │   ├── agent.head               modèle du frontmatter d'agent (name, disallowedTools, f3-permission, hooks)
 │   ├── command.head             lignes ajoutées au frontmatter commun (disable-model-invocation, allowed-tools)
-│   └── fragments/               sections propres à l'outil : fichiers du projet (f3-standards, f3-init)
+│   └── fragments/               sections propres à l'outil : fichiers du projet (f3-init)
 └── opencode/
     ├── vars                     EXPLORE=explore, GENERAL=general, SUBAGENT_TOOL=the subagent tool, ARG1=$1, ARG2=$2
+    ├── tools                    noms des outils intégrés (bash=bash) et modèle MCP (<serveur>_*)
     ├── agent.head               (mode: primary, permission)
     └── fragments/
 cli/                             commande f3 : lanceur, state, render, tool (communs), guard (Claude Code)
-build/<outil>                    lien basculé vers le dernier rendu complet build/<outil>.<id>/ ; ignoré par Git, cible des liens
-install.sh                       question interactive, ou claude|opencode|all ; --render <dossier> ; --remove
+cli/test/fixtures/modules/       sources de test, indépendantes des modules réels (D14)
+build/<outil>                    lien basculé vers build/<outil>.<empreinte>/ (D17) ; ignoré par Git (.gitignore), cible des liens
+install.sh                       bash ; question interactive, ou claude|opencode|all ; --render <dossier> ; --remove
 ```
 
 Points de conception :
 
-- **Une table de permissions, deux rendus.** Elle est déjà écrite avec la sémantique d'OpenCode, que le garde de Claude Code reproduit. `install.sh` l'insère sous `permission:` pour OpenCode et sous `f3-permission:` pour Claude Code : c'est le même texte sous une autre clé, une concaténation. Les clés propres au garde (`shell_read_programs`, `subagent`) ne doivent pas casser OpenCode : vérification V-O2 ; sinon, un second fichier `<agent>.permission.claude`.
-- **Les serveurs MCP refusés** sont une liste commune (`penpot searxng playwright`), rendue en `penpot_*: deny` pour OpenCode et en `disallowedTools: mcp__penpot__*` pour Claude Code. Il faut une boucle de trois lignes en sh, sans transformation de YAML.
-- **Le frontmatter des commandes** est écrit sous une clé neutre (`agent:`), renommée en `f3-agent:` pour Claude Code (W3 : la clé `agent:` y a un autre sens). C'est un seul `sed`.
+- **Une table de permissions, deux rendus** (D15). Elle est déjà écrite avec la sémantique d'OpenCode, que le garde de Claude Code reproduit. Les deux références diffèrent sur les fichiers propres à chaque outil (architect : `opencode.json` et `~/.config/opencode/opencode.json` sous OpenCode, `CLAUDE.md`, `.mcp.json`, `.claude/settings.json` sous Claude Code ; developer : idem en refus ; tester : `~/.claude/skills/*` en lecture sous Claude Code). La table commune est **l'union des deux** : avec D2, les deux jeux de fichiers existent dans le projet, et chaque outil ignore sans risque les chemins sous `~` de l'autre. Le rendu l'insère alors telle quelle sous `permission:` pour OpenCode et sous `f3-permission:` pour Claude Code. Les clés propres au garde (`shell_read_programs`, `subagent`) ne cassent pas OpenCode (V-O2).
+- **Les outils refusés sont hors de la table** (D15), parce que le garde refuse toute clé autre que `edit`, `read`, `shell_read_programs` et `subagent` (`cli/lib/policy.mjs`) : une clé `bash` ou `penpot_*` ferait échouer chaque appel d'outil sous Claude Code. Chaque agent a sa liste dans son frontmatter commun (`deny-tools:` ; analyst : `penpot searxng playwright` ; architect : `penpot playwright` ; tester : `penpot searxng` ; ux : `bash playwright` ; developer : aucune), traduite par le rendu en `bash: deny`, `penpot_*: deny` pour OpenCode, et en `disallowedTools: Bash, mcp__penpot__*` pour Claude Code (4.5).
+- **Le frontmatter des commandes** est écrit sous une clé neutre (`agent:`), renommée par le rendu en `f3-agent:` pour Claude Code (W3 : la clé `agent:` y a un autre sens).
+- **`cli/lib/toolkit.mjs` lit le nouveau format** à partir de l'étape 4 : `commands()` lit `agent:` au lieu de `f3-agent`, et `loadPolicy()` lit `<agent>.permission` au lieu de la clé `f3-permission` du `.md`.
 - **Le garde lit la table de permissions dans le dépôt** (`modules/…/<agent>.permission`) et non dans le fichier rendu : il n'y a qu'une source.
 - **Le tester est en `mode: all` sous OpenCode** (V-O3), pour être appelé en sous-agent par lui-même. Sa clé `subagent` (`"*": deny`, `tester: allow`) est appliquée par OpenCode lui-même (V-O2) et, sous Claude Code, par le garde.
 - **Le lanceur, par outil** (V-O1, V-O7) : Claude Code, `claude --agent <agent> "/f3-<étape> <arguments>"` ; OpenCode, `opencode --standalone --prompt "/f3-<étape> <arguments> "`, avec une espace finale. Sous les deux, le prompt libre et l'idée de `f3 propose` passent par `F3_LAUNCH`, et les arguments sont des identifiants contrôlés avant le lancement.
@@ -238,7 +249,7 @@ Faites le 2026-11-07, avec OpenCode 2.2.5 et Claude Code 2.1.319. Projet de test
 | V-O3 | Sous OpenCode, un agent peut-il être appelé en sous-agent, y compris par lui-même ? | **Oui, avec `mode: all`.** L'outil s'appelle `subagent` dans OpenCode 2.2.5, et non plus « task ». Preuve : `vo3-oc-self-subagent.jsonl` | La relecture de fidélité de `/f3-acceptance` peut être le tester lui-même sous les deux outils (D5) : le tester passe en `mode: all` sous OpenCode. La variable `{{SUBAGENT_TOOL}}` vaut « the subagent tool » ; le « task tool » de `main` est périmé |
 | V-O4 | L'injection `` !`f3 state …` `` fonctionne-t-elle sous OpenCode, et une sortie en erreur interrompt-elle la commande ? | **Elle fonctionne**, et la sortie d'erreur est transmise à l'agent. **Mais un code de sortie non nul n'interrompt pas la commande**, contrairement à Claude Code (W9). Preuve : `vo4-oc-fail-tui.txt` | `f3 state` reste commun (D8). Chaque commande porte une ligne commune : « If the launch state reports an error, show it and stop ». C'est un mécanisme sous Claude Code, une consigne sous OpenCode (section 12 du GUIDE) |
 | V-O5 | Les deux outils suivent-ils un lien symbolique vers un fichier de `build/` ? | **Oui** pour les agents et les commandes des deux outils. Preuves : `vo2-vo5-debug-agents.txt`, `vo5-claude-links.txt` | Liens vers `build/` (D4) |
-| V-O6 | Avec les deux outils installés, chacun charge-t-il ses propres skills ? | **OpenCode : oui.** Il charge sa version quand la même skill existe dans `~/.config/opencode/skills/` et `~/.claude/skills/`, et charge une skill qui n'existe que dans `~/.claude/skills/`. **Claude Code** ne lit que `~/.claude/skills/` et les skills du projet (documentation) : non testé dans un HOME virtuel, faute d'identifiants. Preuve : `vo6-oc-skills.jsonl` | Des skills rendues différemment par outil peuvent coexister. Toute skill f3 doit exister dans les deux rendus, pour qu'OpenCode ne charge jamais la version Claude Code |
+| V-O6 | Avec les deux outils installés, chacun charge-t-il ses propres skills ? | **OpenCode : oui.** Il charge sa version quand la même skill existe dans `~/.config/opencode/skills/` et `~/.claude/skills/`, et charge une skill qui n'existe que dans `~/.claude/skills/`. **Claude Code** ne lit que `~/.claude/skills/` et les skills du projet (documentation) : non testé dans un HOME virtuel, faute d'identifiants. Preuve : `vo6-oc-skills.jsonl` | Des skills rendues différemment par outil pourraient coexister, à condition d'exister dans les deux rendus. D20 rend toutes les skills communes : la question ne se pose plus |
 | V-O7 | Comment chaque outil découpe-t-il « commande, retour à la ligne, texte libre » ? | **Tout part dans `$ARGUMENTS`**, retours à la ligne compris, sous les deux outils ; `$0`/`$1` (Claude Code) et `$1`/`$2` (OpenCode) découpent aux espaces. **Une apostrophe dans le texte casse les guillemets de l'injection** : sous OpenCode, la commande glissée s'exécute (fichier témoin créé) ; sous Claude Code, le contrôle de permissions refuse la ligne et la commande échoue. **Le repli fonctionne sous les deux outils** : une variable d'environnement posée par le lanceur (`F3_LAUNCH`) atteint l'injection, qui lit le prompt dans un fichier, sans qu'il passe par le shell. Preuves : `vo7-*` | Le prompt passe par un fichier et une variable d'environnement (4.2). Le lanceur n'accepte que des identifiants comme arguments |
 
 **Constat de sécurité, hors du périmètre de la question.** Les commandes OpenCode de `main` substituent `$ARGUMENTS` **sans guillemets** dans leurs injections (`ls -1 openspec/changes/$ARGUMENTS/`…), et OpenCode exécute l'injection sans contrôle de permissions. Un argument comme `x; <commande>`, tapé ou collé, exécute donc `<commande>` au lancement. La version Claude Code met `$ARGUMENTS` entre apostrophes et passe par le contrôle de permissions de Claude Code : c'est plus sûr, mais une apostrophe fait encore échouer le lancement. Avec la conception de 4.2, les arguments sont contrôlés par le lanceur avant tout lancement, et le texte libre ne passe plus par le shell. Reste le cas d'une commande `/f3-…` tapée directement dans une session OpenCode : il faut la documenter (GUIDE, section 15.4), ou faire lire les arguments par `f3 state` ailleurs que dans la ligne shell. C'est la décision D13 : pas de correction de `main` pour le moment (décision du 2026-11-07) ; le chantier règle le cas du lanceur et documente le reste.
@@ -248,12 +259,12 @@ Faites le 2026-11-07, avec OpenCode 2.2.5 et Claude Code 2.1.319. Projet de test
 | # | Décision | Recommandation | État |
 |---|---|---|---|
 | D1 | Nom des commandes pour les deux outils | Option A : `f3 <étape>` partout ; le prompt libre après `--` passe par un fichier désigné par `F3_LAUNCH` (4.2) | **Retenue** (2026-11-07) ; V-O1 et V-O7 faites |
-| D2 | Fichiers du projet écrits par `/f3-init` | Ceux de chaque outil installé, et ceux d'un outil déjà présent dans le projet | **Retenue** (2026-11-07) |
+| D2 | Fichiers du projet écrits par `/f3-init` | Ceux de chaque outil installé (D19), et ceux d'un outil déjà présent dans le projet, fichiers d'OpenSpec compris (`openspec init --tools <outils installés>`) (4.3) | **Retenue** (2026-11-07) ; **complétée** après la revue de cohérence : fichiers d'OpenSpec |
 | D3 | Outil lancé par `f3 <étape>` | Configuration du projet propre à chaque utilisateur, non versionnée : `.f3/local` (`tool=claude\|opencode`), créé par le lanceur (question si les deux outils sont installés), changé par `f3 tool <outil>` ; pas de variable `F3_TOOL` (4.6) | **Retenue** (2026-11-07) |
 | D4 | Fichiers rendus périmés après une modification du toolkit | Liens vers `build/<outil>`, lui-même un lien basculé de façon atomique vers le dernier rendu complet ; le lanceur et `f3 state` refont le rendu à chaque appel, sans comparer de dates (4.4) | **Retenue** (2026-11-07) ; **révisée** le même jour (R8 à R11) : la comparaison des dates est abandonnée |
 | D5 | Écarts de garanties sous OpenCode (lecture du code par le tester, relecture de fidélité) | Documentés ; pas de plugin de garde. V-O2 et V-O3 réduisent l'écart : sous OpenCode aussi, le tester n'appelle aucun sous-agent sauf lui-même (permission native `subagent`), et il fait la relecture de fidélité en `mode: all`. Reste ouverte sous OpenCode la lecture du code par le shell | **Retenue** (2026-11-07) |
 | D6 | Section « Consulted as a subagent » de `f3-agent` sous OpenCode | Commune : elle vaut pour les deux outils | **Retenue** (2026-11-07) |
-| D7 | Langage du rendu | sh limité à la concaténation et aux variables ; Node.js au besoin (4.5) | **Retenue** (2026-11-07) |
+| D7 | Langage du rendu | Node.js (`f3 render`), limité à la concaténation, aux variables et à la traduction de `deny-tools`, sans condition (4.5) | **Retenue** (2026-11-07) ; **révisée** avec D4 : le rendu, appelé à chaque lancement, est en Node.js dès le départ |
 | — | Neutraliser d'abord, assembler ensuite (4.1) | — | **Retenue** (2026-11-07) |
 | D8 | `f3 state` aussi sous OpenCode (4.6) : une injection par commande au lieu de 29, avec le contrôle des arguments | Le corps des commandes devient commun, et le contrôle devient un mécanisme sous les deux outils. Conséquence : sous OpenCode, `f3` doit être dans le `PATH` (`~/.local/bin`), comme sous Claude Code | **Retenue** (2026-11-07) |
 | D9 | Interface de l'installateur | Sans argument, `install.sh` demande quel outil installer (Claude Code, OpenCode, les deux) ; l'argument `claude\|opencode\|all` reste possible pour les scripts ; `--remove` retire tout ce que le dépôt a créé ; `--render <dossier>` pour la comparaison (4.9) | **Retenue** (2026-11-07) : question interactive |
@@ -261,6 +272,13 @@ Faites le 2026-11-07, avec OpenCode 2.2.5 et Claude Code 2.1.319. Projet de test
 | D11 | Sort des branches à la fin du chantier | `feat/multi-harness` est fusionnée dans `main`, qui devient la seule version ; `feat/claude-code` n'est plus modifiée et ne sert que de référence (tag de D10) | **Retenue** (2026-11-07) |
 | D12 | Projets déjà cadrés avec une seule version (OpenCode : `opencode.json` ; Claude Code : `CLAUDE.md`, `.mcp.json`, par exemple `poc/agentic-f3-lfdf`) | Pas de commande de migration à part : `f3 init` en mode mise à jour, avec un thème « outils » proposé d'office quand `f3 state init` détecte qu'il manque les fichiers d'un outil installé (4.10) | **Retenue** (2026-11-07) |
 | D13 | Arguments substitués dans le shell des injections (constat de V-O7, section 6) | Dans le chantier : le lanceur n'accepte que des identifiants (`^[a-z0-9-]+$`) et transmet le texte libre par `F3_LAUNCH` ; une commande `/f3-…` tapée directement dans une session OpenCode reste exposée, ce que le GUIDE documente (15.4) | **Retenue** (2026-11-07). **Pas de correction de `main` pour le moment** : la faille reste ouverte sur `main` jusqu'à la fusion du chantier (D11) |
+| D14 | Reprise de `cli/` alors que ses tests lisent le format Claude Code des sources (55 tests sur 112 échouent sur cette branche) | Deux commits : (1) `cli/` tel quel depuis `ref/claude-code`, rouge, la raison dans le message ; (2) racine du toolkit remplaçable (`F3_TOOLKIT_ROOT`) et fixtures `cli/test/fixtures/modules/` copiées de `ref/claude-code` : vert | **Retenue** (2026-11-07) |
+| D15 | Table de permissions commune (section 5) | Union des fichiers et des chemins des deux outils, sans variable ; outils refusés hors de la table, dans une clé `deny-tools` par agent traduite par le rendu | **Retenue** (2026-11-07) |
+| D16 | Langage de `install.sh` | bash, sans contrainte de version (la demande disait sh) | **Retenue** (2026-11-07) |
+| D17 | Nom et nettoyage des rendus (R10) | Dossier nommé par l'empreinte du contenu, écrit dans un dossier temporaire puis renommé ; nettoyage des seuls dossiers à empreinte non ciblés et des temporaires de plus d'une heure (4.4) | **Retenue** (2026-11-07) |
+| D18 | Rendu en échec au lancement (R17) | Aucune bascule ; le lanceur ne lance pas et affiche l'erreur ; `f3 state` la signale, ce qui arrête la commande (4.4) | **Retenue** (2026-11-07) |
+| D19 | Définition d'« outil installé » (D2, D3, `f3 state init`) | f3 est installé pour cet outil : ses liens pointent vers le dépôt du toolkit ; `installedTools()` dans `cli/` (4.3) | **Retenue** (2026-11-07) |
+| D20 | Skills propres à un outil (V-O6) | Toutes les skills sont communes : `f3-standards` décrit les fichiers des deux outils (D2), `review.md` nomme les deux sous-agents d'exploration ; aucune skill rendue (section 3) | **Retenue** (2026-11-07) |
 
 ## 8. Étapes proposées
 
@@ -269,11 +287,11 @@ Une étape à la fois. Chaque étape se termine par un diff relu, et le commit s
 | # | Étape | Critère de fin |
 |---|---|---|
 | 1 | Vérifications V-O1 à V-O7 | **Fait** (2026-11-07) : section 6 |
-| 2 | Reprise de `cli/` depuis `ref/claude-code`, telle quelle, dans un commit séparé (R16). Puis rendu (`f3 render`, appelé par `install.sh --render`, bascule atomique de 4.4) et comparaison avec les deux références, **avant** de déplacer quoi que ce soit : le rendu de `main` doit être identique à `main` | Commit de reprise avec `node --test` vert ; `diff -r` vide pour OpenCode ; diff attendu de Claude Code écrit (R13) |
-| 3 | Neutraliser : `f3 <étape>`, chemin du script, `f3 state` pour OpenCode, section des sous-agents | Fichiers communs ; chaque écart voulu est écrit dans le diff attendu **avant** le changement qui le produit ; le test de comparaison est vert (R13) |
-| 4 | Assembler : frontmatter, fragments, variables, `tools/<outil>/` | Diff réel des deux rendus avec les deux références identique au diff attendu de chaque outil (R13) |
-| 5 | Commande `f3` multi-outil (lanceur, `state`), tests | `node --test` vert ; `f3 propose` ouvre le bon outil |
-| 6 | `/f3-init` et `f3-standards` pour les fichiers de projet des deux outils | Projet d'exemple initialisé pour les deux |
+| 2 | `.gitignore` avec `build/`. Reprise de `cli/` depuis `ref/claude-code` en deux commits (D14, R16). Puis rendu (`f3 render`, appelé par `install.sh --render`, empreinte et bascule atomique de 4.4) et comparaison avec les deux références, **avant** de déplacer quoi que ce soit : le rendu de `main` doit être identique à `main` | Premier commit de reprise rouge, raison écrite ; second commit avec `node --test` vert ; `diff -r` vide pour OpenCode ; diff attendu de Claude Code écrit (R13) |
+| 3 | Neutraliser : `f3 <étape>`, chemin du script, `f3 state` pour OpenCode, section des sous-agents, toutes les skills (D20), table de permissions en union (D15) | Fichiers communs ; chaque écart voulu est écrit dans le diff attendu **avant** le changement qui le produit ; le test de comparaison est vert (R13) |
+| 4 | Assembler : frontmatter, `deny-tools`, fragments, variables, `tools/<outil>/` ; dans le même commit que le changement de format des sources, `toolkit.mjs` lit le nouveau format et les fixtures passent au nouveau format | Diff réel des deux rendus avec les deux références identique au diff attendu de chaque outil (R13) ; `node --test` vert |
+| 5 | Commande `f3` multi-outil (lanceur, `state`, `tool`, `installedTools()`, `RESERVED`), tests | `node --test` vert ; `f3 propose` ouvre le bon outil |
+| 6 | `/f3-init` et `f3-standards` pour les fichiers de projet des deux outils, fichiers d'OpenSpec compris (`openspec init --tools`, D2) ; `f3 state init` liste ceux des deux outils | Projet d'exemple initialisé pour les deux |
 | 7 | Documentation : README, GUIDE (encadrés par outil), drift log | Relue |
 | 8 | Déroulé complet sous chaque outil, sur un projet d'exemple | Un change de `f3 propose` à `f3 archive` sous chaque outil |
 
@@ -283,17 +301,18 @@ Une étape à la fois. Chaque étape se termine par un diff relu, et le commit s
 |---|---|---|
 | R1 | Une modification du dépôt n'est pas active faute de réinstallation | Rendu minimal ; liens vers `build/` ; le lanceur et `f3 state` refont le rendu à chaque appel (D4). Pour une commande tapée dans une session OpenCode, les skills sont à jour, mais l'agent et la commande déjà chargés peuvent être périmés : `f3 state` le signale en une ligne si le rendu a changé un fichier |
 | R2 | Le rendu grossit jusqu'à devenir un programme difficile à maintenir | Rendu en Node.js (`f3 render`, D4 et D7), testé avec `node --test` ; un fragment par outil plutôt qu'une condition |
-| R3 | Une variable non substituée atteint un agent | `install.sh` échoue s'il reste `{{` dans `build/` |
+| R3 | Une variable non substituée atteint un agent | `f3 render` échoue s'il reste `{{` dans le rendu, avant toute bascule ; un test `node --test` le vérifie |
 | R4 | Une évolution d'un outil casse son rendu sans bruit | Versions vérifiées notées dans le README ; comparaison avec la référence rejouée après chaque mise à jour |
 | R5 | Les garanties diffèrent entre outils sans que l'utilisateur le sache | Section 12 du GUIDE par outil (4.7) |
 | R6 | Un utilisateur OpenCode lance une étape depuis une session ouverte à la main ou avec le service géré, sans `f3` : le prompt libre n'arrive pas, et l'argument tapé passe par le shell sans contrôle (D13) | Le GUIDE recommande `f3 <étape>`. `f3 state` détecte l'absence de `F3_LAUNCH` : il contrôle lui-même l'identifiant reçu (`^[a-z0-9-]+$`) et le refuse sinon, et ajoute une ligne qui recommande `f3 <étape>`. Taper `/f3-…` reste possible (D1). L'injection dans la ligne shell elle-même reste ouverte (D13) |
 | R7 | La faille de `main` (arguments sans guillemets dans les injections OpenCode) reste ouverte jusqu'à la fusion | Décision du 2026-11-07 (D13) ; à rappeler si la fusion tarde |
 | R8 | Le rendu reste périmé sans que rien ne le signale : une source supprimée ou renommée ne rend aucune source « plus récente », et un `git checkout` fausse les dates | Le rendu est refait à chaque lancement, sans comparaison de dates (D4 révisée) |
-| R9 | Une session ouverte dans un autre terminal lit un rendu à moitié écrit, ou ne trouve plus `build/<outil>/` pendant son remplacement (`rename()` échoue sur un dossier non vide ; l'enchaînement ancien → `.old`, nouveau → à la place laisse un instant sans dossier) | Rendu dans un dossier neuf `build/<outil>.<id>/`, puis bascule atomique du lien `build/<outil>` (4.4) |
-| R10 | Deux `f3` lancés en même temps rendent en parallèle et mélangent leurs fichiers | Même parade que R9 : chaque rendu a son propre dossier, le dernier lien posé gagne, aucun verrou |
-| R11 | `build/` disparaît (`git clean -fdX`, nouveau clone) : tous les liens d'installation sont morts et l'outil démarre sans agents ni commandes f3, sans message d'erreur | Le prochain `f3` reconstruit `build/` (D4) ; le GUIDE (15.3) traite le symptôme « agent ou commande inconnus » pour une session OpenCode ouverte à la main |
+| R9 | Une session ouverte dans un autre terminal lit un rendu à moitié écrit, ou ne trouve plus `build/<outil>/` pendant son remplacement (`rename()` échoue sur un dossier non vide ; l'enchaînement ancien → `.old`, nouveau → à la place laisse un instant sans dossier) | Rendu dans un dossier `build/<outil>.<empreinte>/`, qui n'a son nom final qu'une fois complet, puis bascule atomique du lien `build/<outil>` (4.4, D17) |
+| R10 | Deux `f3` lancés en même temps rendent en parallèle, mélangent leurs fichiers, ou l'un supprime le rendu en cours de l'autre | Dossier nommé par l'empreinte, écrit dans un dossier temporaire puis renommé ; le nettoyage ne touche que les dossiers à empreinte non ciblés et les temporaires de plus d'une heure ; aucun verrou (D17) |
+| R11 | `build/` disparaît (`git clean -fdX`, nouveau clone) : tous les liens d'installation sont morts et l'outil démarre sans agents ni commandes f3, sans message d'erreur | Le prochain `f3` reconstruit `build/` (D4) ; `install.sh` rend avant de poser les liens et de nettoyer les liens morts (4.5) ; le GUIDE (15.3) traite le symptôme « agent ou commande inconnus » pour une session OpenCode ouverte à la main |
 | R12 | Sous OpenCode, `f3` absent du `PATH` : l'injection répond « command not found » sans arrêter la commande (V-O4), et l'agent continue sans état de lancement ni contrôle des arguments | `install.sh` vérifie que `~/.local/bin` est dans le `PATH` et le dit sinon ; la ligne commune de chaque commande devient « If the launch state is missing, empty or reports an error, show it and stop » |
 | R13 | La liste des écarts voulus grossit pendant les étapes 3 et 4, et une régression s'y cache à la relecture | Un diff attendu versionné par outil (par exemple `tests/ref/<outil>.diff`) ; chaque écart voulu y est écrit avant le changement qui le produit ; un test compare le diff réel au diff attendu, et toute différence non prévue le fait échouer |
 | R14 | Dans un projet à équipe mixte, `opencode.json` et `.mcp.json` (deux traductions de la section Stack, D2) divergent après une modification à la main | `f3 state` compare les noms des serveurs MCP des deux fichiers et signale l'écart en une ligne, sans bloquer ; `f3 init` (thème « outils ») réaligne |
-| R15 | V-O6 n'est pas vérifiée côté Claude Code (pas de HOME virtuel avec identifiants) | Vérifiée au déroulé complet (étape 8), avec les deux installations réelles ; risque faible, la documentation de Claude Code dit qu'il ne lit pas `~/.config/opencode/` |
-| R16 | La commande `f3` de `feat/claude-code` est écrite pour Claude Code seul (`spawnSync('claude')`, garde) ; la reprendre en même temps qu'on l'adapte rend ses régressions invisibles | Reprise de `cli/` depuis `ref/claude-code`, telle quelle, dans un commit séparé avec ses 112 tests verts, avant toute modification (étape 2) ; pas de fusion de `feat/claude-code`, qui brouillerait la comparaison avec `ref/opencode` |
+| R15 | V-O6 n'est pas vérifiée côté Claude Code (pas de HOME virtuel avec identifiants) | Sans objet depuis D20 : aucune skill n'est rendue, donc les deux outils chargent le même texte quel que soit le dossier lu. Reste vérifiée au déroulé complet (étape 8) |
+| R16 | La commande `f3` de `feat/claude-code` est écrite pour Claude Code seul (`spawnSync('claude')`, garde) ; la reprendre en même temps qu'on l'adapte rend ses régressions invisibles | Reprise de `cli/` depuis `ref/claude-code`, telle quelle, dans un commit séparé, avant toute modification (étape 2). Ses tests lisent le format Claude Code des sources et échouent sur cette branche (55 sur 112) : un second commit ne change que la racine du toolkit et ajoute des fixtures, ce qui rend les 112 tests verts (D14). Pas de fusion de `feat/claude-code`, qui brouillerait la comparaison avec `ref/opencode` |
+| R17 | Le rendu échoue au lancement (source en cours d'édition, frontmatter illisible, toolkit en lecture seule, disque plein) | Aucune bascule ; le lanceur ne lance pas et affiche l'erreur ; `f3 state` la signale, ce qui arrête la commande (D18). Toolkit en lecture seule : marche si le rendu à jour existe déjà |
