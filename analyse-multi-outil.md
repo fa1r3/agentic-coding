@@ -2,7 +2,7 @@
 
 Document de travail, en français, à supprimer ou à verser dans la documentation à la fin des travaux. Branche `feat/multi-harness`, tirée de `main` (`a33b9d3`).
 
-**État au 2026-11-07.** Décisions D1 à D13 prises (section 7). Vérifications V-O1 à V-O7 faites (section 6). Prochaine étape : l'étape 2 de la section 8, le rendu et la comparaison avec les deux références.
+**État au 2026-11-07.** Décisions D1 à D13 prises (section 7), D4 révisée après la revue des risques. Vérifications V-O1 à V-O7 faites (section 6). Risques R1 à R16 revus et leurs parades décidées (section 9). Prochaine étape : l'étape 2 de la section 8, le rendu et la comparaison avec les deux références.
 
 Dans ce document, **outil** désigne l'outil qui fait tourner les agents (Claude Code, OpenCode), pour ne pas le confondre avec les **agents** f3 (analyst, architect, developer, tester, ux).
 
@@ -104,13 +104,17 @@ Aujourd'hui, une modification du dépôt est active tout de suite, sans réinsta
 Parades, à combiner :
 - rendre le moins de fichiers possible (4.1) : tout le reste reste lié ;
 - écrire les fichiers rendus dans un dossier du dépôt ignoré par Git (`build/<outil>/`), puis lier les cibles vers ce dossier : `install.sh` ne fait que reconstruire `build/`, et le lien reste stable ;
-- **décidé (D4, 2026-11-07) : le lanceur refait le rendu.** Avant chaque étape, `f3` compare les dates des sources (`modules/`, `tools/<outil>/`) et de `build/<outil>/`, et refait le rendu si une source est plus récente. Tout ce qui passe par `f3 <étape>` est ainsi actif sans réinstaller, comme aujourd'hui.
+- **décidé (D4, 2026-11-07, révisée le même jour après la revue des risques) : le rendu est refait à chaque lancement.** Le lanceur `f3 <étape>` et `f3 state` refont le rendu à chaque appel, sans comparer de dates. Tout ce qui passe par `f3` est ainsi actif sans réinstaller, comme aujourd'hui.
+
+Pourquoi pas une comparaison de dates (première version de D4) : une source supprimée ou renommée ne rend aucune source « plus récente », et le fichier rendu périmé resterait chargé ; un `git checkout` vers une version antérieure peut aussi fausser les dates (R8). Le rendu d'une trentaine de petits fichiers coûte quelques millisecondes : le refaire toujours est juste dans tous les cas et coûte moins de code.
 
 Conséquences de D4 :
-- le rendu doit pouvoir être appelé par le lanceur : il est écrit une seule fois, en Node.js (`f3 render`), et `install.sh` l'appelle. C'est le « Node.js au besoin » de D7 : le rendu passe en Node.js dès maintenant, et `install.sh` garde le choix de l'outil, les prérequis, les liens et `--remove` ;
-- le rendu écrit dans un dossier temporaire, puis remplace `build/<outil>/` d'un coup (renommage), pour qu'une session ouverte dans un autre terminal ne lise jamais un rendu à moitié écrit ;
-- le rendu est rapide (une trentaine de petits fichiers), mais une comparaison de dates coûte encore moins : on ne refait le rendu que si nécessaire ;
-- limite : sous OpenCode, `/f3-<étape>` tapé directement dans une session ne passe pas par le lanceur. Si le toolkit a changé depuis le dernier rendu, cette session utilise l'ancien. `f3 state` le signale en une ligne de l'état de lancement : c'est un avertissement, pas un blocage.
+- le rendu doit pouvoir être appelé par le lanceur et par `f3 state` : il est écrit une seule fois, en Node.js (`f3 render`), et `install.sh` l'appelle. C'est le « Node.js au besoin » de D7 : le rendu passe en Node.js dès maintenant, et `install.sh` garde le choix de l'outil, les prérequis, les liens et `--remove` ;
+- **bascule atomique d'un lien** (R9, R10) : chaque rendu est écrit dans un dossier neuf au nom unique, `build/<outil>.<id>/`, puis `build/<outil>` (un lien symbolique) est remplacé d'un coup : un nouveau lien est créé à côté, puis renommé par-dessus l'ancien (`rename()` est atomique sur un lien). Les rendus précédents sont supprimés ensuite. Une session ouverte dans un autre terminal ne lit jamais un rendu à moitié écrit, et deux rendus simultanés ne se mélangent pas : le dernier lien posé gagne, et les deux rendus sont complets. Pas de verrou ;
+- les liens d'installation (`~/.claude/…`, `~/.config/opencode/…`) pointent vers `build/<outil>/…`, chemin qui traverse le lien basculé : ils ne changent jamais après l'installation ;
+- si `build/` a disparu (`git clean -fdX`, nouveau clone), le prochain `f3` le reconstruit (R11) ;
+- `f3 state` écrit donc dans `build/` du dépôt du toolkit : la promesse du README et du GUIDE (15.4) « les injections ne font que lire » devient « elles ne font que lire le projet ; `f3 state` refait le rendu du toolkit dans son dossier `build/` » (étape 7) ;
+- limite : sous OpenCode, `/f3-<étape>` tapé directement dans une session ne passe pas par le lanceur. L'injection `f3 state` refait le rendu, donc les skills chargées ensuite sont à jour ; mais l'agent et la commande, chargés à l'ouverture de la session, peuvent être périmés. Si le rendu a changé un fichier, `f3 state` le signale en une ligne de l'état de lancement : c'est un avertissement, pas un blocage (R1).
 
 ### 4.5 « Un installateur simple en sh » : tenable, à condition de limiter le rendu
 
@@ -205,7 +209,7 @@ tools/
     ├── agent.head               (mode: primary, permission)
     └── fragments/
 cli/                             commande f3 : lanceur, state, render, tool (communs), guard (Claude Code)
-build/<outil>/                   fichiers rendus, ignorés par Git, cibles des liens
+build/<outil>                    lien basculé vers le dernier rendu complet build/<outil>.<id>/ ; ignoré par Git, cible des liens
 install.sh                       question interactive, ou claude|opencode|all ; --render <dossier> ; --remove
 ```
 
@@ -217,7 +221,7 @@ Points de conception :
 - **Le garde lit la table de permissions dans le dépôt** (`modules/…/<agent>.permission`) et non dans le fichier rendu : il n'y a qu'une source.
 - **Le tester est en `mode: all` sous OpenCode** (V-O3), pour être appelé en sous-agent par lui-même. Sa clé `subagent` (`"*": deny`, `tester: allow`) est appliquée par OpenCode lui-même (V-O2) et, sous Claude Code, par le garde.
 - **Le lanceur, par outil** (V-O1, V-O7) : Claude Code, `claude --agent <agent> "/f3-<étape> <arguments>"` ; OpenCode, `opencode --standalone --prompt "/f3-<étape> <arguments> "`, avec une espace finale. Sous les deux, le prompt libre et l'idée de `f3 propose` passent par `F3_LAUNCH`, et les arguments sont des identifiants contrôlés avant le lancement.
-- **Chaque commande commence par la même consigne** : « If the launch state reports an error, show it and stop ». Sous OpenCode, une injection en erreur n'interrompt pas la commande (V-O4) : cette consigne y tient lieu de mécanisme.
+- **Chaque commande commence par la même consigne** : « If the launch state is missing, empty or reports an error, show it and stop » (élargie pour R12). Sous OpenCode, une injection en erreur n'interrompt pas la commande (V-O4) : cette consigne y tient lieu de mécanisme.
 
 ## 6. Vérifications
 
@@ -246,7 +250,7 @@ Faites le 2026-11-07, avec OpenCode 2.2.5 et Claude Code 2.1.319. Projet de test
 | D1 | Nom des commandes pour les deux outils | Option A : `f3 <étape>` partout ; le prompt libre après `--` passe par un fichier désigné par `F3_LAUNCH` (4.2) | **Retenue** (2026-11-07) ; V-O1 et V-O7 faites |
 | D2 | Fichiers du projet écrits par `/f3-init` | Ceux de chaque outil installé, et ceux d'un outil déjà présent dans le projet | **Retenue** (2026-11-07) |
 | D3 | Outil lancé par `f3 <étape>` | Configuration du projet propre à chaque utilisateur, non versionnée : `.f3/local` (`tool=claude\|opencode`), créé par le lanceur (question si les deux outils sont installés), changé par `f3 tool <outil>` ; pas de variable `F3_TOOL` (4.6) | **Retenue** (2026-11-07) |
-| D4 | Fichiers rendus périmés après une modification du toolkit | Liens vers `build/` ; avant chaque étape, le lanceur compare les dates des sources et de `build/` et refait le rendu si besoin (4.4) | **Retenue** (2026-11-07) |
+| D4 | Fichiers rendus périmés après une modification du toolkit | Liens vers `build/<outil>`, lui-même un lien basculé de façon atomique vers le dernier rendu complet ; le lanceur et `f3 state` refont le rendu à chaque appel, sans comparer de dates (4.4) | **Retenue** (2026-11-07) ; **révisée** le même jour (R8 à R11) : la comparaison des dates est abandonnée |
 | D5 | Écarts de garanties sous OpenCode (lecture du code par le tester, relecture de fidélité) | Documentés ; pas de plugin de garde. V-O2 et V-O3 réduisent l'écart : sous OpenCode aussi, le tester n'appelle aucun sous-agent sauf lui-même (permission native `subagent`), et il fait la relecture de fidélité en `mode: all`. Reste ouverte sous OpenCode la lecture du code par le shell | **Retenue** (2026-11-07) |
 | D6 | Section « Consulted as a subagent » de `f3-agent` sous OpenCode | Commune : elle vaut pour les deux outils | **Retenue** (2026-11-07) |
 | D7 | Langage du rendu | sh limité à la concaténation et aux variables ; Node.js au besoin (4.5) | **Retenue** (2026-11-07) |
@@ -265,9 +269,9 @@ Une étape à la fois. Chaque étape se termine par un diff relu, et le commit s
 | # | Étape | Critère de fin |
 |---|---|---|
 | 1 | Vérifications V-O1 à V-O7 | **Fait** (2026-11-07) : section 6 |
-| 2 | Rendu (`f3 render`, appelé par `install.sh --render`) et comparaison avec les deux références, **avant** de déplacer quoi que ce soit : le rendu de `main` doit être identique à `main` | `diff -r` vide pour OpenCode |
-| 3 | Neutraliser : `f3 <étape>`, chemin du script, `f3 state` pour OpenCode, section des sous-agents | Fichiers communs ; différences avec les références toutes listées et voulues |
-| 4 | Assembler : frontmatter, fragments, variables, `tools/<outil>/` | `diff -r` des deux rendus avec les deux références = seulement les écarts voulus |
+| 2 | Reprise de `cli/` depuis `ref/claude-code`, telle quelle, dans un commit séparé (R16). Puis rendu (`f3 render`, appelé par `install.sh --render`, bascule atomique de 4.4) et comparaison avec les deux références, **avant** de déplacer quoi que ce soit : le rendu de `main` doit être identique à `main` | Commit de reprise avec `node --test` vert ; `diff -r` vide pour OpenCode ; diff attendu de Claude Code écrit (R13) |
+| 3 | Neutraliser : `f3 <étape>`, chemin du script, `f3 state` pour OpenCode, section des sous-agents | Fichiers communs ; chaque écart voulu est écrit dans le diff attendu **avant** le changement qui le produit ; le test de comparaison est vert (R13) |
+| 4 | Assembler : frontmatter, fragments, variables, `tools/<outil>/` | Diff réel des deux rendus avec les deux références identique au diff attendu de chaque outil (R13) |
 | 5 | Commande `f3` multi-outil (lanceur, `state`), tests | `node --test` vert ; `f3 propose` ouvre le bon outil |
 | 6 | `/f3-init` et `f3-standards` pour les fichiers de projet des deux outils | Projet d'exemple initialisé pour les deux |
 | 7 | Documentation : README, GUIDE (encadrés par outil), drift log | Relue |
@@ -277,10 +281,19 @@ Une étape à la fois. Chaque étape se termine par un diff relu, et le commit s
 
 | # | Risque | Parade |
 |---|---|---|
-| R1 | Une modification du dépôt n'est pas active faute de réinstallation | Rendu minimal ; liens vers `build/` ; le lanceur refait le rendu si une source est plus récente (D4) ; `f3 state` signale un rendu périmé pour une commande tapée dans une session OpenCode |
+| R1 | Une modification du dépôt n'est pas active faute de réinstallation | Rendu minimal ; liens vers `build/` ; le lanceur et `f3 state` refont le rendu à chaque appel (D4). Pour une commande tapée dans une session OpenCode, les skills sont à jour, mais l'agent et la commande déjà chargés peuvent être périmés : `f3 state` le signale en une ligne si le rendu a changé un fichier |
 | R2 | Le rendu grossit jusqu'à devenir un programme difficile à maintenir | Rendu en Node.js (`f3 render`, D4 et D7), testé avec `node --test` ; un fragment par outil plutôt qu'une condition |
 | R3 | Une variable non substituée atteint un agent | `install.sh` échoue s'il reste `{{` dans `build/` |
 | R4 | Une évolution d'un outil casse son rendu sans bruit | Versions vérifiées notées dans le README ; comparaison avec la référence rejouée après chaque mise à jour |
 | R5 | Les garanties diffèrent entre outils sans que l'utilisateur le sache | Section 12 du GUIDE par outil (4.7) |
-| R6 | Un utilisateur OpenCode lance une étape depuis une session ouverte avec le service géré, sans `f3` : le prompt libre n'arrive pas, et l'argument tapé passe par le shell sans contrôle (D13) | Le GUIDE recommande `f3 <étape>` ; `f3 state` signale qu'il n'a pas été lancé par `f3` (absence de `F3_LAUNCH`) |
+| R6 | Un utilisateur OpenCode lance une étape depuis une session ouverte à la main ou avec le service géré, sans `f3` : le prompt libre n'arrive pas, et l'argument tapé passe par le shell sans contrôle (D13) | Le GUIDE recommande `f3 <étape>`. `f3 state` détecte l'absence de `F3_LAUNCH` : il contrôle lui-même l'identifiant reçu (`^[a-z0-9-]+$`) et le refuse sinon, et ajoute une ligne qui recommande `f3 <étape>`. Taper `/f3-…` reste possible (D1). L'injection dans la ligne shell elle-même reste ouverte (D13) |
 | R7 | La faille de `main` (arguments sans guillemets dans les injections OpenCode) reste ouverte jusqu'à la fusion | Décision du 2026-11-07 (D13) ; à rappeler si la fusion tarde |
+| R8 | Le rendu reste périmé sans que rien ne le signale : une source supprimée ou renommée ne rend aucune source « plus récente », et un `git checkout` fausse les dates | Le rendu est refait à chaque lancement, sans comparaison de dates (D4 révisée) |
+| R9 | Une session ouverte dans un autre terminal lit un rendu à moitié écrit, ou ne trouve plus `build/<outil>/` pendant son remplacement (`rename()` échoue sur un dossier non vide ; l'enchaînement ancien → `.old`, nouveau → à la place laisse un instant sans dossier) | Rendu dans un dossier neuf `build/<outil>.<id>/`, puis bascule atomique du lien `build/<outil>` (4.4) |
+| R10 | Deux `f3` lancés en même temps rendent en parallèle et mélangent leurs fichiers | Même parade que R9 : chaque rendu a son propre dossier, le dernier lien posé gagne, aucun verrou |
+| R11 | `build/` disparaît (`git clean -fdX`, nouveau clone) : tous les liens d'installation sont morts et l'outil démarre sans agents ni commandes f3, sans message d'erreur | Le prochain `f3` reconstruit `build/` (D4) ; le GUIDE (15.3) traite le symptôme « agent ou commande inconnus » pour une session OpenCode ouverte à la main |
+| R12 | Sous OpenCode, `f3` absent du `PATH` : l'injection répond « command not found » sans arrêter la commande (V-O4), et l'agent continue sans état de lancement ni contrôle des arguments | `install.sh` vérifie que `~/.local/bin` est dans le `PATH` et le dit sinon ; la ligne commune de chaque commande devient « If the launch state is missing, empty or reports an error, show it and stop » |
+| R13 | La liste des écarts voulus grossit pendant les étapes 3 et 4, et une régression s'y cache à la relecture | Un diff attendu versionné par outil (par exemple `tests/ref/<outil>.diff`) ; chaque écart voulu y est écrit avant le changement qui le produit ; un test compare le diff réel au diff attendu, et toute différence non prévue le fait échouer |
+| R14 | Dans un projet à équipe mixte, `opencode.json` et `.mcp.json` (deux traductions de la section Stack, D2) divergent après une modification à la main | `f3 state` compare les noms des serveurs MCP des deux fichiers et signale l'écart en une ligne, sans bloquer ; `f3 init` (thème « outils ») réaligne |
+| R15 | V-O6 n'est pas vérifiée côté Claude Code (pas de HOME virtuel avec identifiants) | Vérifiée au déroulé complet (étape 8), avec les deux installations réelles ; risque faible, la documentation de Claude Code dit qu'il ne lit pas `~/.config/opencode/` |
+| R16 | La commande `f3` de `feat/claude-code` est écrite pour Claude Code seul (`spawnSync('claude')`, garde) ; la reprendre en même temps qu'on l'adapte rend ses régressions invisibles | Reprise de `cli/` depuis `ref/claude-code`, telle quelle, dans un commit séparé avec ses 112 tests verts, avant toute modification (étape 2) ; pas de fusion de `feat/claude-code`, qui brouillerait la comparaison avec `ref/opencode` |
