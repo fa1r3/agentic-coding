@@ -1,0 +1,262 @@
+// Permission table of an agent (key f3-permission of its frontmatter) and its evaluation.
+// Semantics of OpenCode: wildcard globs ("*" matches any text, "/" included), the last matching rule wins.
+import { statSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { HOME, agentFile, readFrontmatter } from './toolkit.mjs';
+
+const KEYS = ['edit', 'read', 'shell_read_programs', 'subagent'];
+const VALUES = ['allow', 'ask', 'deny'];
+
+export function loadPolicy(agent) {
+  const file = agentFile(agent);
+  if (!file) throw new Error(`unknown agent "${agent}"`);
+  const table = readFrontmatter(file)['f3-permission'] || {};
+  for (const [key, value] of Object.entries(table)) {
+    if (!KEYS.includes(key)) throw new Error(`unknown key "${key}" in f3-permission of ${agent}`);
+    const values = typeof value === 'string' ? [value] : Object.values(value);
+    for (const v of values) if (!VALUES.includes(v)) throw new Error(`unknown value "${v}" for ${key} in f3-permission of ${agent}`);
+  }
+  return table;
+}
+
+export function wildcard(text, pattern) {
+  let p = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  if (p.endsWith(' .*')) p = p.slice(0, -3) + '( .*)?';
+  return new RegExp('^' + p + '$', 's').test(text);
+}
+
+function expandHome(p) {
+  return p === '~' ? HOME : p.startsWith('~/') ? join(HOME, p.slice(2)) : p;
+}
+
+// Resource of a path: relative to the project root inside it, absolute outside it.
+// A directory ends with "/", so that "tests/*" covers the folder tests itself; the root is ".".
+export function resource(path, root, { directory = false } = {}) {
+  const abs = resolve(root, expandHome(path));
+  const rel = relative(root, abs);
+  if (rel === '') return '.';
+  const inside = !rel.startsWith('..') && !isAbsolute(rel);
+  let res = (inside ? rel : abs).split(sep).join('/');
+  let dir = directory;
+  if (!dir) {
+    try { dir = statSync(abs).isDirectory(); } catch { dir = false; }
+  }
+  return dir ? res + '/' : res;
+}
+
+// Effect of a rule table on a resource: "allow", "ask", "deny", or null when no rule matches.
+export function evaluate(rules, res) {
+  if (rules === undefined) return null;
+  if (typeof rules === 'string') return rules;
+  let effect = null;
+  for (const [pattern, value] of Object.entries(rules)) {
+    const expanded = expandHome(pattern);
+    const target = isAbsolute(expanded) ? expanded : pattern;
+    if (wildcard(res, target)) effect = value;
+  }
+  return effect;
+}
+
+// Programs that read files, refused in the shell of an agent with shell_read_programs: deny.
+// The search programs (grep, rg, find) are the exception: Claude Code has no search tool, so they
+// are permitted when every path they search is readable by the agent.
+const READ_PROGRAMS = new Set(['cat', 'head', 'tail', 'less', 'more', 'sed', 'awk', 'xxd', 'strings']);
+const SEARCH_PROGRAMS = new Set(['grep', 'egrep', 'fgrep', 'rg', 'find']);
+const CODE_FLAGS = { node: ['-e', '--eval', '-p', '--print'], python: ['-c'], python3: ['-c'] };
+// Programs that run another program given as their arguments.
+const WRAPPERS = new Set(['env', 'nice', 'nohup', 'time', 'timeout', 'command', 'exec', 'sudo', 'stdbuf']);
+const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
+
+function words(part) {
+  const result = [];
+  const re = /"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/g;
+  let m;
+  while ((m = re.exec(part))) result.push(m[1] ?? m[2] ?? m[3]);
+  while (result.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(result[0])) result.shift();
+  return result;
+}
+
+function gitSubcommand(args) {
+  for (let i = 0; i < args.length; i++) {
+    if (['-C', '-c', '--git-dir', '--work-tree'].includes(args[i])) { i++; continue; }
+    if (!args[i].startsWith('-')) return { sub: args[i], rest: args.slice(i + 1) };
+  }
+  return { sub: null, rest: [] };
+}
+
+// Options that take a value, per search program; "file" marks a value that is a file to read.
+const GREP_OPTS = { short: { e: 'pattern', f: 'file', m: 1, A: 1, B: 1, C: 1, d: 1, D: 1 },
+  long: { regexp: 'pattern', file: 'file', 'max-count': 1, 'after-context': 1, 'before-context': 1, context: 1, include: 1, exclude: 1, 'exclude-dir': 1, 'exclude-from': 'file', label: 1, devices: 1, directories: 1, 'binary-files': 1, 'group-separator': 1 } };
+const RG_OPTS = { short: { e: 'pattern', f: 'file', g: 1, t: 1, T: 1, m: 1, A: 1, B: 1, C: 1, j: 1, M: 1, E: 1, r: 1, d: 1 },
+  long: { regexp: 'pattern', file: 'file', glob: 1, iglob: 1, type: 1, 'type-not': 1, 'type-add': 1, 'type-clear': 1, 'max-count': 1, 'after-context': 1, 'before-context': 1, context: 1, threads: 1, 'max-columns': 1, encoding: 1, replace: 1, 'max-depth': 1, 'max-filesize': 1, 'ignore-file': 'file', sort: 1, sortr: 1, pre: 1, 'pre-glob': 1, 'path-separator': 1, 'context-separator': 1, 'field-match-separator': 1, 'field-context-separator': 1, colors: 1, color: 1, engine: 1, 'dfa-size-limit': 1, 'regex-size-limit': 1 } };
+const FIND_FORBIDDEN = ['-exec', '-execdir', '-ok', '-okdir', '-fprint', '-fprint0', '-fprintf', '-fls', '-delete'];
+
+// Paths searched by grep or rg: { paths, files } (files: files read for patterns), or null if unparsable.
+function searchPaths(program, args, piped) {
+  if (program === 'find') {
+    let i = 0;
+    while (i < args.length && /^-[HLP]$|^-O\d$/.test(args[i])) i++;
+    if (args[i] === '-D') i += 2;
+    const paths = [];
+    while (i < args.length && !/^[-(!]/.test(args[i])) paths.push(args[i++]);
+    const forbidden = args.slice(i).find((a) => FIND_FORBIDDEN.includes(a));
+    if (forbidden) return { forbidden: `find ${forbidden}` };
+    return { paths: paths.length ? paths : ['.'], files: [] };
+  }
+  const opts = program === 'rg' ? RG_OPTS : GREP_OPTS;
+  const positional = [];
+  const files = [];
+  let patternGiven = false;
+  let recursive = program === 'rg';
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--') { positional.push(...args.slice(i + 1)); break; }
+    if (a.startsWith('--')) {
+      const [name, value] = a.slice(2).split(/=(.*)/s);
+      if (['recursive', 'dereference-recursive'].includes(name)) recursive = true;
+      if (program === 'rg' && name === 'files') patternGiven = true;
+      const kind = opts.long[name];
+      if (!kind) continue;
+      const v = value !== undefined ? value : args[++i];
+      if (kind === 'pattern') patternGiven = true;
+      if (kind === 'file' && v !== undefined) { files.push(v); patternGiven = patternGiven || name === 'file'; }
+      continue;
+    }
+    if (a.startsWith('-') && a.length > 1) {
+      for (let j = 1; j < a.length; j++) {
+        const c = a[j];
+        if (program !== 'rg' && (c === 'r' || c === 'R')) recursive = true;
+        const kind = opts.short[c];
+        if (!kind) continue;
+        const v = j + 1 < a.length ? a.slice(j + 1) : args[++i];
+        if (kind === 'pattern') patternGiven = true;
+        if (kind === 'file' && v !== undefined) { files.push(v); patternGiven = true; }
+        break;
+      }
+      continue;
+    }
+    positional.push(a);
+  }
+  const paths = (patternGiven ? positional : positional.slice(1)).filter((p) => p !== '-');
+  if (!paths.length) {
+    // Without a path, rg searches the working folder unless its input is piped; grep only when recursive.
+    const searchesRoot = program === 'rg' ? !piped : recursive;
+    return { paths: searchesRoot ? ['.'] : [], files };
+  }
+  return { paths, files };
+}
+
+// Checks a shell command for an agent with shell_read_programs: deny. Returns the reason of a
+// refusal, or null. Reading programs are refused; search programs only outside the readable paths.
+export function shellReadCheck(command, table, root, depth = 0) {
+  const tokens = command.split(/(\|\||&&|;|\||\n|\$\(|`|\(|\))/);
+  let piped = false;
+  for (const token of tokens) {
+    if (/^(\|\||&&|;|\||\n|\$\(|`|\(|\))$/.test(token)) { piped = token === '|'; continue; }
+    let w = words(token.trim());
+    if (!w.length) continue;
+    let program = w[0].split('/').pop();
+    let viaXargs = false;
+    while (WRAPPERS.has(program) || program === 'xargs') {
+      if (program === 'xargs') viaXargs = true;
+      w = w.slice(1);
+      while (w.length && (w[0].startsWith('-') || /^[A-Za-z_][A-Za-z0-9_]*=/.test(w[0]) || (program === 'timeout' && /^\d/.test(w[0])))) w = w.slice(1);
+      if (!w.length) break;
+      program = w[0].split('/').pop();
+    }
+    if (!w.length) continue;
+    if (SHELLS.has(program)) {
+      const i = w.indexOf('-c');
+      if (i > 0 && w[i + 1] !== undefined && depth < 3) {
+        const inner = shellReadCheck(w[i + 1], table, root, depth + 1);
+        if (inner) return inner;
+      }
+      continue;
+    }
+    if (READ_PROGRAMS.has(program)) return { program, reason: 'read' };
+    if (SEARCH_PROGRAMS.has(program)) {
+      if (viaXargs) return { program: `xargs ${program}`, reason: 'read' };
+      const found = searchPaths(program === 'egrep' || program === 'fgrep' ? 'grep' : program, w.slice(1), piped);
+      if (found.forbidden) return { program: found.forbidden, reason: 'read' };
+      for (const path of [...found.paths, ...found.files]) {
+        const effect = evaluate(table.read, resource(path, root));
+        if (effect === 'deny' || effect === 'ask') return { program, reason: 'search', path: resource(path, root) };
+      }
+      continue;
+    }
+    if (program === 'git') {
+      const { sub, rest } = gitSubcommand(w.slice(1));
+      if (['show', 'grep', 'diff'].includes(sub)) return { program: `git ${sub}`, reason: 'read' };
+      if (sub === 'log' && rest.some((a) => a === '-p' || a === '--patch' || /^-[a-zA-Z]*p$/.test(a))) return { program: 'git log -p', reason: 'read' };
+    }
+    const flags = CODE_FLAGS[program];
+    const flag = flags && w.slice(1).find((a) => flags.some((f) => a === f || a.startsWith(f + '=')));
+    if (flag) return { program: `${program} ${flag}`, reason: 'read' };
+  }
+  return null;
+}
+
+function staticPrefix(pattern) {
+  const segments = pattern.split('/');
+  const fixed = [];
+  for (const s of segments) {
+    if (/[*?[\]{}]/.test(s)) break;
+    fixed.push(s);
+  }
+  return fixed.join('/');
+}
+
+function readableList(table) {
+  if (typeof table.read !== 'object') return '';
+  const allowed = Object.entries(table.read).filter(([, v]) => v === 'allow').map(([p]) => p.replace(/\/\*$/, '/'));
+  return allowed.length ? `; you may read ${allowed.join(', ')}` : '';
+}
+
+// Decision on one tool call: { effect: 'deny' | 'ask', reason } or null (no decision).
+export function decide(agent, table, call, root) {
+  const { tool, input = {} } = call;
+  const verdict = (effect, reason) => (effect === 'deny' || effect === 'ask' ? { effect, reason: `f3 guard (${agent}): ${reason}` } : null);
+
+  if (['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool)) {
+    const path = input.file_path ?? input.notebook_path;
+    if (!path) return null;
+    const res = resource(path, root);
+    const effect = evaluate(table.edit, res);
+    return verdict(effect, effect === 'ask' ? `editing ${res} needs the user's confirmation` : `the ${agent} may not edit ${res}`);
+  }
+
+  if (['Read', 'Grep', 'Glob'].includes(tool) && table.read !== undefined) {
+    const paths = [];
+    if (tool === 'Read') paths.push([input.file_path, false]);
+    else {
+      const base = input.path ?? '.';
+      paths.push([base, tool === 'Glob']);
+      if (tool === 'Glob' && input.pattern) {
+        const prefix = staticPrefix(input.pattern);
+        if (prefix) paths.push([isAbsolute(prefix) ? prefix : join(resolve(root, expandHome(base)), prefix), false]);
+      }
+    }
+    for (const [path, directory] of paths) {
+      if (!path) continue;
+      const res = resource(path, root, { directory });
+      const effect = evaluate(table.read, res);
+      if (effect === 'deny' || effect === 'ask') return verdict(effect, `the ${agent} may not read ${res}${readableList(table)}`);
+    }
+    return null;
+  }
+
+  if (tool === 'Bash' && table.shell_read_programs === 'deny') {
+    const found = shellReadCheck(input.command || '', table, root);
+    if (!found) return null;
+    if (found.reason === 'search') return verdict('deny', `the ${agent} may search only in what it may read, not in ${found.path} (${found.program})${readableList(table)}`);
+    return verdict('deny', `the ${agent} does not read files through the shell (${found.program}). Use the Read tool, or search with grep, rg or find in what you may read${readableList(table)}`);
+  }
+
+  if (tool === 'Agent' && table.subagent !== undefined) {
+    const type = input.subagent_type || 'general-purpose';
+    const effect = evaluate(table.subagent, type);
+    return verdict(effect, `the ${agent} may not call the subagent "${type}"`);
+  }
+
+  return null;
+}
