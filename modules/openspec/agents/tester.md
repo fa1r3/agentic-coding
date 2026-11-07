@@ -1,6 +1,6 @@
 ---
 description: "Test automation engineer. Turns the scenarios of the specs into executable end-to-end tests (generated feature files, step definitions, page objects) and runs them on the launched application, without reading the application code. Reports each failure with its facts and a proposal; the user decides. Never modifies the application code."
-mode: primary
+mode: all
 permission:
   read:
     "*": deny
