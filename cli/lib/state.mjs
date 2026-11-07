@@ -7,6 +7,9 @@
 // - Under f3 <step>, F3_LAUNCH names the launch file of the launcher: its idea and its prompt are
 //   shown last, and the file is removed. Without F3_LAUNCH, the command was typed in a session: a
 //   line recommends f3 <step> (R6); the identifier is checked in both cases.
+// - In a framed project, warning lines, which do not block, report a tool of the project that lacks
+//   files, .f3/local not ignored by Git, and MCP servers that differ between opencode.json and
+//   .mcp.json (analysis 4.10, R14); f3 state init details the tools of the project for f3 init.
 // Exit code 0 when the command may go on; otherwise 1, with the reason on stderr (Claude Code then
 // interrupts the command; under OpenCode, each command says to stop).
 import { execFileSync } from 'node:child_process';
@@ -15,7 +18,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { LAUNCH_FILE, LAUNCH_PREFIX, LaunchError, readLocal } from './launch.mjs';
 import { render } from './render.mjs';
-import { SCRIPTS_DIR, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
+import { PROJECT_FILES, localIgnored, missingFiles, projectTools, toolWarnings } from './project.mjs';
+import { SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
 
 class StateError extends Error {}
 
@@ -150,21 +154,33 @@ const ENTRIES = {
   init: {
     args: [],
     framed: false,
-    lines: () => {
-      const files = ['AGENTS.md', 'CONTEXT.md', 'BACKLOG.md', 'arch/decisions.md', 'openspec/config.yaml', 'CLAUDE.md', '.mcp.json', '.claude/settings.json'].map((f) => {
+    lines: (_, { installed }) => {
+      const framing = ['AGENTS.md', 'CONTEXT.md', 'BACKLOG.md', 'arch/decisions.md', 'openspec/config.yaml'];
+      const files = [...framing, ...TOOLS.flatMap((t) => PROJECT_FILES[t].files)].map((f) => {
         if (!existsSync(f)) return `${f}: absent`;
         const text = readFileSync(f, 'utf8');
         const marker = text.includes('f3 standards') || firstLine(text).trim() === 'schema: f3' ? ' (f3 marker)' : '';
         return `${f}: present${marker}`;
       });
-      const skills = existsSync('.claude/skills') ? readdirSync('.claude/skills').sort().join(', ') || '(empty)' : 'absent';
+      const tools = projectTools(installed).map(({ tool, installed: inst, present }) => {
+        const why = [inst ? 'f3 installed' : '', present.length ? `in the project: ${present.join(', ')}` : ''].filter(Boolean).join('; ');
+        const missing = missingFiles(tool);
+        return `${tool} (${TOOL_NAMES[tool]}): ${why}${missing.length ? `; missing: ${missing.join(', ')}` : ''}`;
+      });
+      const skills = TOOLS.map((t) => {
+        const dir = PROJECT_FILES[t].skills;
+        return `${dir}: ${existsSync(dir) ? readdirSync(dir).sort().join(', ') || '(empty)' : 'absent'}`;
+      });
+      const ignored = localIgnored();
       return [
         block('Framing files', files),
+        block('Tools of the project (f3 init writes the files of each one)', tools, 'none: f3 is installed for no tool, run install.sh'),
         `- Git repository: ${firstLine(git('rev-parse', '--is-inside-work-tree'))}`,
         block('Uncommitted changes', uncommitted(20)),
+        `- .f3/local ignored by Git: ${ignored === null ? 'no Git repository' : ignored ? 'yes' : 'no'}`,
         `- OpenSpec: ${firstLine(run('openspec', ['--version']))}`,
         block('Schema f3', head(run('openspec', ['schema', 'which', 'f3']), 3)),
-        `- OpenSpec skills installed in the project (.claude/skills): ${skills}`,
+        block('Skills installed in the project by OpenSpec', skills),
       ];
     },
   },
@@ -259,7 +275,8 @@ export function stateOf(command, rawArgs, { env = process.env, renderTool = rend
       if (error instanceof LaunchError) throw new StateError(error.message);
       throw error;
     }
-    const tools = local?.tool ? [local.tool] : installedTools();
+    const installed = installedTools();
+    const tools = local?.tool ? [local.tool] : installed;
     const warnings = renderTools(tools, renderTool);
     if (entry.framed !== false) checkFramed();
     const args = splitArgs(rawArgs);
@@ -270,7 +287,8 @@ export function stateOf(command, rawArgs, { env = process.env, renderTool = rend
     if (entry.args.includes('mode?') && args[1] !== undefined && args[1] !== 'conformity') {
       throw new StateError(`Unknown mode "${args[1]}": the only mode is "conformity". Usage: ${usage}.`);
     }
-    const lines = [...entry.lines(args, { tools }), ...warnings];
+    const framed = existsSync('openspec/config.yaml') && firstLine(readFileSync('openspec/config.yaml', 'utf8')).trim() === 'schema: f3';
+    const lines = [...entry.lines(args, { tools, installed }), ...warnings, ...(framed ? toolWarnings(installed) : [])];
     if (!env.F3_LAUNCH) {
       lines.push(`- Not started by f3: this command was typed in a session. Recommend to the user to start each step in a terminal with f3 <step>, here: f3 ${[command, ...args].join(' ')}`);
     }

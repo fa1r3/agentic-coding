@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -112,7 +112,7 @@ test('a project that is not framed stops every command but init', () => {
   assert.equal(init.code, 0, init.stderr);
   assert.match(init.stdout, /openspec\/config\.yaml: absent/);
   assert.match(init.stdout, /Git repository: true/);
-  assert.match(init.stdout, /OpenSpec skills installed in the project \(\.claude\/skills\): absent/);
+  assert.match(init.stdout, /Skills installed in the project by OpenSpec:\n  \.claude\/skills: absent\n  \.opencode\/skills: absent\n/);
 });
 
 test('init marks the f3 files', () => {
@@ -200,7 +200,86 @@ test('a render that switches its link gives one warning line, then none once up 
   assert.equal(first.code, 0, first.stderr);
   assert.ok(existsSync(join(ROOT, 'build', 'claude')) && existsSync(join(ROOT, 'build', 'opencode')));
   assert.equal(first.stdout.match(/^- Warning: the toolkit had changed/gm).length, 2);
-  assert.doesNotMatch(inDir(framed, () => stateOf('dev', 'add-import')).stdout, /Warning/);
+  assert.doesNotMatch(inDir(framed, () => stateOf('dev', 'add-import')).stdout, /Warning: the toolkit had changed/);
+});
+
+// A framed project with the files of both tools, in their state after f3 init, then altered by each test.
+function equipped() {
+  const dir = project();
+  const w = (f, t) => { mkdirSync(join(dir, f, '..'), { recursive: true }); writeFileSync(join(dir, f), t); };
+  w('CLAUDE.md', '@AGENTS.md\n@CONTEXT.md\n');
+  w('.claude/settings.json', '{}\n');
+  w('.mcp.json', '{ "mcpServers": { "playwright": {}, "penpot": {} } }\n');
+  w('opencode.json', '{ "instructions": ["CONTEXT.md"], "mcp": { "penpot": {}, "playwright": {} } }\n');
+  w('.claude/skills/openspec-apply-change/SKILL.md', 'x');
+  w('.opencode/skills/openspec-apply-change/SKILL.md', 'x');
+  w('.gitignore', '.f3/local\n');
+  return { dir, w, rm: (f) => rmSync(join(dir, f), { recursive: true }) };
+}
+const quiet = { renderTool: () => ({ switched: false }) };
+const toolWarnings = (dir, cmd = 'dev', args = 'add-import') => inDir(dir, () => stateOf(cmd, args, quiet)).stdout.split('\n').filter((l) => /^- Warning: (the project lacks|\.f3\/local|the MCP|cannot compare)/.test(l));
+
+test('a framed project with the files of its tools, .f3/local ignored and the same MCP servers: no warning', () => {
+  assert.deepEqual(toolWarnings(equipped().dir), []);
+});
+
+test('every command warns, without blocking, of the files a tool of the project lacks', () => {
+  const p = equipped();
+  p.rm('opencode.json');
+  p.rm('.claude/skills');
+  for (const cmd of [['dev', 'add-import'], ['propose', ''], ['ux-tokens', '']]) {
+    const r = inDir(p.dir, () => stateOf(cmd[0], cmd[1], quiet));
+    assert.equal(r.code, 0, r.stderr);
+    assert.deepEqual(toolWarnings(p.dir, ...cmd), [
+      '- Warning: the project lacks files of Claude Code, which f3 is installed for (.claude/skills/openspec-*): run f3 init, theme Tools.',
+      '- Warning: the project lacks files of OpenCode, which f3 is installed for (opencode.json): run f3 init, theme Tools.',
+    ]);
+  }
+});
+
+test('.f3/local not ignored by Git is reported; a project that is not framed gets no tool warning', () => {
+  const p = equipped();
+  p.w('.gitignore', 'node_modules/\n');
+  assert.deepEqual(toolWarnings(p.dir), ['- Warning: .f3/local, the tool of each user, is not ignored by Git: run f3 init, theme Tools.']);
+  const bare = project({ framed: false });
+  assert.doesNotMatch(inDir(bare, () => stateOf('init', '', quiet)).stdout, /Warning: (the project lacks|\.f3)/);
+});
+
+test('MCP servers that differ between opencode.json and .mcp.json are reported (R14)', () => {
+  const p = equipped();
+  p.w('opencode.json', '{ "mcp": { "playwright": {} } }\n');
+  assert.deepEqual(toolWarnings(p.dir), ['- Warning: the MCP servers of opencode.json (playwright) and .mcp.json (penpot, playwright) differ: run f3 init, theme Tools.']);
+  p.w('opencode.json', '{ "mcp": ');
+  assert.match(toolWarnings(p.dir)[0], /^- Warning: cannot compare the MCP servers of opencode.json and .mcp.json: /);
+  p.rm('.mcp.json');
+  assert.deepEqual(toolWarnings(p.dir), []);
+});
+
+test('init lists the tools of the project, installed or present, with what each lacks', () => {
+  const p = equipped();
+  p.rm('opencode.json');
+  const r = inDir(p.dir, () => stateOf('init', '', quiet));
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /- Tools of the project \(f3 init writes the files of each one\):\n  claude \(Claude Code\): f3 installed; in the project: CLAUDE\.md, \.mcp\.json, \.claude\/settings\.json, \.claude\/skills\/openspec-\*\n  opencode \(OpenCode\): f3 installed; in the project: \.opencode\/skills\/openspec-\*; missing: opencode\.json\n/);
+  assert.match(r.stdout, /opencode\.json: absent/);
+  assert.match(r.stdout, /- \.f3\/local ignored by Git: yes/);
+  assert.match(r.stdout, /  \.opencode\/skills: openspec-apply-change\n/);
+});
+
+test('a tool f3 is not installed for is a tool of the project when the project has its files', () => {
+  const p = equipped();
+  const saved = join(sandbox, 'opencode-agents');
+  renameSync(AGENTS.opencode, saved);
+  try {
+    p.rm('.opencode');
+    const r = inDir(p.dir, () => stateOf('init', '', quiet));
+    assert.match(r.stdout, /  opencode \(OpenCode\): in the project: opencode\.json; missing: \.opencode\/skills\/openspec-\*\n/);
+    assert.deepEqual(toolWarnings(p.dir), ['- Warning: the project lacks files of OpenCode, which the project uses (.opencode/skills/openspec-*): run f3 init, theme Tools.']);
+    p.rm('opencode.json');
+    assert.doesNotMatch(inDir(p.dir, () => stateOf('init', '', quiet)).stdout, /opencode \(OpenCode\)/);
+  } finally {
+    renameSync(saved, AGENTS.opencode);
+  }
 });
 
 test('unknown command', () => {

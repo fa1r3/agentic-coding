@@ -187,7 +187,7 @@ test('the injection of the launched command gets the note of the user from f3 st
     const [{ state }] = t.calls();
     assert.equal(state.status, 0, state.stderr);
     assert.match(state.stdout, /\n\nNote from the user:\n\nreprends à la 2\.3, l'autre est faite\n$/);
-    assert.doesNotMatch(state.stdout, /Warning|Not started by f3/);
+    assert.doesNotMatch(state.stdout, /Warning: the toolkit had changed|Not started by f3/);
   }
 });
 
