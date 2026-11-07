@@ -1,6 +1,8 @@
 # agentic-toolkit: the f3 workflow guide
 
-This guide explains what the agentic-toolkit does, why it is built the way it is, and how to use it, step by step. It assumes you know how to write software. It does not assume you know OpenCode, OpenSpec or agentic programming.
+This guide explains what the agentic-toolkit does, why it is built the way it is, and how to use it, step by step. It assumes you know how to write software. It does not assume you know Claude Code, OpenCode, OpenSpec or agentic programming.
+
+The toolkit runs under **Claude Code** or **OpenCode**, as you choose for each project. The workflow is the same under both; where a tool behaves differently, a note marked **Claude Code.** or **OpenCode.** says how.
 
 All the examples use a fictional invoicing product: accountants who issue invoices to customers. It is unrelated to any real project, and its names only illustrate a form.
 
@@ -8,7 +10,7 @@ All the examples use a fictional invoicing product: accountants who issue invoic
 
 1. [What the toolkit is](#1-what-the-toolkit-is)
 2. [The ideas behind it](#2-the-ideas-behind-it)
-3. [The building blocks: OpenCode and OpenSpec](#3-the-building-blocks-opencode-and-openspec)
+3. [The building blocks: Claude Code or OpenCode, and OpenSpec](#3-the-building-blocks-claude-code-or-opencode-and-openspec)
 4. [What the toolkit contains](#4-what-the-toolkit-contains)
 5. [The files of a project](#5-the-files-of-a-project)
 6. [The agents and their boundaries](#6-the-agents-and-their-boundaries)
@@ -28,7 +30,7 @@ All the examples use a fictional invoicing product: accountants who issue invoic
 
 ## 1. What the toolkit is
 
-The agentic-toolkit is a set of files that you install once on your machine. It teaches an AI coding agent, running in OpenCode, to build software with you in a disciplined way:
+The agentic-toolkit is a set of files that you install once on your machine. It teaches an AI coding agent, running in Claude Code or OpenCode, to build software with you in a disciplined way:
 
 - you describe a need;
 - an agent asks you functional questions until the need is clear, then writes it down as a specification;
@@ -41,7 +43,7 @@ The agentic-toolkit is a set of files that you install once on your machine. It 
 
 At every step, an agent analyzes and proposes; **you decide**. Nothing is written in a project file without your validation.
 
-The workflow is called **f3**. Every command of the toolkit starts with `f3-`.
+The workflow is called **f3**. Each step is launched from a terminal with `f3 <step>`, which runs the command `/f3-<step>` of the toolkit.
 
 ### Who it is for
 
@@ -125,22 +127,26 @@ Why: an agent optimizes inside the frame it receives, and applies it to the lett
 
 ---
 
-## 3. The building blocks: OpenCode and OpenSpec
+## 3. The building blocks: Claude Code or OpenCode, and OpenSpec
 
-The toolkit adds nothing to these two tools: it configures them.
+The toolkit adds nothing to these tools: it configures them, and adds one small command, `f3`, to tie them together.
 
-### 3.1 OpenCode
+### 3.1 Claude Code or OpenCode
 
-[OpenCode](https://opencode.ai/docs/) is a terminal application where an AI model works on your repository. It provides:
+[Claude Code](https://code.claude.com/docs/) and [OpenCode](https://opencode.ai/docs/) are terminal applications where an AI model works on your repository. The toolkit uses the same notions in both:
 
-- **Agents**: a role for the model, defined in a Markdown file: a description, a system prompt, and **permissions** (which files it may read or edit, which tools it may use). You switch the active agent with Tab.
-- **Commands**: a reusable prompt, defined in a Markdown file, launched by typing `/name`. A command can declare the agent that runs it, so launching the command switches the agent. A command receives its arguments as `$ARGUMENTS` (all of them) or `$1`, `$2` (one by one). It can also insert the output of shell commands into its prompt, with the syntax `` !`command` ``, so the agent starts with the current state of the repository.
+- **Agents**: a role for the model, defined in a Markdown file: a description, a system prompt, and what it may not do (which files it may not read or edit, which tools it may not use).
+- **Commands**: a reusable prompt, defined in a Markdown file, launched by typing `/name`. A command receives its arguments as `$ARGUMENTS` (all of them) or one by one. It can also insert the output of a shell command into its prompt, with the syntax `` !`command` ``, so the agent starts with the current state of the repository.
 - **Skills**: folders of instructions (`SKILL.md` and references) that an agent loads when it needs them, instead of carrying them in every prompt.
-- **MCP servers**: external tools the agent can call, such as a browser driver or a design tool. Their tools are named `<server>_<tool>`, which lets a permission deny a whole server with `<server>_*`.
-- **Subagents**: an agent can launch another agent, in its own context, through the task tool. OpenCode ships two built-in subagents: `explore` (reading and searching) and `general` (any task).
-- **Configuration**: `opencode.json`, at two levels: global (`~/.config/opencode/opencode.json`, your preferences, such as providers and models) and per project (only what the project needs). OpenCode merges both.
+- **MCP servers**: external tools the agent can call, such as a browser driver or a design tool. Their tools carry the name of their server, which lets an agent refuse a whole server.
+- **Subagents**: an agent can launch another agent, in its own context. Each tool ships a built-in **exploration** subagent (reading and searching) and a built-in **general** subagent (any task).
+- **Project files**: the settings a project needs, versioned with it; your own preferences (providers, models, permission modes) stay in your settings.
 
-Permission rules are evaluated in order, and **the last rule that matches wins**. That is why an agent file can say `"*": deny` first, then allow a few paths after it.
+The toolkit writes the permissions of each agent once, as a table of path rules evaluated in order, where **the last rule that matches wins**. That is why a table can say `"*": deny` first, then allow a few paths after it.
+
+> **Claude Code.** Agents (called subagents in its documentation) list the tools they may not use (`disallowedTools`) and **hooks**, commands that Claude Code runs before each tool call and that can refuse it: the hook of each f3 agent, `f3 guard`, applies its permission table. A command does not choose the agent that runs it: the session does, when it starts (`claude --agent <name>`). Arguments one by one are `$0`, `$1` (counted from zero). If the shell command of a command fails, the command does not start. MCP tools are named `mcp__<server>__<tool>`. Subagents are called through the Agent tool; the built-in ones are `Explore` (read-only, on the model of the session) and `general-purpose`, and a subagent cannot ask you questions: it reports to the agent that called it. Project files: `CLAUDE.md` (instructions loaded in every session, which can import other files with `@file`), `.mcp.json` (MCP servers), `.claude/settings.json` (settings and hooks); your preferences are in `~/.claude/settings.json`.
+
+> **OpenCode.** Agents carry **permissions**, which OpenCode applies itself: the permission table of each f3 agent is written into its file. You switch the active agent with Tab, and a command declares the agent that runs it, so launching the command switches the agent. Arguments one by one are `$1`, `$2`. A shell command that fails does not stop the command. MCP tools are named `<server>_<tool>`. Subagents are called through the subagent tool; the built-in ones are `explore` and `general`. Configuration: `opencode.json`, at two levels, global (`~/.config/opencode/opencode.json`, your preferences) and per project (only what the project needs), merged by OpenCode.
 
 ### 3.2 OpenSpec
 
@@ -151,7 +157,7 @@ Permission rules are evaluated in order, and **the last rule that matches wins**
 - A **delta spec** describes what the change does to a capability, in sections `ADDED`, `MODIFIED`, `REMOVED` and `RENAMED Requirements`. A `MODIFIED` requirement replaces the whole requirement at archiving, so OpenSpec refuses one that omits an existing scenario.
 - A **schema** defines which artifacts a change has, in which order, from which templates, with which instructions for the agent. An artifact is "done" when its file exists; an artifact becomes available only when the artifacts it requires are done. Implementation ("apply") becomes available only when the artifacts the schema lists are done.
 - `openspec/config.yaml`: the project's configuration: the schema to use, a `context` (a product description injected into every artifact's instructions), and optional rules.
-- OpenSpec installs **skills** in the project (`.opencode/skills/openspec-*`), which the f3 commands use: `openspec-continue-change` (write the next artifact), `openspec-apply-change` (implement tasks), `openspec-archive-change` (archive).
+- OpenSpec installs **skills** in the project, for each tool of the project (`.claude/skills/openspec-*`, `.opencode/skills/openspec-*`), which the f3 commands use: `openspec-continue-change` (write the next artifact), `openspec-apply-change` (implement tasks), `openspec-archive-change` (archive).
 
 The toolkit provides its own schema, **f3**, which adds the steps of the f3 workflow to the default OpenSpec flow.
 
@@ -163,7 +169,13 @@ The toolkit provides its own schema, **f3**, which adds the steps of the f3 work
 agentic-toolkit/
 ├── README.md                       short overview
 ├── GUIDE.md                        this guide
-├── install.sh                      links the modules into OpenCode and OpenSpec
+├── install.sh                      renders and links the toolkit for Claude Code, OpenCode or both
+├── cli/                            the f3 command (Node.js) and its tests
+├── tools/                          what differs between the tools
+│   ├── claude/                     frontmatter templates, names of the built-in subagents and tools
+│   └── opencode/
+├── build/                          the agents and commands rendered for each tool (ignored by Git)
+├── tests/ref/                      the expected differences with the reference of each tool
 ├── retro/drift-log.md              the failures that shaped the toolkit, and their fixes
 └── modules/
     ├── openspec/                   the workflow
@@ -185,21 +197,96 @@ agentic-toolkit/
             └── ux-penpot/          their translation into Penpot
 ```
 
-The separation between `ux-practice` and `ux-penpot` illustrates a rule of the toolkit: what is specific to a tool lives in one place. Replacing Penpot with another design tool means writing another adapter skill, not rewriting the design workflow.
+The separation between `ux-practice` and `ux-penpot` illustrates a rule of the toolkit: what is specific to a tool lives in one place. Replacing Penpot with another design tool means writing another adapter skill, not rewriting the design workflow. The same rule separates `modules/`, common to Claude Code and OpenCode, from `tools/<tool>/`.
 
 ### 4.1 How it plugs in
 
-`install.sh` creates symbolic links:
+`install.sh` installs the toolkit for Claude Code, OpenCode or both (section 15.2), with symbolic links:
 
-| From the toolkit | To |
-|---|---|
-| `modules/*/agents/*.md` | `~/.config/opencode/agents/` |
-| `modules/*/commands/*.md` | `~/.config/opencode/commands/` |
-| `modules/*/skills/*/` | `~/.config/opencode/skills/` |
-| `modules/*/scripts/*` | `~/.config/opencode/scripts/` |
-| `modules/*/schemas/*/` | `~/.local/share/openspec/schemas/` |
+| From the toolkit | Claude Code | OpenCode |
+|---|---|---|
+| `build/<tool>/*/agents/*.md`, rendered from `modules/*/agents/` | `~/.claude/agents/` | `~/.config/opencode/agents/` |
+| `build/<tool>/*/commands/*.md`, rendered from `modules/*/commands/` | `~/.claude/commands/` | `~/.config/opencode/commands/` |
+| `modules/*/skills/*/` | `~/.claude/skills/` | `~/.config/opencode/skills/` |
+| `modules/*/scripts/*` | `~/.local/share/f3/scripts/` | the same |
+| `modules/*/schemas/*/` | `~/.local/share/openspec/schemas/` | the same |
+| `cli/f3.mjs` | `~/.local/bin/f3` | the same |
 
-Because they are links, a change in the toolkit is active in every project at once, after an OpenCode restart. A project refers to the schema by name: `schema: f3` in its `openspec/config.yaml`. OpenSpec looks for a schema of that name in the project (`openspec/schemas/f3/`), then on the machine (the link above), then in its own package.
+Both installations can live on one machine. Because they are links, a change in the toolkit is active in every project at once: the skills, scripts and schemas are the files of the toolkit, and `f3` renders the agents and commands again at each launch (4.3). A project refers to the schema by name: `schema: f3` in its `openspec/config.yaml`. OpenSpec looks for a schema of that name in the project (`openspec/schemas/f3/`), then on the machine (the link above), then in its own package.
+
+The `f3` command has these uses:
+
+- `f3 <step> [<arguments>] [-- <prompt>]` launches a step: a new session of the tool of the project, as the agent of the step, running `/f3-<step>` (4.2);
+- `f3 tool [claude|opencode]` shows or sets the tool of the project (4.4);
+- `f3 state <command>` is the single shell line each command runs at launch: it checks the arguments and the project, and prints the state of the repository the command needs (section 15.4);
+- `f3 render [claude|opencode]` renders the agents and commands into `build/` (4.3); `f3` and `install.sh` call it, so you rarely need to;
+- under Claude Code only, `f3 guard <agent>` is the hook each agent runs before its tool calls, which applies its permission table, and `f3 guard-prompt` is the hook of the project that refuses an f3 command typed in a session started as another agent.
+
+`f3` alone lists the steps.
+
+> **Claude Code.** The agents are always installed in `~/.claude/agents/`: Claude Code runs the hooks of an agent placed in a project folder only when that folder is trusted.
+
+### 4.2 Launching a step
+
+```
+f3 <step> [<arguments>] [-- <prompt>]
+```
+
+From a terminal, in the project, `f3 <step>` starts a new session of the tool of the project (4.4), as the agent the command of the step declares, and runs `/f3-<step>` with the arguments.
+
+- **The arguments are identifiers**: lowercase letters, digits and `-` (`add-invoice-issuing`, `conformity`). Anything else is refused before the launch, with a reminder to give free text after `--`. One exception: under `f3 propose`, words that are not a single identifier are your idea, for example `f3 propose credit notes for issued invoices`.
+- **The prompt always comes last.** Everything after the first `--` is a prompt for the agent, taken as is and never parsed: a `--`, an option or an identifier written in it is only text, and changes neither the step, nor its arguments, nor the tool. A `--` with nothing after it is refused, to catch a typing error rather than launch the step without the prompt you meant.
+- **The prompt never goes through a shell line.** The launcher writes the prompt and the idea into a private file (mode 600, in a private folder of the temporary directory), and starts the tool with the variable `F3_LAUNCH` naming it. `f3 state` reads the file, shows the idea under "Idea from the user:" and the prompt under "Note from the user:", at the end of the launch state, then removes it. The launcher removes its folder when the tool ends.
+- **The note refines the request; it does not replace the workflow.** Each command says so: a note lifts no precondition and skips no step.
+
+Examples:
+
+```
+f3 dev add-invoice-issuing -- resume at task 2.3, task 2.2 was done by hand
+f3 init -- the product is in French, Penpot is the design tool
+```
+
+Your shell reads the line before `f3` does: put the prompt between quotes when it contains characters the shell interprets, such as `;`, `'`, `&` or `*` (`f3 init -- "the product's language is French"`).
+
+> **Claude Code.** The launcher runs `claude --agent <agent> "/f3-<step> <arguments>"`.
+
+> **OpenCode.** The launcher runs `opencode --standalone --prompt "/f3-<step> <arguments> "`, with a final space, without which a command with no argument is not sent. `--standalone` makes the OpenCode server a child of the launcher, which is how `F3_LAUNCH` reaches the command; the OpenCode service managed in the background (`opencode serve --service`) does not inherit it (deduced, not tested). You can still type `/f3-<step>` in an OpenCode session: the command switches to its agent and runs, but it receives no prompt, and its argument goes through the shell (section 15.4).
+
+### 4.3 The render, at each launch
+
+The agents and commands are written once, in `modules/`, with a frontmatter common to both tools. They are **rendered** for each tool: the frontmatter of the tool is built from the templates of `tools/<tool>/`, a few names are substituted (the built-in subagents, the subagent tool, the positional arguments), and the tools each agent refuses are translated into the form of the tool. The skills, scripts and schemas are not rendered: they are the same files for both tools.
+
+- The render goes into `build/<tool>`, a link to the last complete render (`build/<tool>.<fingerprint>.<pid>/`). The installation links go through `build/<tool>`, so they never change after the installation. `build/` is ignored by Git.
+- **`f3 <step>` and `f3 state` render again at every call**, without comparing dates: a change of the toolkit is active at the next launch, without reinstalling. When nothing changed, nothing is written.
+- The link switches in one step to a render written in full beforehand: a session open in another terminal never reads a half-written render. Old renders are removed once the process that wrote them has ended, and never the one the link points to.
+- **A failed render launches nothing.** A source with an unknown `{{` marker, an unreadable frontmatter, a read-only toolkit or a full disk make the render fail. The link keeps the last complete render; the launcher shows the error and does not start the tool; `f3 state` reports it, which stops the command. A read-only toolkit works as long as its current render already exists; otherwise, run `install.sh` with the rights to write in the toolkit.
+- If `build/` disappears (`git clean -fdX`, a new clone), the next `f3` rebuilds it. Until then, the installation links are dead (section 15.3).
+- When `f3 state` finds that the toolkit changed since the last render, the launch state warns that the agent and the command the session loaded may be out of date: start a new session with `f3 <step>`.
+- Limit: every `f3` that writes in one `build/` must run on the same machine; a toolkit shared for writing between machines or containers is not supported.
+
+`install.sh --render <dir>` writes the full render of each tool into `<dir>/<tool>/`, laid out like `modules/`, without installing anything. The tests of `cli/` use it to compare each render with the reference version of its tool: every intended difference is listed in `tests/ref/<tool>.diff`, and any other difference fails the tests.
+
+> **OpenCode.** `f3 <step>` renders before starting OpenCode, so the session loads the current agent and command. In a session opened by hand, the agent and the command were loaded when the session started: the warning of the launch state then tells you they may be out of date.
+
+### 4.4 The tool of a project
+
+Each user chooses the tool of each project. The choice is kept in `.f3/local`, at the root of the project, as one line `tool=claude` or `tool=opencode`. It is not versioned: `f3 init` adds `.f3/local` to `.gitignore`, so two developers of the same project can each work with their own tool.
+
+- When `.f3/local` is absent, the first `f3 <step>` writes it: with the only tool f3 is installed for, or, when both are installed, with the tool you choose:
+
+  ```
+  f3: Claude Code and OpenCode are both installed.
+  Tool for this project (saved in .f3/local; change it with f3 tool <tool>):
+    1) Claude Code
+    2) OpenCode
+  Choice [1-2]:
+  ```
+
+  Without a terminal to ask in, `f3` refuses and tells you to run `f3 tool <tool>`.
+- `f3 tool` shows the tool of the project; `f3 tool claude` or `f3 tool opencode` changes it. Setting a tool f3 is not installed for is accepted, with a warning; launching a step with it is refused, with the `install.sh` command to run.
+- `.f3/local` is read in the current folder: launch `f3` from the root of the project.
+
+The tool you choose has no effect on the versioned files of the project: `f3 init` writes the files of each tool of the project (5.1).
 
 ---
 
@@ -209,7 +296,7 @@ The workflow is a chain of files. Each step reads the files the previous steps w
 
 There are three families:
 
-- the **framing files**, written once by `/f3-init` and changed rarely (5.1);
+- the **framing files**, written once by `f3 init` and changed rarely, with the files of each tool of the project (5.1);
 - the **files of a change**, which live in the folder of the change and are archived with it (5.3);
 - the **registers**, which grow change after change and outlive every change (5.4).
 
@@ -217,10 +304,28 @@ There are three families:
 
 | File | Role | Written by | Read by | Without it |
 |---|---|---|---|---|
-| `openspec/config.yaml` | the **product**: what it does, for whom, its volumes, its constraints, its design tool, its language; and `schema: f3` | the architect, during `/f3-init` | every OpenSpec artifact (its `context` is injected into their instructions) | agents design for an imagined product: wrong volumes, wrong platform |
-| `AGENTS.md` | the **code rules**: an invariant part (architecture style, naming, tests, Git) and a Stack section (this project's technologies and commands) | the architect, during `/f3-init` and the design steps | every agent, in every session | each agent applies its own habits; commands do not know how to verify or test |
-| `CONTEXT.md` | the **vocabulary**: each business term, with the English term used in code | the analyst (and `/f3-init`) | every agent, in every session | the same concept gets three names in code, specs and screens |
-| `opencode.json` (project) | only the workflow keys: `instructions` (to load `CONTEXT.md`) and the MCP servers the project needs | the architect, during `/f3-init` | OpenCode | agents miss the vocabulary or the tools; personal settings leak into the repository |
+| `openspec/config.yaml` | the **product**: what it does, for whom, its volumes, its constraints, its design tool, its language; and `schema: f3` | the architect, during `f3 init` | every OpenSpec artifact (its `context` is injected into their instructions) | agents design for an imagined product: wrong volumes, wrong platform |
+| `AGENTS.md` | the **code rules**: an invariant part (architecture style, naming, tests, Git) and a Stack section (this project's technologies and commands) | the architect, during `f3 init` and the design steps | every agent, in every session | each agent applies its own habits; commands do not know how to verify or test |
+| `CONTEXT.md` | the **vocabulary**: each business term, with the English term used in code | the analyst (and `f3 init`) | every agent, in every session | the same concept gets three names in code, specs and screens |
+| `CLAUDE.md` (Claude Code) | `@AGENTS.md` and `@CONTEXT.md`, so that every session loads the code rules and the vocabulary | the architect, during `f3 init` | Claude Code | agents miss the code rules (Claude Code reads `AGENTS.md` alone only when there is no `CLAUDE.md`) or the vocabulary |
+| `.mcp.json` (Claude Code) | the MCP servers the project needs: the observer of the running application, the design tool | the architect, during `f3 init`, when the Stack section decides a server | Claude Code | agents miss their tools |
+| `.claude/settings.json` (Claude Code) | the hook that makes each f3 command run as its agent (`f3 guard-prompt`) | the architect, during `f3 init` | Claude Code | a step typed in the wrong session runs under the wrong agent |
+| `opencode.json` (OpenCode, project) | only the workflow keys: `instructions` (to load `CONTEXT.md`) and the MCP servers the project needs | the architect, during `f3 init` | OpenCode | agents miss the vocabulary or the tools; personal settings leak into the repository |
+| `.gitignore` | the line `.f3/local`: the tool of each user is not versioned (4.4) | the architect, during `f3 init` | Git | one user's tool is imposed on the others |
+
+#### The files of each tool
+
+`f3 init` writes the files of **each tool of the project**, whatever tool you launch it with. A tool is a tool of the project when f3 is installed for it on your machine, or when the project already has one of its files: `CLAUDE.md`, `.mcp.json` or `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode, or the OpenSpec skills of the tool (`.claude/skills/openspec-*`, `.opencode/skills/openspec-*`). A project shared by a team that uses both tools versions both sets, and `f3 init` runs `openspec init --tools claude,opencode` for it.
+
+The MCP servers are decided once, in the Stack section of AGENTS.md. `.mcp.json` and `opencode.json` are two translations of that decision, not two sources: they name the same servers (`playwright` for Playwright, `penpot` for Penpot), names on which the tools each agent refuses depend.
+
+In a framed project, the launch state of **every** command adds a warning line, which does not block, when:
+
+- a tool of the project lacks a file `f3 init` always writes (`CLAUDE.md` and `.claude/settings.json`; `opencode.json`), or, once `openspec/` exists, its OpenSpec skills (`.mcp.json` is written only when a server is decided);
+- `.f3/local` is not ignored by Git;
+- the MCP servers of `opencode.json` and `.mcp.json` have different names, or one of the files cannot be read.
+
+Each warning tells you to run `f3 init`, theme Tools (step 0).
 
 ### 5.2 The two parts of AGENTS.md
 
@@ -228,7 +333,7 @@ The **invariant part** is identical in every project. It states the architecture
 
 > **Domain identity at the boundaries.** Outside the adapters that store or read it, a business object is always designated by its domain identity. A technical identifier never crosses a port, an entry point or an output contract. [...] Example: an invoice attachment is read through `GET /invoices/{invoiceId}/attachment`, never through `?path=...`.
 
-The **Stack section** is written for the project during `/f3-init`, from the stack decision. It answers fixed questions in fixed subsections, and the commands of the workflow refer to them by name:
+The **Stack section** is written for the project during `f3 init`, from the stack decision. It answers fixed questions in fixed subsections, and the commands of the workflow refer to them by name:
 
 | Subsection | Answers | Used by |
 |---|---|---|
@@ -249,21 +354,21 @@ Everything a change produces lives in `openspec/changes/<change-id>/`, in the or
 
 | File | Written by (step) | Role | Read next by | Why it is needed |
 |---|---|---|---|---|
-| `.openspec.yaml` | OpenSpec, when `/f3-propose` creates the change | the metadata of the change, including its schema | OpenSpec | OpenSpec knows which steps the change follows |
-| `clarification.md` | the analyst (`/f3-propose`) | the clarified need, section by section: Need, Scope (in, out, decisions against advice), Vocabulary, Behavior, Rules and edge cases, Examples, Security, Open points | the analyst (proposal, specs), Tres Amigos, the architect | the specs are derived from validated answers, not from the analyst's guesses; an interrupted interview resumes at the first empty section |
-| `proposal.md` | the analyst (`/f3-propose`) | why and what: the capabilities added or modified, what is out of scope | every following step | the scope is written once; later steps can detect what exceeds it |
-| `specs/<capability>/spec.md` | the analyst (`/f3-propose`), corrected in Tres Amigos | the **delta specs**: requirements and scenarios added, modified, removed or renamed | everyone; `f3-features` turns them into feature files | the contract of the change: what will be built, designed and proven |
-| `tres-amigos.md` | the analyst, chairing `/f3-tres-amigos` | the record of each session: the raw reports of the four members, the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13) | you, later sessions | each decision has its reason; a later session does not argue it again |
-| `validations/amigos.md` | `/f3-tres-amigos`, when you declare the specs ready | the validation of the step | OpenSpec (unblocks the next step) | without it, the schema refuses the interface design |
-| `ux.md` | the ux agent (`/f3-ux-design`); the analyst may write appearance wishes in it | the design delta: intentions, views, components, icons, tokens, conflicts, proposed cross-cutting decisions. It names and decides; it holds no appearance value | the architect (Interface section of the design), the developer, `/f3-archive` | the names the code, the screens and the tests will share are decided once |
-| `ux-design.md` | the ux agent (`/f3-ux-design`) | the progress tracking of the design: each step of the impact analysis, each icon, component and screen with its status, and the conformity results | the ux agent, at each run | the design is done one unit per run; each run resumes where the previous one stopped |
-| `validations/ux.md` | `/f3-ux-design`, when you declare the design finished, or close it as not-applicable | the validation of the step | OpenSpec | without it, the schema refuses the technical design |
-| `design.md` | the architect (`/f3-design`) | how the change is built: decisions, Interface (views, components and tokens of `ux.md`), Volumetry, **Test strategy** (unit and integration tests, test entry points, replacement coverage of manual scenarios) | the design review, the developer, the tester | technical choices are written and reviewable before any code |
-| `tasks.md` | the architect (`/f3-design`); fix groups added by the tester and the ux agent | the work, split into functional slices, each citing the scenarios it delivers; the checkboxes the developer ticks | the developer, the design review | the developer works from an explicit, reviewed list; OpenSpec tracks progress |
-| `review.md` | the architect, chairing `/f3-design-review` | the record of the design review: reports, grid, decisions | you, later sessions | same as `tres-amigos.md`, for the design |
-| `validations/review.md` | `/f3-design-review`, when you declare the design ready | the validation of the step | OpenSpec | without it, implementation (apply) is refused |
-| `conformity/<view>--<state>.png` | the `general` subagent, for `/f3-ux-design <change-id> conformity` | captures of the running application, one per approved screen | the ux agent, you | the comparison with the design screens is made on images, not on descriptions |
-| `acceptance/pass-NN.md` | the tester (`/f3-acceptance`), one per pass | the report of an acceptance pass: delta, tests written, fidelity review, failures and decisions, tickets, backlog entries, tested commit, conclusion | you, `/f3-archive` | the proof that the change does what its specs say, at a given commit; `/f3-archive` refuses a change whose last pass is not green |
+| `.openspec.yaml` | OpenSpec, when `f3 propose` creates the change | the metadata of the change, including its schema | OpenSpec | OpenSpec knows which steps the change follows |
+| `clarification.md` | the analyst (`f3 propose`) | the clarified need, section by section: Need, Scope (in, out, decisions against advice), Vocabulary, Behavior, Rules and edge cases, Examples, Security, Open points | the analyst (proposal, specs), Tres Amigos, the architect | the specs are derived from validated answers, not from the analyst's guesses; an interrupted interview resumes at the first empty section |
+| `proposal.md` | the analyst (`f3 propose`) | why and what: the capabilities added or modified, what is out of scope | every following step | the scope is written once; later steps can detect what exceeds it |
+| `specs/<capability>/spec.md` | the analyst (`f3 propose`), corrected in Tres Amigos | the **delta specs**: requirements and scenarios added, modified, removed or renamed | everyone; `f3-features` turns them into feature files | the contract of the change: what will be built, designed and proven |
+| `tres-amigos.md` | the analyst, chairing `f3 tres-amigos` | the record of each session: the raw reports of the four members, the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13) | you, later sessions | each decision has its reason; a later session does not argue it again |
+| `validations/amigos.md` | `f3 tres-amigos`, when you declare the specs ready | the validation of the step | OpenSpec (unblocks the next step) | without it, the schema refuses the interface design |
+| `ux.md` | the ux agent (`f3 ux-design`); the analyst may write appearance wishes in it | the design delta: intentions, views, components, icons, tokens, conflicts, proposed cross-cutting decisions. It names and decides; it holds no appearance value | the architect (Interface section of the design), the developer, `f3 archive` | the names the code, the screens and the tests will share are decided once |
+| `ux-design.md` | the ux agent (`f3 ux-design`) | the progress tracking of the design: each step of the impact analysis, each icon, component and screen with its status, and the conformity results | the ux agent, at each run | the design is done one unit per run; each run resumes where the previous one stopped |
+| `validations/ux.md` | `f3 ux-design`, when you declare the design finished, or close it as not-applicable | the validation of the step | OpenSpec | without it, the schema refuses the technical design |
+| `design.md` | the architect (`f3 design`) | how the change is built: decisions, Interface (views, components and tokens of `ux.md`), Volumetry, **Test strategy** (unit and integration tests, test entry points, replacement coverage of manual scenarios) | the design review, the developer, the tester | technical choices are written and reviewable before any code |
+| `tasks.md` | the architect (`f3 design`); fix groups added by the tester and the ux agent | the work, split into functional slices, each citing the scenarios it delivers; the checkboxes the developer ticks | the developer, the design review | the developer works from an explicit, reviewed list; OpenSpec tracks progress |
+| `review.md` | the architect, chairing `f3 design-review` | the record of the design review: reports, grid, decisions | you, later sessions | same as `tres-amigos.md`, for the design |
+| `validations/review.md` | `f3 design-review`, when you declare the design ready | the validation of the step | OpenSpec | without it, implementation (apply) is refused |
+| `conformity/<view>--<state>.png` | the built-in general subagent, for `f3 ux-design <change-id> conformity` | captures of the running application, one per approved screen | the ux agent, you | the comparison with the design screens is made on images, not on descriptions |
+| `acceptance/pass-NN.md` | the tester (`f3 acceptance`), one per pass | the report of an acceptance pass: delta, tests written, fidelity review, failures and decisions, tickets, backlog entries, tested commit, conclusion | you, `f3 archive` | the proof that the change does what its specs say, at a given commit; `f3 archive` refuses a change whose last pass is not green |
 
 Three of these files are **validations**. They contain a date, the decision and a summary, and they are what OpenSpec looks at: an artifact is done when its file exists. A command writes its validation only when you declare the step finished, so a step can take several sessions.
 
@@ -273,13 +378,13 @@ These files outlive every change. They are read at the start of a step and enric
 
 | File | Role | Written by, and when | Read by | Why it is needed |
 |---|---|---|---|---|
-| `openspec/specs/` | the current behavior of the product | OpenSpec, when `/f3-archive` merges the delta specs | everyone | the reference every new change is compared with |
-| `CONTEXT.md` | the vocabulary (see 5.1) | the analyst, during `/f3-propose` and Tres Amigos | every agent | one concept, one name |
-| `BACKLOG.md` | the ideas not planned yet, in priority order (section 11) | the agent that finds an idea, with your agreement; `/f3-propose` sorts it | `/f3-propose` | staying focused never loses an idea |
-| `arch/decisions.md` | the structural decisions, with their reasons and the options set aside | the architect, during `/f3-init` and `/f3-design` | the architect, the design review | a choice is not reopened by accident, and its reason survives |
-| `ux/brief.md` | the art direction | the ux agent, during `/f3-ux-direction` | the ux agent | every screen follows one direction |
-| `ux/decisions.md` | the design decisions that hold for the whole product | the architect, when `/f3-archive` takes them from `ux.md` | the ux agent | a choice made in one change applies to the next ones |
-| `ux/cookbook.md` | the verified recipes for the design tool | the ux agent, during `/f3-ux-calibrate` and any work in the tool | the ux agent | the agent does not rediscover the tool's API in every session |
+| `openspec/specs/` | the current behavior of the product | OpenSpec, when `f3 archive` merges the delta specs | everyone | the reference every new change is compared with |
+| `CONTEXT.md` | the vocabulary (see 5.1) | the analyst, during `f3 propose` and Tres Amigos | every agent | one concept, one name |
+| `BACKLOG.md` | the ideas not planned yet, in priority order (section 11) | the agent that finds an idea, with your agreement; `f3 propose` sorts it | `f3 propose` | staying focused never loses an idea |
+| `arch/decisions.md` | the structural decisions, with their reasons and the options set aside | the architect, during `f3 init` and `f3 design` | the architect, the design review | a choice is not reopened by accident, and its reason survives |
+| `ux/brief.md` | the art direction | the ux agent, during `f3 ux-direction` | the ux agent | every screen follows one direction |
+| `ux/decisions.md` | the design decisions that hold for the whole product | the architect, when `f3 archive` takes them from `ux.md` | the ux agent | a choice made in one change applies to the next ones |
+| `ux/cookbook.md` | the verified recipes for the design tool | the ux agent, during `f3 ux-calibrate` and any work in the tool | the ux agent | the agent does not rediscover the tool's API in every session |
 | `ux/views.md` | the **views register**: each view of the code, its unit of code, its displays (route and kind) and the screens seen through each | the developer, in the commit that creates, renames or removes a view or one of its routes | the tester, the ux agent, the architect | the tester names its page objects without reading code or mockups; a route coded without design shows up as a display without screen |
 | `tests/e2e/features/` | the feature files, one per capability | `f3-features`, regenerated at each acceptance and at archiving | the test runner, you | the specs, executable word for word |
 | `tests/e2e/manual-scenarios.md` | the scenarios not automated end to end, each with its reason, its replacement coverage and its origin | the analyst (Tres Amigos) or the tester (acceptance), with your agreement | `f3-features`, the tester, Tres Amigos | an exception is decided once and is not raised again; `f3-features` rejects an entry that no longer matches a scenario |
@@ -324,53 +429,55 @@ The toolkit, its templates and every **stable keyword** are in English: headings
 
 Every agent loads the f3-agent skill at startup: the rules they all share (the user decides, one question at a time, a validated decision written at once, the frame check, the language). An agent's file only holds its role and its **writing scope table**; a command says what its step produces, never what may be written. An agent asked to write outside its table stops and says so.
 
-Why separate agents: a role shapes behavior. An agent called "architect" that leads a functional interview drifts towards technical solutions; an agent that writes both the code and its acceptance tests declares its own work finished. Each command declares its agent, so you never switch agents by hand.
+Why separate agents: a role shapes behavior. An agent called "architect" that leads a functional interview drifts towards technical solutions; an agent that writes both the code and its acceptance tests declares its own work finished. Each command declares its agent, and `f3 <step>` starts the session as that agent, so you never choose an agent by hand.
 
 The tester's isolation is deliberate: it reads the specs, the feature files, the Stack section, the Test strategy of the design, the impact of `ux.md`, the views register, and the running application. What it does not know, it cannot use to make a test pass.
 
-Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent is removed from its tool list, which also saves context.
+Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent (the `deny-tools` list of its file) is removed from its tool list, which also saves context. Each agent also has a **permission table** (`<agent>.permission`, next to its file): the paths it may edit, and for the tester the paths it may read. What each tool enforces of it is in section 12.
 
 ---
 
 ## 7. The workflow at a glance
 
 ```
-once per project      /f3-init ── /f3-ux-calibrate ── /f3-ux-direction ── /f3-ux-tokens
+once per project      f3 init ── f3 ux-calibrate ── f3 ux-direction ── f3 ux-tokens
 
-per change            /f3-propose          clarification, proposal, specs      analyst
+per change            f3 propose          clarification, proposal, specs      analyst
                            │
-                      /f3-tres-amigos      specs reviewed by 4 viewpoints      analyst + 4 explore
+                      f3 tres-amigos      specs reviewed by 4 viewpoints      analyst + 4 exploration
                            │
-                      /f3-ux-design        impact, components, screens         ux
+                      f3 ux-design        impact, components, screens         ux
                            │
-                      /f3-design           design.md, tasks.md                 architect
+                      f3 design           design.md, tasks.md                 architect
                            │
-                      /f3-design-review    design reviewed by 3 viewpoints     architect + 3 explore
+                      f3 design-review    design reviewed by 3 viewpoints     architect + 3 exploration
                            │
-                      /f3-dev              code, unit and integration tests,   developer
+                      f3 dev              code, unit and integration tests,   developer
                            │               views register
                       your check of the journeys, then
-                      /f3-ux-design <change> conformity                        ux + general
+                      f3 ux-design <change> conformity                        ux + general
                            │
-                      /f3-acceptance       feature files, steps, page objects  tester + explore
-                           │   failures: adapt the test │ ticket → /f3-dev │ amend │ backlog │ manual
+                      f3 acceptance       feature files, steps, page objects  tester + itself
+                           │   failures: adapt the test │ ticket → f3 dev │ amend │ backlog │ manual
                            │
-                      /f3-archive          merge specs, check, merge branch    architect
+                      f3 archive          merge specs, check, merge branch    architect
 ```
+
+"exploration" and "general" are the built-in subagents of the tool: `Explore` and `general-purpose` under Claude Code, `explore` and `general` under OpenCode. The tester calls itself as a subagent for the fidelity review of its tests.
 
 The OpenSpec schema enforces the order of the planning steps: an artifact cannot be written before the artifacts it requires exist, and implementation cannot start before the design review is validated.
 
 | Artifact of the schema | File | Written by | Requires |
 |---|---|---|---|
-| clarification | `clarification.md` | `/f3-propose` | nothing |
-| proposal | `proposal.md` | `/f3-propose` | clarification |
-| specs | `specs/<capability>/spec.md` | `/f3-propose` | proposal |
-| amigos | `validations/amigos.md` | `/f3-tres-amigos` | specs |
-| ux | `validations/ux.md` | `/f3-ux-design` | amigos |
-| design | `design.md` | `/f3-design` | specs, ux |
-| tasks | `tasks.md` | `/f3-design` | specs, design |
-| review | `validations/review.md` | `/f3-design-review` | tasks |
-| (apply) | code | `/f3-dev` | review |
+| clarification | `clarification.md` | `f3 propose` | nothing |
+| proposal | `proposal.md` | `f3 propose` | clarification |
+| specs | `specs/<capability>/spec.md` | `f3 propose` | proposal |
+| amigos | `validations/amigos.md` | `f3 tres-amigos` | specs |
+| ux | `validations/ux.md` | `f3 ux-design` | amigos |
+| design | `design.md` | `f3 design` | specs, ux |
+| tasks | `tasks.md` | `f3 design` | specs, design |
+| review | `validations/review.md` | `f3 design-review` | tasks |
+| (apply) | code | `f3 dev` | review |
 
 A step conducted by a command is done when its **validation file** exists. The command writes it only when you declare the step finished, so that you can run the step in several sessions.
 
@@ -378,9 +485,9 @@ A step conducted by a command is done when its **validation file** exists. The c
 
 ## 8. The steps, one by one
 
-Each step below gives: its purpose, the command, what you do, what it produces, and what to watch. Run each command in a **new session**: a fresh context per step keeps the agent focused, and the files carry the state.
+Each step below gives: its purpose, the command, what you do, what it produces, and what to watch. Launch each command from a terminal with `f3 <step> <arguments>`: it starts a **new session** as the agent of the step (section 4.2). A fresh context per step keeps the agent focused, and the files carry the state.
 
-### Step 0: framing the project, once (`/f3-init`)
+### Step 0: framing the project, once (`f3 init`)
 
 **Purpose.** Describe the product, decide the stack, and write the framing files.
 
@@ -389,7 +496,7 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 **Modes.** The command reads the repository and picks a mode:
 - **creation**: no framing file exists;
 - **adoption**: files exist, but not in the f3 format (see section 14);
-- **update**: the project is already framed; you say which themes to review.
+- **update**: the project is already framed; you say which themes to review. The theme **Tools** writes the missing files of the tools of the project (5.1), aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore`, and rewrites the marker of AGENTS.md in its current form; it touches nothing else. The command proposes it first when the launch state reports a tool that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or the marker of AGENTS.md in its former form ("written by /f3-init").
 
 **What you do.** Answer an interview, one question at a time, each with a recommended answer: product, users, expected behavior, volumetry, platform and constraints, security and data, design tool, language, vocabulary. Then the **stack phase**:
 
@@ -400,7 +507,11 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 5. it writes the Stack section of AGENTS.md, and you validate it;
 6. it adds a first backlog entry: set up the repository according to the Stack section.
 
-**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of `opencode.json`. Nothing is committed: you review `git diff` and commit.
+**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. Nothing is committed: you review `git diff` and commit.
+
+> **Claude Code.** At the first f3 session in the project, each developer trusts the folder and approves the servers of `.mcp.json`.
+
+> **OpenCode.** The command proposes to move the user preferences found in the project `opencode.json` (providers, models, agent settings) to `~/.config/opencode/opencode.json`, and moves them only with your agreement. OpenCode reads its configuration at startup: a session opened by hand must be restarted after a change of `opencode.json`.
 
 **Example of a context part** (fictional invoicing product):
 
@@ -412,26 +523,26 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 
 A good context line lets someone decide a concrete case. "Fast" is not a context line; "a list of 50,000 invoices opens in under a second" is.
 
-### Step 0': the design setup, once (`/f3-ux-calibrate`, `/f3-ux-direction`, `/f3-ux-tokens`)
+### Step 0': the design setup, once (`f3 ux-calibrate`, `f3 ux-direction`, `f3 ux-tokens`)
 
 Only if the project uses a design tool.
 
-- **`/f3-ux-calibrate`** verifies, on a dedicated empty file of the design tool, how to perform each basic operation (create a page, a board, a component with variants, tokens, export an image), and writes each working recipe in `ux/cookbook.md`. Run it again after an update of the design tool: it checks each recipe again and fixes those that no longer work. Why: an agent that rediscovers a tool's API in every session wastes its context and repeats the same mistakes.
-- **`/f3-ux-direction`** analyzes the product, draws **two clearly contrasting art directions** in the tool, lets you choose or combine, then writes `ux/brief.md` section by section with you (principles, reference colors, typography, icons, anti-references, accessibility, platform, component library). Why: a direction chosen from text produces a default theme; a direction chosen from drawings has an identity.
-- **`/f3-ux-tokens`** creates the design tokens in the tool (global values, semantic roles per theme, component tokens later), checks the contrasts by computation, shows them on a preview, and lets you adjust.
+- **`f3 ux-calibrate`** verifies, on a dedicated empty file of the design tool, how to perform each basic operation (create a page, a board, a component with variants, tokens, export an image), and writes each working recipe in `ux/cookbook.md`. Run it again after an update of the design tool: it checks each recipe again and fixes those that no longer work. Why: an agent that rediscovers a tool's API in every session wastes its context and repeats the same mistakes.
+- **`f3 ux-direction`** analyzes the product, draws **two clearly contrasting art directions** in the tool, lets you choose or combine, then writes `ux/brief.md` section by section with you (principles, reference colors, typography, icons, anti-references, accessibility, platform, component library). Why: a direction chosen from text produces a default theme; a direction chosen from drawings has an identity.
+- **`f3 ux-tokens`** creates the design tokens in the tool (global values, semantic roles per theme, component tokens later), checks the contrasts by computation, shows them on a preview, and lets you adjust.
 
 The design tool is the only source of appearance. The code takes it over by opening the components and screens in the tool, and by using the tokens by their name.
 
-### Step 1: proposing a change (`/f3-propose`)
+### Step 1: proposing a change (`f3 propose`)
 
 **Purpose.** Turn an idea into a clear, small, specified change.
 
 **Agent.** analyst.
 
 **How to start it.**
-- `/f3-propose` alone: it offers to resume a clarification in progress, or shows the backlog, proposes a sorting, and recommends the next change.
-- `/f3-propose credit notes for issued invoices`: it clarifies this idea.
-- `/f3-propose add-credit-notes`: it resumes that change.
+- `f3 propose` alone: it offers to resume a clarification in progress, or shows the backlog, proposes a sorting, and recommends the next change.
+- `f3 propose credit notes for issued invoices`: it clarifies this idea.
+- `f3 propose add-credit-notes`: it resumes that change.
 
 **The interview.** One question at a time, each with a recommended answer, in this order:
 1. **need and scope**, including a size check: if the need covers several independent journeys, the agent proposes a split; the rest goes to the backlog. If you keep something it advised against, it records your decision under "Decisions against advice" and never raises it again;
@@ -447,11 +558,11 @@ Each validated answer is written at once in `clarification.md`. Then the agent w
 
 **What to watch.** At the end, the agent lists the **new steps**: step sentences that did not exist before. Each one will need code in the tests; prefer reusing existing sentences.
 
-### Step 2: the Tres Amigos session (`/f3-tres-amigos <change-id>`)
+### Step 2: the Tres Amigos session (`f3 tres-amigos <change-id>`)
 
 **Purpose.** Make the specs complete and unambiguous before anyone designs or codes.
 
-**Agent.** analyst, as chair, with four members convened one after the other as `explore` subagents:
+**Agent.** analyst, as chair, with four members convened one after the other as built-in exploration subagents (`Explore` under Claude Code, `explore` under OpenCode):
 
 | Member | Viewpoint |
 |---|---|
@@ -476,7 +587,7 @@ The chair merges and orders them into a **grid**; for each point that needs a pr
 
 **What to watch.** A grid can grow long, especially on a project you adopt: reviewers find defects that existed before the change. Keep in the change what makes its scenarios right, observable and acceptable; send the rest to the backlog, with a priority.
 
-### Step 3: the interface design (`/f3-ux-design <change-id>`)
+### Step 3: the interface design (`f3 ux-design <change-id>`)
 
 **Purpose.** Design the views and components the change needs, in the design tool.
 
@@ -510,7 +621,7 @@ The chair merges and orders them into a **grid**; for each point that needs a pr
 
 The developer writes it, in the commit that creates, renames or removes a view or one of its routes, so that at any commit it matches the code. A display without any screen gets the line `none`: that is how a route built without design shows up, precisely, and the conformity check submits it to you.
 
-### Step 4: the technical design and the tasks (`/f3-design <change-id>`)
+### Step 4: the technical design and the tasks (`f3 design <change-id>`)
 
 **Purpose.** Decide how to build the change, and split the work.
 
@@ -534,11 +645,11 @@ A decision that commits the following changes (new technology, new storage) is p
 
 Why functional slices: a component built and unit-tested in one group and never wired into a page in another is a classic agent failure. A slice is only done when the scenario works from end to end.
 
-### Step 5: the design review (`/f3-design-review <change-id>`)
+### Step 5: the design review (`f3 design-review <change-id>`)
 
 **Purpose.** Challenge the design and the tasks before a line of code is written.
 
-**Agent.** architect, as chair, with three `explore` members:
+**Agent.** architect, as chair, with three members, built-in exploration subagents (`Explore` under Claude Code, `explore` under OpenCode):
 
 | Member | Viewpoint |
 |---|---|
@@ -550,7 +661,7 @@ Same mechanism as Tres Amigos: grid, your decisions, application to design.md an
 
 **What to watch.** The chair is the author of the design. Read the raw reports of the members in `review.md`, not only the grid.
 
-### Step 6: development (`/f3-dev <change-id>`)
+### Step 6: development (`f3 dev <change-id>`)
 
 **Purpose.** Write the code.
 
@@ -566,16 +677,16 @@ For a task on a view or a component:
 
 It stops and reports when the design contradicts the specs, when a state of the specs has no screen, when a name differs between code and design, or when the design uses a value that has no token. At the end, it lists what it reported, the displays of `ux/views.md` without screen, and what the manual scenarios of the change ask you to check by hand.
 
-### Step 7: your check, then conformity (`/f3-ux-design <change-id> conformity`)
+### Step 7: your check, then conformity (`f3 ux-design <change-id> conformity`)
 
 **Your check.** Launch the application and try the journeys of the change yourself, including the checks by hand that the developer listed for the manual scenarios. Nothing replaces it, and it is cheap at this point.
 
-**Conformity.** Only when the interface design step was approved (not when it was closed as not-applicable). The ux agent delegates to the `general` subagent the capture of each approved screen in the running application, through the display under which `ux/views.md` lists it, then compares each capture with the design screen and lists the deviations. Each display of `ux/views.md` without screen is also a deviation. For each one, you decide:
-- **ticket**: a task in a "Conformity fixes" group of tasks.md, for `/f3-dev`;
+**Conformity.** Only when the interface design step was approved (not when it was closed as not-applicable). The ux agent delegates to the built-in general subagent (`general-purpose` under Claude Code, `general` under OpenCode) the capture of each approved screen in the running application, through the display under which `ux/views.md` lists it, then compares each capture with the design screen and lists the deviations. Each display of `ux/views.md` without screen is also a deviation. For each one, you decide:
+- **ticket**: a task in a "Conformity fixes" group of tasks.md, for `f3 dev`;
 - **design update**: the implementation is better, the screen is updated in the tool; for a display coded without design, its screens are drawn;
 - **backlog**.
 
-### Step 8: acceptance (`/f3-acceptance <change-id>`)
+### Step 8: acceptance (`f3 acceptance <change-id>`)
 
 **Purpose.** Prove each scenario on the launched application, and catch regressions.
 
@@ -584,14 +695,14 @@ It stops and reports when the design contradicts the specs, when a state of the 
 What happens:
 1. the feature files are regenerated from the specs with the delta of the change; the manual scenarios are tagged `@manual` and excluded;
 2. the test runner lists the steps without definition; the tester writes them, adapts the steps of modified requirements, and writes or adapts the **page objects** of the views involved, named after `ux/views.md`;
-3. an independent `explore` subagent reviews the new and changed step definitions and page objects: does each definition do exactly what its sentence says?
+3. the tester, called as a subagent in a fresh context and under the same reading rules, reviews the new and changed step definitions and page objects: does each definition do exactly what its sentence says?
 4. the whole suite runs;
 5. each failure is presented with its facts and a proposal (adapt the test, ticket for the developer, amendment of the spec, backlog, or manual under the conditions of section 10.4), following the classification in section 10.6; you decide;
 6. the pass report is written in `acceptance/pass-NN.md`, and the tests and the report are committed.
 
-Green means every scenario passes (except, during a migration, the scenarios outside the delta that are skipped for a missing step) and no ticket was added. Red with tickets means `/f3-dev`, then `/f3-acceptance` again: each run is a new pass, and a pass never modifies the report of a previous one.
+Green means every scenario passes (except, during a migration, the scenarios outside the delta that are skipped for a missing step) and no ticket was added. Red with tickets means `f3 dev`, then `f3 acceptance` again: each run is a new pass, and a pass never modifies the report of a previous one.
 
-### Step 9: archiving (`/f3-archive <change-id>`)
+### Step 9: archiving (`f3 archive <change-id>`)
 
 **Agent.** architect.
 
@@ -609,7 +720,7 @@ This section follows one small change through the whole workflow, with excerpts 
 
 ### 9.1 The idea
 
-You run `/f3-propose let the accountant issue an invoice`.
+You run `f3 propose let the accountant issue an invoice`.
 
 ### 9.2 Clarification (excerpt of `clarification.md`)
 
@@ -709,7 +820,7 @@ The Technical security member objects: "Task 1.1: nothing says how the test-data
 
 ### 9.8 Development
 
-`/f3-dev add-invoice-issuing`: the developer creates `feat/add-invoice-issuing`, implements group 1, then group 2 (opening the four screens before task 2.3), then group 3, one commit per task. With task 2.3, it adds the entry of `invoice-editor` to `ux/views.md`, with its display `/invoices/:number (page)` and its four screens.
+`f3 dev add-invoice-issuing`: the developer creates `feat/add-invoice-issuing`, implements group 1, then group 2 (opening the four screens before task 2.3), then group 3, one commit per task. With task 2.3, it adds the entry of `invoice-editor` to `ux/views.md`, with its display `/invoices/:number (page)` and its four screens.
 
 ### 9.9 Acceptance
 
@@ -735,11 +846,11 @@ Feature: invoicing
       ...
 ```
 
-The tester writes the page object `InvoiceEditor`, named after `ux/views.md`, and the step definitions (see section 10.5). The fidelity reviewer notices that the definition of "the invoice ... has the status ..." read the status of whatever invoice was displayed, without opening the one named in the sentence; the tester fixes it. One scenario fails: the refusal message is "Line amount missing" instead of "A line has no amount". The requirement is in the delta, the application does not do what the spec says: you choose **ticket**. A group "Acceptance fixes, pass 01" is added to tasks.md; `/f3-dev` fixes it; `/f3-acceptance` passes green.
+The tester writes the page object `InvoiceEditor`, named after `ux/views.md`, and the step definitions (see section 10.5). The fidelity reviewer notices that the definition of "the invoice ... has the status ..." read the status of whatever invoice was displayed, without opening the one named in the sentence; the tester fixes it. One scenario fails: the refusal message is "Line amount missing" instead of "A line has no amount". The requirement is in the delta, the application does not do what the spec says: you choose **ticket**. A group "Acceptance fixes, pass 01" is added to tasks.md; `f3 dev` fixes it; `f3 acceptance` passes green.
 
 ### 9.10 Archiving
 
-`/f3-archive add-invoice-issuing` merges the specs, checks that the regenerated feature file is identical to the tested one, sets backlog entry B-002 to `done add-invoice-issuing`, and merges the branch.
+`f3 archive add-invoice-issuing` merges the specs, checks that the regenerated feature file is identical to the tested one, sets backlog entry B-002 to `done add-invoice-issuing`, and merges the branch.
 
 ---
 
@@ -763,9 +874,9 @@ A test written by hand from a scenario can drift from it: it may check something
 | `- **GIVEN** ...`, `- **WHEN** ...`, `- **THEN** ...`, `- **AND** ...`, `- **BUT** ...` | `Given ...`, `When ...`, `Then ...`, `And ...`, `But ...` |
 
 ```
-node ~/.config/opencode/scripts/f3-features.mjs                 main specs only
-node ~/.config/opencode/scripts/f3-features.mjs <change-id>     main specs with the delta of that change
-node ~/.config/opencode/scripts/f3-features.mjs --check [<id>]  same conversion, nothing written
+node ~/.local/share/f3/scripts/f3-features.mjs                 main specs only
+node ~/.local/share/f3/scripts/f3-features.mjs <change-id>     main specs with the delta of that change
+node ~/.local/share/f3/scripts/f3-features.mjs --check [<id>]  same conversion, nothing written
 ```
 
 The script applies the delta of the change (added, modified, removed and renamed requirements) before converting, so the tests check the new behavior. It refuses a scenario line that is not a step, a scenario that does not start with GIVEN or WHEN, a step order other than GIVEN, WHEN, THEN, a scenario without THEN, and an entry of the manual scenarios register that is malformed or matches no scenario.
@@ -891,11 +1002,11 @@ The runner and the exact commands are in the End-to-end tests subsection of the 
 
 - Statuses: `open`, `in-progress <change-id>`, `done <change-id>`, `dropped` with its reason.
 - Origin: `initial framing`, or the change and the step that produced it (`propose`, `tres-amigos`, `ux-design`, `design`, `design-review`, `conformity`, `acceptance`), with the date.
-- Open entries are kept in priority order, which you decide when `/f3-propose` offers a sorting.
+- Open entries are kept in priority order, which you decide when `f3 propose` offers a sorting.
 - Entries come from the framing, the clarification (out of scope, split), the reviews (points set aside), conformity and acceptance (defects outside the change).
 - An entry is never deleted and nothing is added without your agreement. A number is never reused.
 
-When you run `/f3-propose` without argument and nothing is in progress, it shows the backlog and recommends the next change. The backlog is how the workflow stays focused without losing anything.
+When you run `f3 propose` without argument and nothing is in progress, it shows the backlog and recommends the next change. The backlog is how the workflow stays focused without losing anything.
 
 ---
 
@@ -903,18 +1014,19 @@ When you run `/f3-propose` without argument and nothing is in progress, it shows
 
 Be clear about which controls are mechanisms and which are instructions given to an agent. An instruction is usually followed, but nothing physically prevents an agent from ignoring it.
 
+The workflow is the same under Claude Code and OpenCode; some of its controls are not. These hold under both tools:
+
 | Control | Kind |
 |---|---|
 | Order of the planning artifacts, and apply only after the design review | **mechanism**: the OpenSpec schema blocks |
 | A step without definition fails the test generation | **mechanism**: the test runner (except the scenarios skipped during a migration, counted in the reports) |
 | Scenario lines that are not steps, or steps in the wrong order | **mechanism**: `f3-features` refuses them |
 | An entry of the manual scenarios register that is malformed or matches no scenario | **mechanism**: `f3-features` refuses it |
-| Feature files identical after archiving | **mechanism**: checked by `/f3-archive` by regeneration |
+| Feature files identical after archiving | **mechanism**: checked by `f3 archive` by regeneration |
 | Appearance values only from design tokens | **mechanism** if the Stack section names a lint rule run by the verification command; **instruction** otherwise |
-| An agent cannot edit a file outside its writing scope | **mechanism** for the edit tool; **not** for files written through the shell |
+| A step launched with `f3 <step>` receives only identifiers as arguments, and its prompt never goes through a shell line | **mechanism**: the launcher refuses any other argument, and passes the prompt through a file (4.2) |
 | An agent does not see the MCP tools it does not need | **mechanism**: denied tools are removed from its list |
-| The tester does not read the application code | **mechanism** for the read tool; instruction for the shell |
-| The developer does not modify end-to-end tests | **mechanism** for the edit tool; instruction for the shell |
+| A note from the user does not lift a precondition nor skip a step | **instruction** of each command |
 | Archiving only after a green acceptance | **instruction**: OpenSpec cannot block archiving |
 | An amendment of the specs only after your validation, recorded in `tres-amigos.md` | **instruction**; the regeneration at archiving still proves that the archived specs are the tested ones |
 | One fact per step, reuse of existing steps | **instruction**, checked by the Test member of Tres Amigos |
@@ -922,23 +1034,39 @@ Be clear about which controls are mechanisms and which are instructions given to
 | The views register kept in line with the code | **instruction** to the developer, checked by conformity and by the tester, who cannot name a page object without it |
 | Every agent checks its frame | **instruction** |
 
+These depend on the tool:
+
+| Control | Claude Code | OpenCode |
+|---|---|---|
+| A step runs under its agent | **mechanism**: `f3 <step>` starts the session as the agent of the step, and the hook of `.claude/settings.json` (`f3 guard-prompt`) refuses an f3 command typed in a session started as another agent | **mechanism**: the command switches the session to its agent |
+| The argument of a command names a change in progress; the project is framed; the render succeeded; `f3` is found | **mechanism**: `f3 state` fails, and Claude Code does not start the command | **instruction**: a failing injection does not stop the command; the line that follows it tells the agent to show the error and stop |
+| A step of the workflow is never launched by the model itself | **mechanism**: the commands have `disable-model-invocation` | the OpenCode commands of the toolkit have no such key |
+| An agent cannot edit a file outside its writing scope | **mechanism** for the edit tools, through its guard hook; **not** for files written through the shell | **mechanism** for the edit tool, through its permissions; **not** for files written through the shell |
+| The tester does not read the application code | **mechanism** for the Read tool (by path), for the reading programs of the shell (`cat`, `sed`, `git diff`, `node -e`…), for the search programs (`grep`, `rg`, `find`, permitted only in the paths it may read) and for subagents, through its guard hook; **instruction** for the rest, such as a script that reads a file | **mechanism** for the read tool only; **instruction** for glob, grep and the shell, which can still read the code |
+| The tester calls no subagent but itself | its guard hook | the `subagent` permission of OpenCode |
+| The developer does not modify end-to-end tests | **mechanism** for the edit tools; instruction for the shell | **mechanism** for the edit tool; instruction for the shell |
+| The guard itself fails (error, `f3` not found) | **mechanism**: the call is refused | no guard: OpenCode applies the permissions itself |
+| An f3 agent called as a subagent stays within its scope | **mechanism**: its guard hook applies in subagent mode too; that it writes nothing at all is an **instruction** of the f3-agent skill | its own permissions apply (section 16); that it writes nothing at all is an **instruction** of the f3-agent skill |
+
+Why the difference: OpenCode applies the permissions of an agent itself, and Claude Code does not, so under Claude Code the guard hook of each agent applies its permission table. The same table is written once for both tools. Under OpenCode, closing the tester's gap through the shell would take a plugin: it is not part of the toolkit, and the gap is documented here and in section 16.
+
 The `operations` guidance of `openspec/config.yaml` is advisory in OpenSpec: the toolkit never relies on it. Rules that must hold live in the schema, the agents and the commands.
 
 ---
 
 ## 13. Resuming, re-running, reopening
 
-- **Every command can be run again.** It reads the state of the repository at launch (the `` !`...` `` lines of its prompt) and resumes: a clarification at its first empty section, a review at its pending grid rows, a design at its first `todo` element, an implementation at its unchecked tasks, an acceptance at a new pass.
-- **A spec is amended, not reopened.** Once the Tres Amigos step is validated, a later step that finds a spec missing, ambiguous or impossible to test (the ux design, the technical design, the design review, the acceptance) proposes an **amendment**: the current text, the proposed text, the reason, and the files of the following steps it affects. You validate the exact text; nothing is written before. The agent then applies it, runs the checks, records it at the end of `tres-amigos.md` (step, reason, before, after) and updates or reports the following files. No step is reopened, and the validations stay valid. Two safeguards: an amendment stays within the proposal of the change (anything else goes to the backlog or to a new change), and an amendment that changes an expected result, removes a scenario or reduces what it proves says so explicitly. When an amendment is only a pragmatic way around a problem, the agent also proposes a backlog entry to rework the requirement in a Tres Amigos session. The developer never amends: it reports. An amendment can also touch what surrounds the specs: bring `proposal.md` in line with the specs (never add a need to it), change the entry of a manual scenario in `tests/e2e/manual-scenarios.md`, or refine a term of `CONTEXT.md`. A point of a design review left "to bring to Tres Amigos" is presented again as an amendment the next time `/f3-design-review` runs.
-- **A closed step is reopened only on request.** If you run `/f3-tres-amigos` on a change whose specs are validated, the command says the step is closed, lists the files produced since by the following steps, and asks whether you want to reopen it, knowing that those files will have to be reviewed; for a change of a few requirements, it proposes an amendment instead.
-- **One step per session.** Start a new OpenCode session for each command. The files carry the state; a fresh context keeps the agent sharp.
+- **Every command can be run again.** It reads the state of the repository at launch (the `f3 state` line of its prompt) and resumes: a clarification at its first empty section, a review at its pending grid rows, a design at its first `todo` element, an implementation at its unchecked tasks, an acceptance at a new pass.
+- **A spec is amended, not reopened.** Once the Tres Amigos step is validated, a later step that finds a spec missing, ambiguous or impossible to test (the ux design, the technical design, the design review, the acceptance) proposes an **amendment**: the current text, the proposed text, the reason, and the files of the following steps it affects. You validate the exact text; nothing is written before. The agent then applies it, runs the checks, records it at the end of `tres-amigos.md` (step, reason, before, after) and updates or reports the following files. No step is reopened, and the validations stay valid. Two safeguards: an amendment stays within the proposal of the change (anything else goes to the backlog or to a new change), and an amendment that changes an expected result, removes a scenario or reduces what it proves says so explicitly. When an amendment is only a pragmatic way around a problem, the agent also proposes a backlog entry to rework the requirement in a Tres Amigos session. The developer never amends: it reports. An amendment can also touch what surrounds the specs: bring `proposal.md` in line with the specs (never add a need to it), change the entry of a manual scenario in `tests/e2e/manual-scenarios.md`, or refine a term of `CONTEXT.md`. A point of a design review left "to bring to Tres Amigos" is presented again as an amendment the next time `f3 design-review` runs.
+- **A closed step is reopened only on request.** If you run `f3 tres-amigos` on a change whose specs are validated, the command says the step is closed, lists the files produced since by the following steps, and asks whether you want to reopen it, knowing that those files will have to be reviewed; for a change of a few requirements, it proposes an amendment instead.
+- **One step per session.** `f3 <step>` starts a new session of the tool for each command. The files carry the state; a fresh context keeps the agent sharp.
 - **Commit between steps.** Several commands stop when files are uncommitted (development resuming on unknown files, acceptance, archiving). Review `git diff` after each step and commit; the commands never commit planning files for you.
 
 ---
 
 ## 14. Adopting an existing project
 
-`/f3-init` in **adoption** mode brings an existing project to the f3 format without redoing its choices:
+`f3 init` in **adoption** mode brings an existing project to the f3 format without redoing its choices:
 
 - it reads the existing framing files, and only asks about what is missing or contradictory;
 - it describes the stack in place and records each structural choice in `arch/decisions.md`, asking you the reason of each one; without a reason, it writes "reason not documented";
@@ -949,16 +1077,20 @@ The `operations` guidance of `openspec/config.yaml` is advisory in OpenSpec: the
 Practical sequence:
 
 1. on a clean Git tree, create a branch for the adoption;
-2. check that the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` are in `.opencode/skills/`;
-3. move your providers, models and agent settings from the project `opencode.json` to `~/.config/opencode/opencode.json`; keep only `instructions` and the MCP servers the project needs;
-4. run `/f3-init`, with a prompt that gives the facts the repository cannot tell (language, design tool, which choices were validated and which were not);
+2. check that the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` are in the skills folder of each tool of the project (`.claude/skills/`, `.opencode/skills/`); if `openspec/` exists without them for a tool, `openspec init --tools <tool>` adds them, without touching the files of the other tool;
+3. under OpenCode, keep in the project `opencode.json` only `instructions` and the MCP servers the project needs: `f3 init` proposes to move your providers, models and agent settings to `~/.config/opencode/opencode.json`, and moves them only with your agreement;
+4. run `f3 init`, with a prompt after `--` that gives the facts the repository cannot tell (language, design tool, which choices were validated and which were not), for example `f3 init -- the product is in French, Penpot is the design tool, the choice of PostgreSQL was validated, the message queue was not` (section 4.2);
 5. check that the User interface subsection of the Stack covers the design tokens and components (where they live, how a token is named, how the use of tokens is enforced); if no lint rule enforces it yet, add a backlog entry;
 6. if the project has design files, have the ux agent bring them to the current templates: headings and labels, then the content the templates require, without changing any choice of direction;
 7. the views register `ux/views.md` is built once, from the code and the design tool, by the developer: the first group of tasks of the next change contains this task whenever the register is missing or incomplete. The ux agent only reads it. The register then shows the displays without screen and the screens under another name, which the conformity check submits to you;
 8. review `git diff`, commit, merge;
-9. run `/f3-propose`: the backlog contains the work of bringing the rest to the standard, which goes through the normal workflow, in small changes.
+9. run `f3 propose`: the backlog contains the work of bringing the rest to the standard, which goes through the normal workflow, in small changes.
 
 Rewriting existing scenarios and end-to-end tests is a change **without behavior change** in the specs: the scenarios are reworded into steps, the tests are rebuilt as feature files, step definitions and page objects. Do it in slices of a few requirements (thirty to forty scenarios is a size a review can absorb). While a capability is only partly rewritten, its other scenarios are skipped rather than failing the generation (section 10.3). A slice also brings the code back in line with the requirements it rewrites: the backlog entries for defects on those requirements join its scope. The old test files are not migrated: each one is deleted by the slice that rewrites the requirements it covered.
+
+### 14.1 A project framed for one tool
+
+A project framed before the toolkit ran under both tools has the files of one tool only (`opencode.json`, or `CLAUDE.md` and `.mcp.json`), and its AGENTS.md marker says "written by /f3-init". There is no migration command: the launch state of each command warns about what is missing (section 5.1), and `f3 init` in update mode proposes the theme Tools first. The theme writes the files of the tools of the project that are missing, aligns their MCP servers on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the marker; it touches nothing else. Review `git diff`, then commit.
 
 ---
 
@@ -966,10 +1098,15 @@ Rewriting existing scenarios and end-to-end tests is a change **without behavior
 
 ### 15.1 Prerequisites
 
-- OpenCode.
-- OpenSpec, which requires Node.js 20.19.0 or later, with a profile that installs `openspec-continue-change` (`openspec config profile`, then `openspec update` in each project).
-- In each project, an end-to-end test runner that reads Gherkin feature files, decided during `/f3-init` (for example Playwright with playwright-bdd).
+- Claude Code, OpenCode, or both.
+- Node.js 20.19.0 or later, for OpenSpec, the render and the `f3` command; and `~/.local/bin` in your `PATH`.
+- OpenSpec, with a profile that installs `openspec-continue-change` (`openspec config profile`, then `openspec update` in each project).
+- In each project, an end-to-end test runner that reads Gherkin feature files, decided during `f3 init` (for example Playwright with playwright-bdd).
 - Optionally, a design tool with an MCP server (the toolkit provides the Penpot adapter).
+
+`install.sh` stops when Node.js is missing or older than 20.19.0. A tool you install for, OpenSpec, or `~/.local/bin` missing from the `PATH` only gives a warning: they can be installed afterwards.
+
+Checked versions: Claude Code 2.1.319, OpenCode 2.2.5, OpenSpec 1.16.0. After updating one of them, run `node --test cli/test/*.test.mjs` in the toolkit: it renders both tools and compares each render with the reference of its tool.
 
 ### 15.2 Installing
 
@@ -979,34 +1116,71 @@ cd ~/projects/agentic-toolkit
 ./install.sh
 ```
 
-Restart OpenCode. `./install.sh --remove` removes every link the toolkit created.
+Without argument, `install.sh` asks which tool to install for: 1) Claude Code, 2) OpenCode, 3) both. In a script, give the answer as an argument: `./install.sh claude`, `./install.sh opencode` or `./install.sh all`. For each tool, it renders the agents and commands into `build/<tool>`, then links them (section 4.1), and removes the dead links it left behind; if a render fails, it touches no link. Run it again after adding an agent, a command, a skill or a script; a change of an existing file needs no reinstallation (section 4.3).
+
+`./install.sh --remove` removes every link the toolkit created, for both tools. `./install.sh --render <dir>` renders each tool into `<dir>/<tool>/` and installs nothing.
+
+Then, in a project, launch each step from a terminal with `f3 <step> <arguments>`; `f3` alone lists the steps. The first `f3 <step>` of a project sets its tool (section 4.4).
+
+> **Claude Code.** New Claude Code sessions load the agents, commands and skills. The first time you work in a project, Claude Code asks you to trust its folder, then to approve the MCP servers of its `.mcp.json`.
+
+> **OpenCode.** `f3 <step>` starts a new OpenCode process each time; a session you opened by hand must be restarted to load the agents, commands and skills.
 
 ### 15.3 Common problems
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| A command answers under the wrong agent | the command was not launched with `/`, or the agent name is unknown | launch the command with `/f3-...` in a new session; check `~/.config/opencode/agents/` contains the agent |
-| "schema f3 not found" | the toolkit is not installed, or the link is broken | run `./install.sh`; `openspec schema which f3` shows where the schema resolves |
-| `/f3-design` stops on a missing skill | the OpenSpec profile does not install `openspec-continue-change` | `openspec config profile`, then `openspec update` |
-| The next step refuses to start although the previous one is finished | its validation file was not written: the step was not declared finished | relaunch the command of the previous step and declare it finished, or ask its agent to write the validation in the format of its command |
-| An agent writes nothing and says it is not allowed | the file is outside its writing scope | run the command meant for that file (see section 6) |
-| An agent writes a file in the wrong folder | its session started before a permission change; it wrote where it could | restart OpenCode after any toolkit update, then move the file |
-| An agent's context fills up quickly | it loads MCP tools it does not need | deny them in its permissions (`"<server>_*": "deny"`), globally in `~/.config/opencode/opencode.json` for built-in agents such as `explore` |
-| The verification command never passes | it includes the end-to-end tests | keep the end-to-end suite out of the verification command; it is run by `/f3-acceptance` |
-| A setting seems ignored | a `.opencode` folder or `opencode.json` higher in the directory tree (even in your home folder) overrides it | remove the stray file; keep only the global and the project configuration |
+| Symptom | Tool | Cause | Fix |
+|---|---|---|---|
+| A command is refused with "runs as the <agent> agent" | Claude Code | it was typed in a session started otherwise | quit, and launch it from a terminal with `f3 <step> <arguments>` |
+| A command stops with "Shell command failed" | Claude Code | `f3 state` refused the argument or the state of the project; its message says why | pass the identifier of a change in progress; frame the project with `f3 init` |
+| The agent shows an error of the launch state and stops | OpenCode | the same: `f3 state` refused the argument or the state of the project | the same |
+| `f3: command not found`; under Claude Code, every call of an agent refused with "f3 guard failed"; under OpenCode, the launch state answers "command not found" | both | `~/.local/bin` is not in the `PATH`, or the toolkit folder moved | add `~/.local/bin` to the `PATH`; run `./install.sh` again |
+| In a session opened by hand, an f3 agent or command is unknown | both, mostly OpenCode | `build/` disappeared (`git clean -fdX`, a new clone): the installation links are dead | launch the step with `f3 <step>`, which renders before starting the tool, or run `f3 render`; then open a new session |
+| `f3` refuses: "the render of <tool> failed", or the launch state reports it | both | a source of the toolkit has an unknown `{{` marker or an unreadable frontmatter, the toolkit is read-only, or the disk is full | fix the source and launch again; for a read-only toolkit, run `./install.sh <tool>` with the rights to write in it |
+| The launch state warns that the toolkit changed since the last render | both | the toolkit changed after the session loaded its agent and command | start a new session with `f3 <step>` |
+| The launch state warns that the project lacks files of a tool, that `.f3/local` is not ignored by Git, or that the MCP servers differ | both | the project was framed for one tool, by an earlier version, or a file was edited by hand | `f3 init`, theme Tools (section 14.1) |
+| `f3` refuses: ".f3/local names <tool>, for which f3 is not installed" | both | the tool of the project is not installed on this machine | `./install.sh <tool>`, or `f3 tool <other tool>` |
+| `f3` refuses: "no tool chosen" | both | both tools are installed, `.f3/local` is absent, and there is no terminal to ask in | `f3 tool claude` or `f3 tool opencode` |
+| `f3` refuses: "… is not an identifier" | both | free text was given as an argument | write it after `--` (section 4.2) |
+| The note after `--` does not reach the agent | OpenCode | the command was typed in a session, or the session runs on the managed service | launch the step with `f3 <step> … -- <prompt>` |
+| "schema f3 not found" | both | the toolkit is not installed, or the link is broken | run `./install.sh`; `openspec schema which f3` shows where the schema resolves |
+| `f3 design` stops on a missing skill | both | the OpenSpec profile does not install `openspec-continue-change` | `openspec config profile`, then `openspec update` |
+| The next step refuses to start although the previous one is finished | both | its validation file was not written: the step was not declared finished | relaunch the command of the previous step and declare it finished, or ask its agent to write the validation in the format of its command |
+| An agent writes nothing and says it is not allowed | both | the file is outside its writing scope | run the command meant for that file (see section 6) |
+| An agent writes a file in the wrong folder | OpenCode | its session started before a permission change; it wrote where it could | start a new session with `f3 <step>` after any toolkit update, then move the file |
+| An agent's context fills up quickly | both | it loads MCP tools it does not need | add the server to the `deny-tools` list of the agent in the toolkit; under OpenCode, deny it for built-in agents such as `explore` in `~/.config/opencode/opencode.json` (`"<server>_*": "deny"`) |
+| The verification command never passes | both | it includes the end-to-end tests | keep the end-to-end suite out of the verification command; it is run by `f3 acceptance` |
+| A setting seems ignored | OpenCode | a `.opencode` folder or `opencode.json` higher in the directory tree (even in your home folder) overrides it | remove the stray file; keep only the global and the project configuration |
+| The MCP servers of the project are missing | Claude Code | they were not approved at the first session | approve them with `/mcp` in a session; `claude mcp list` shows their state |
+| Claude Code asks for a confirmation at each edit | Claude Code | the guard never answers "allow": your own permission mode applies | choose `acceptEdits` in your settings if you want fewer confirmations; edits outside a scope stay refused |
 
 ### 15.4 Commands that run on your machine
 
-Some commands insert the output of shell commands into their prompt when you launch them. All of them only read: `git status`, `git branch`, `git rev-parse`, `ls`, `grep`, `head`, `openspec --version`, `openspec schema which`, `openspec status`, and `f3-features --check`. The argument of a command is inserted into these shell commands: pass only a change identifier.
+Each command inserts into its prompt, when you launch it, the output of a single shell command run in the project root: `f3 state <command>`. It only reads the project: `git status`, `git branch`, `git rev-parse`, `git check-ignore`, the framing files and the folders of the change, `openspec --version`, `openspec schema which`, `openspec status`, and `f3-features --check`. It writes only in the toolkit and the temporary directory: it renders the agents and commands again into `build/` (section 4.3), and removes the private launch file that `f3 <step>` wrote for the session. The argument of the command is passed to it between single quotes, and checked before it builds any path: pass only a change identifier.
+
+Launched with `f3 <step>`, a command only ever receives identifiers as arguments, and the prompt after `--` never goes through a shell line (section 4.2).
+
+> **Claude Code.** `f3 state` is the only shell command a command may run without asking. An argument that breaks the quotes of the line is refused by the permission check of Claude Code, and the command does not start.
+
+> **OpenCode.** A command typed in a session (`/f3-<step> <arguments>`) still works, but its argument is inserted into the shell line of its injection, which OpenCode runs without any permission check: an argument containing an apostrophe can end the quotes and run another command. `f3 state` refuses an argument that is not an identifier, but only once the shell has run the line. Type only a change identifier, or better, launch the step with `f3 <step>`: when `f3` did not start the session, the launch state says so and gives the `f3` command to use.
 
 ---
 
 ## 16. Known limits
 
-- **Archiving cannot be blocked mechanically.** OpenSpec has no field to require an artifact before archiving. `/f3-archive` checks the last acceptance report, but an agent archiving by other means would not.
-- **Edit permissions do not cover the shell.** An agent can write a file with a shell command even where its edit permission denies it. The toolkit relies on instructions there, and on Git: every step ends with a diff you review.
-- **Subagent permissions.** The conformity mode relies on the built-in `general` subagent having the browser tools while the ux agent does not. In current OpenCode, a subagent applies its own permissions; check it on your version.
-- **Positional arguments.** `/f3-ux-design <change-id> conformity` reads its two arguments as `$1` and `$2`. With a single argument, it falls back to the design mode.
+- **Archiving cannot be blocked mechanically.** OpenSpec has no field to require an artifact before archiving. `f3 archive` checks the last acceptance report, but an agent archiving by other means would not.
+- **Permissions do not cover writes through the shell.** An agent can write a file with a shell command even where its permission table denies it. The toolkit relies on instructions there, and on Git: every step ends with a diff you review.
+- **Subagent tools and permissions.** The conformity mode relies on the built-in general subagent having the browser tools while the ux agent does not.
+  > **Claude Code.** A subagent does not inherit the tools its caller refuses (checked with 2.1.318). For the same reason, the tester may call no subagent but itself.
+
+  > **OpenCode.** A subagent applies its own permissions; check it on your version.
+- **The tester's reading rules differ by tool** (section 12).
+  > **Claude Code.** The tester searches through the shell: Claude Code 2.1.318 gives its sessions no Grep or Glob tool. It may run `grep`, `rg` and `find` only when every path they search is one it may read; the guard reads their arguments, so an unusual option can make it refuse a legitimate search. The guard stops habits, not intent: it refuses the reading tools and programs, not a script written to read a file. A step definition that would read the code is caught by the fidelity review of the acceptance.
+
+  > **OpenCode.** Only the read tool is restricted: glob, grep and the shell can still read the application code. Closing this gap would take a plugin, which the toolkit does not have. The fidelity review of the acceptance is the remaining check.
+- **A failing launch state does not stop an OpenCode command.** Under OpenCode, the command goes on after a failed injection; the line that follows it tells the agent to show the error and stop. Under Claude Code, the command does not start.
+- **A command typed in a session.** Under OpenCode, `/f3-<step>` typed in a session receives no prompt, and its argument goes through the shell (section 15.4). The OpenCode service managed in the background (`opencode serve --service`) does not receive the prompt either, since it does not inherit the environment of `f3` (deduced, not tested).
+- **One machine per toolkit.** The render relies on the process numbers of the machine: every `f3` that writes in the `build/` of a toolkit must run on the same machine, in the same process namespace (section 4.3).
+- **Positional arguments.** `f3 ux-design <change-id> conformity` reads its two arguments one by one (`$0` and `$1` under Claude Code, `$1` and `$2` under OpenCode). With a single argument, it falls back to the design mode.
 - **Feature files check form, not quality.** The conversion guarantees that the scenarios are executed word for word, not that they are well written. Quality comes from spec-practice and the Test member of Tres Amigos; fidelity of the step definitions comes from the independent review during acceptance.
 - **Conformity needs an approved design step.** When the interface design of a change is closed as not-applicable, conformity does not run: a display coded without design in that change is only reported by the developer.
 - **Tokens are not synchronized automatically.** The design tool is the source; the code takes tokens over through a task of the change that creates or modifies them. A divergence between the two is caught by conformity, not by a mechanism.
