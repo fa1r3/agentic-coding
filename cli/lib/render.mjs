@@ -21,9 +21,9 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { ROOT } from './toolkit.mjs';
+import { ROOT, TOOLS } from './toolkit.mjs';
 
-export const TOOLS = ['claude', 'opencode'];
+export { TOOLS };
 // The kinds of files that are rendered; every other file of a module is used as is.
 const RENDERED = ['agents', 'commands'];
 // Renders in a row whose sources changed before their check, before giving up.

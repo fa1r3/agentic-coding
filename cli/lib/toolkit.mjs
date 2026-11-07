@@ -1,6 +1,6 @@
 // Locations and sources of the toolkit: its root, its commands and agents, and their frontmatter.
-import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync, readdirSync, readlinkSync, existsSync, realpathSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 
@@ -13,9 +13,49 @@ export const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(HOME, '.claude')
 export const DATA_DIR = process.env.XDG_DATA_HOME || join(HOME, '.local', 'share');
 export const SCRIPTS_DIR = join(DATA_DIR, 'f3', 'scripts');
 export const SKILLS_DIR = join(CLAUDE_DIR, 'skills');
+export const OPENCODE_DIR = join(process.env.XDG_CONFIG_HOME || join(HOME, '.config'), 'opencode');
+
+// The tools that run the agents: their name for the user and the folder install.sh links into.
+export const TOOLS = ['claude', 'opencode'];
+export const TOOL_NAMES = { claude: 'Claude Code', opencode: 'OpenCode' };
+export const TOOL_DIRS = { claude: CLAUDE_DIR, opencode: OPENCODE_DIR };
+export const skillsDir = (tool) => join(TOOL_DIRS[tool], 'skills');
 
 // Subcommands of f3 that are not workflow steps: no command may be named /f3-<one of them>.
-export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'render'];
+export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'tool', 'render'];
+
+// Whether a link points into the toolkit, by its own path or once resolved: install.sh writes the
+// path it was run from, which may go through a link.
+function intoToolkit(link) {
+  let target;
+  try {
+    target = resolve(dirname(link), readlinkSync(link));
+  } catch {
+    return false;
+  }
+  const inside = (p) => p.startsWith(ROOT + sep);
+  if (inside(target)) return true;
+  try {
+    return inside(realpathSync(target));
+  } catch {
+    return false;
+  }
+}
+
+// The tools f3 is installed for (D19): those whose agents folder holds a link into the toolkit, the
+// criterion of install.sh --remove. A tool in the PATH without f3 is not installed.
+export function installedTools() {
+  return TOOLS.filter((tool) => {
+    const dir = join(TOOL_DIRS[tool], 'agents');
+    let names;
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return false;
+    }
+    return names.some((name) => intoToolkit(join(dir, name)));
+  });
+}
 
 function unquote(value) {
   const v = value.trim();
