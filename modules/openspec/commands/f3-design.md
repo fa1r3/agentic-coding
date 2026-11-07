@@ -5,10 +5,11 @@ agent: architect
 
 Write the technical design and the tasks of the OpenSpec change $ARGUMENTS.
 
-State at launch:
+State at launch (from `f3 state design`):
 
-- Progress of OpenSpec: !`openspec status --change "$ARGUMENTS" 2>&1 | tail -12`
-- Architecture decisions: !`if [ -f arch/decisions.md ]; then grep -E '^## A-|^- Status:' arch/decisions.md | paste -d' ' - -; else echo "arch/decisions.md absent"; fi`
+!`f3 state design '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments.
 

@@ -3,6 +3,12 @@ description: "Checks on a fixed and minimal case how to perform in the design to
 agent: ux
 ---
 
+State at launch (from `f3 state ux-calibrate`):
+
+!`f3 state ux-calibrate`
+
+If the launch state is missing, empty or reports an error, show it and stop.
+
 Goal: establish or check again `ux/cookbook.md`, on a fixed and minimal case, independent of the product. This command uses neither the brief, nor the specs, nor the tokens of the project.
 
 Preconditions: tool.

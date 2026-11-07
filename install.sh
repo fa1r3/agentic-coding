@@ -9,6 +9,7 @@
 #   modules/*/skills/*/      -> ~/.config/opencode/skills/
 #   modules/*/scripts/*      -> ~/.local/share/f3/scripts/
 #   modules/*/schemas/*/     -> ~/.local/share/openspec/schemas/
+#   cli/f3.mjs               -> ~/.local/bin/f3 (f3 state, called by every command)
 set -euo pipefail
 
 TOOLKIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,6 +19,7 @@ SCRIPTS="$DATA/f3/scripts"
 SCHEMAS="$DATA/openspec/schemas"
 # Former location of the scripts: the links left there are removed.
 OLD_SCRIPTS="$OPENCODE/scripts"
+BIN="$HOME/.local/bin"
 MODE="${1:-install}"
 
 if [[ "$MODE" != "install" && "$MODE" != "--remove" && "$MODE" != "--render" ]]; then
@@ -46,7 +48,7 @@ link() {
   ln -sfn "$source" "$target"
 }
 
-DIRS=("$OPENCODE/agents" "$OPENCODE/commands" "$OPENCODE/skills" "$SCRIPTS" "$SCHEMAS")
+DIRS=("$OPENCODE/agents" "$OPENCODE/commands" "$OPENCODE/skills" "$SCRIPTS" "$SCHEMAS" "$BIN")
 shopt -s nullglob
 
 if [[ "$MODE" == "--remove" ]]; then
@@ -70,6 +72,7 @@ for module in "$TOOLKIT"/modules/*/; do
   for f in "$module"scripts/*; do link "$f" "$SCRIPTS/$(basename "$f")"; done
   for d in "$module"schemas/*/; do link "${d%/}" "$SCHEMAS/$(basename "$d")"; done
 done
+for f in "$TOOLKIT"/cli/f3.mjs; do link "$f" "$BIN/f3"; done
 
 for dir in "${DIRS[@]}"; do
   for entry in "$dir"/*; do
@@ -86,5 +89,10 @@ for entry in "$OLD_SCRIPTS"/*; do
     echo "Obsolete link removed: $entry"
   fi
 done
+
+case ":$PATH:" in
+  *":$BIN:"*) ;;
+  *) echo "Warning: $BIN is not in the PATH; add it so that the f3 command is found." >&2 ;;
+esac
 
 echo "Toolkit linked. Restart OpenCode to load the agents, commands and skills."

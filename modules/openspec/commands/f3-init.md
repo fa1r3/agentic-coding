@@ -5,14 +5,11 @@ agent: architect
 
 You frame this project with the f3 standards. Load the f3-standards skill, and read each of its references when you write the file it describes.
 
-State at launch:
+State at launch (from `f3 state init`):
 
-- Framing files: !`for f in AGENTS.md CONTEXT.md BACKLOG.md arch/decisions.md openspec/config.yaml opencode.json; do if [ -f "$f" ]; then m=""; grep -q "f3 standards" "$f" 2>/dev/null && m=" (f3 marker)"; head -1 "$f" | grep -q "^schema: f3" && m=" (f3 marker)"; echo "$f: present$m"; else echo "$f: absent"; fi; done`
-- Git repository: !`git rev-parse --is-inside-work-tree 2>&1 | head -1`
-- Uncommitted changes: !`git status --porcelain 2>&1 | head -20`
-- OpenSpec: !`openspec --version 2>&1 | head -1`
-- Schema f3: !`openspec schema which f3 2>&1 | head -3`
-- OpenSpec skills installed in the project: !`ls .opencode/skills 2>&1`
+!`f3 state init`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of the project `opencode.json`.
 

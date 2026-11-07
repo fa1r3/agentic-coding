@@ -5,10 +5,11 @@ agent: architect
 
 You chair the design review of the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. Goal: a design and tasks that deliver each scenario of the specs, comply with AGENTS.md and arch/decisions.md, and carry no identifiable security risk, before a line of code is written.
 
-State at launch:
+State at launch (from `f3 state design-review`):
 
-- Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
-- Progress of OpenSpec: !`openspec status --change "$ARGUMENTS" 2>&1 | tail -12`
+!`f3 state design-review '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 If design.md or tasks.md is missing, stop: they are written with `f3 design $ARGUMENTS`.
 

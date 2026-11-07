@@ -5,11 +5,11 @@ agent: analyst
 
 You chair a Tres Amigos session on the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. The user represents the business. Goal: complete and unambiguous specs, written as short reusable steps, ready to be designed, developed and turned into executable tests.
 
-State at launch:
+State at launch (from `f3 state tres-amigos`):
 
-- Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
-- Path of the spec-practice skill: !`echo "$HOME/.config/opencode/skills/spec-practice/SKILL.md"`
-- Step form check: !`node "$HOME/.local/share/f3/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
+!`f3 state tres-amigos '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
 

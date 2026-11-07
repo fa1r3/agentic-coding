@@ -5,10 +5,11 @@ agent: ux
 
 Change: "$1". Mode: "$2".
 
-State at launch:
+State at launch (from `f3 state ux-design`):
 
-- Files of the change: !`ls -1 openspec/changes/$1/ openspec/changes/$1/validations/ 2>&1`
-- Design tool named by the context: !`grep -A1 -E '^\s*Design tool' openspec/config.yaml 2>&1 | tail -1`
+!`f3 state ux-design '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 If the mode is "conformity", follow only the section Conformity mode. Otherwise, follow the design mode.
 

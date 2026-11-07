@@ -5,13 +5,11 @@ agent: analyst
 
 Request: "$ARGUMENTS".
 
-State at launch:
+State at launch (from `f3 state propose`):
 
-- Project schema: !`head -1 openspec/config.yaml 2>&1`
-- Changes in progress and their files: !`for d in openspec/changes/*/; do n=$(basename "$d"); [ "$n" = archive ] && continue; s=""; for f in clarification.md proposal.md; do [ -f "$d$f" ] && s="$s $f"; done; [ -d "${d}specs" ] && s="$s specs/"; [ -f "${d}validations/amigos.md" ] && s="$s validations/amigos.md"; echo "- $n:${s:- (empty)}"; done 2>/dev/null`
-- Backlog entries: !`if [ -f BACKLOG.md ]; then grep -E '^## B-|^- Status:' BACKLOG.md | paste -d' ' - - | head -40; else echo "BACKLOG.md absent"; fi`
+!`f3 state propose`
 
-If `openspec/config.yaml` does not start with `schema: f3`, stop: the project must first be framed with `f3 init`.
+If the launch state is missing, empty or reports an error, show it and stop.
 
 Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
 

@@ -5,12 +5,11 @@ agent: tester
 
 Acceptance of the change "$ARGUMENTS", following the e2e-practice skill. This command commits.
 
-State at launch:
+State at launch (from `f3 state acceptance`):
 
-- Current commit: !`git rev-parse --short HEAD`
-- Uncommitted files: !`git status --porcelain | head -30`
-- Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ openspec/changes/$ARGUMENTS/acceptance/ 2>&1`
-- Unchecked tasks: !`grep -c '^\s*- \[ \]' openspec/changes/$ARGUMENTS/tasks.md 2>/dev/null`
+!`f3 state acceptance '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
 
 Produces: the files of `tests/e2e/`, the report `acceptance/pass-<NN>.md`, "Acceptance fixes" groups in tasks.md, `BACKLOG.md` entries with the origin `$ARGUMENTS, acceptance`, entries of `tests/e2e/manual-scenarios.md`, amendments.
 
