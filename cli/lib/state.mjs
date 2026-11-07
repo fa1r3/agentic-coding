@@ -1,11 +1,21 @@
 // f3 state <command> [arguments]: checks the arguments and the project, then prints the launch state
-// of the command. Called by the single shell injection of each command; writes nothing.
+// of the command. Called by the single shell injection of each command; it reads the project, and
+// writes only the render of the toolkit in its build/ (D4).
+// - The tool of .f3/local is rendered, or every installed tool when the file is absent. A failed
+//   render is an error of the launch state; a render that switched its link is a warning: the agent
+//   and the command the session loaded may be out of date (R1).
+// - Under f3 <step>, F3_LAUNCH names the launch file of the launcher: its idea and its prompt are
+//   shown last, and the file is removed. Without F3_LAUNCH, the command was typed in a session: a
+//   line recommends f3 <step> (R6); the identifier is checked in both cases.
 // Exit code 0 when the command may go on; otherwise 1, with the reason on stderr (Claude Code then
-// interrupts the command).
+// interrupts the command; under OpenCode, each command says to stop).
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { SCRIPTS_DIR, SKILLS_DIR } from './toolkit.mjs';
+import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, rmdirSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { LAUNCH_FILE, LAUNCH_PREFIX, LaunchError, readLocal } from './launch.mjs';
+import { render } from './render.mjs';
+import { SCRIPTS_DIR, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
 
 class StateError extends Error {}
 
@@ -75,6 +85,59 @@ function splitArgs(raw) {
   return (raw || '').trim().split(/\s+/).filter(Boolean);
 }
 
+// The path of a skill under each tool of the launch state.
+function skillPath(tools, skill) {
+  const path = (tool) => join(skillsDir(tool), skill, 'SKILL.md');
+  if (!tools.length) return 'f3 is installed for no tool: run install.sh';
+  if (tools.length === 1) return path(tools[0]);
+  return tools.map((t) => `${path(t)} (${TOOL_NAMES[t]})`).join('; ');
+}
+
+// Reads and removes the launch file named by F3_LAUNCH: { idea, prompt }, or null when it is gone (a
+// later command of a session started by f3). Only a file the launcher writes is read and removed:
+// <tmpdir>/f3-launch-*/launch.json, a regular file of the user, private.
+function takeLaunch(file) {
+  const dir = dirname(resolve(file));
+  if (basename(file) !== LAUNCH_FILE || !basename(dir).startsWith(LAUNCH_PREFIX) || dirname(dir) !== resolve(tmpdir())) {
+    throw new StateError(`F3_LAUNCH names a file the launcher of f3 does not write: ${file}`);
+  }
+  let info;
+  try {
+    info = lstatSync(file);
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+  if (!info.isFile() || info.uid !== process.getuid() || (info.mode & 0o077) !== 0) {
+    throw new StateError(`F3_LAUNCH names a file that is not a private file of the user: ${file}`);
+  }
+  let launch;
+  try {
+    launch = JSON.parse(readFileSync(file, 'utf8'));
+  } finally {
+    rmSync(file, { force: true });
+    try { rmdirSync(dir); } catch { /* left to the launcher */ }
+  }
+  return { idea: typeof launch?.idea === 'string' ? launch.idea : null, prompt: typeof launch?.prompt === 'string' ? launch.prompt : null };
+}
+
+// Renders the tools of the launch state; returns the warning lines of the renders that switched.
+function renderTools(tools, renderTool) {
+  const warnings = [];
+  for (const tool of tools) {
+    let result;
+    try {
+      result = renderTool(tool);
+    } catch (error) {
+      throw new StateError(`the render of ${TOOL_NAMES[tool]} failed: ${error.message}`);
+    }
+    if (result.switched) {
+      warnings.push(`- Warning: the toolkit had changed since the last render of ${TOOL_NAMES[tool]}: the agent and the command this session loaded may be out of date. Tell the user; a new session started with f3 loads the current ones.`);
+    }
+  }
+  return warnings;
+}
+
 const changeFiles = (id, ...subs) => block('Files of the change', [`openspec/changes/${id}`, ...subs.map((s) => `openspec/changes/${id}/${s}`)].map(listFolder));
 const openspecProgress = (id) => block('Progress of OpenSpec', tail(run('openspec', ['status', '--change', id]), 12));
 const unchecked = (id) => {
@@ -122,9 +185,9 @@ const ENTRIES = {
   },
   'tres-amigos': {
     args: ['change'],
-    lines: ([id]) => [
+    lines: ([id], { tools }) => [
       changeFiles(id, 'validations'),
-      `- Path of the spec-practice skill: ${join(SKILLS_DIR, 'spec-practice', 'SKILL.md')}`,
+      `- Path of the spec-practice skill: ${skillPath(tools, 'spec-practice')}`,
       block('Step form check', head(run('node', [join(SCRIPTS_DIR, 'f3-features.mjs'), '--check', id]), 40)),
     ],
   },
@@ -184,10 +247,20 @@ const ENTRIES = {
 export const STATE_COMMANDS = Object.keys(ENTRIES);
 
 // Returns { code, stdout, stderr } instead of printing, for the tests.
-export function stateOf(command, rawArgs) {
+export function stateOf(command, rawArgs, { env = process.env, renderTool = render } = {}) {
   const entry = ENTRIES[command];
   if (!entry) return { code: 1, stdout: '', stderr: `f3 state: unknown command "${command}". Known: ${STATE_COMMANDS.join(', ')}.` };
   try {
+    const launch = env.F3_LAUNCH ? takeLaunch(env.F3_LAUNCH) : null;
+    let local;
+    try {
+      local = readLocal();
+    } catch (error) {
+      if (error instanceof LaunchError) throw new StateError(error.message);
+      throw error;
+    }
+    const tools = local?.tool ? [local.tool] : installedTools();
+    const warnings = renderTools(tools, renderTool);
     if (entry.framed !== false) checkFramed();
     const args = splitArgs(rawArgs);
     const usage = `f3 ${command}${entry.args.map((a) => (a === 'change' ? ' <change-id>' : a === 'mode?' ? ' [conformity]' : '')).join('')}`;
@@ -197,7 +270,13 @@ export function stateOf(command, rawArgs) {
     if (entry.args.includes('mode?') && args[1] !== undefined && args[1] !== 'conformity') {
       throw new StateError(`Unknown mode "${args[1]}": the only mode is "conformity". Usage: ${usage}.`);
     }
-    return { code: 0, stdout: entry.lines(args).join('\n') + '\n', stderr: '' };
+    const lines = [...entry.lines(args, { tools }), ...warnings];
+    if (!env.F3_LAUNCH) {
+      lines.push(`- Not started by f3: this command was typed in a session. Recommend to the user to start each step in a terminal with f3 <step>, here: f3 ${[command, ...args].join(' ')}`);
+    }
+    if (launch?.idea) lines.push('', 'Idea from the user:', '', launch.idea);
+    if (launch?.prompt) lines.push('', 'Note from the user:', '', launch.prompt);
+    return { code: 0, stdout: lines.join('\n') + '\n', stderr: '' };
   } catch (error) {
     if (error instanceof StateError) return { code: 1, stdout: '', stderr: `f3 state ${command}: ${error.message}` };
     return { code: 1, stdout: '', stderr: `f3 state ${command} failed: ${error.message}` };

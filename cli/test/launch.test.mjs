@@ -22,7 +22,9 @@ const fs = require('node:fs');
 const file = process.env.F3_LAUNCH;
 let launch = null;
 if (file && fs.existsSync(file)) launch = { content: fs.readFileSync(file, 'utf8'), mode: fs.statSync(file).mode & 0o777, dirMode: fs.statSync(require('node:path').dirname(file)).mode & 0o777 };
-fs.appendFileSync(process.env.F3_TEST_RECORD, JSON.stringify({ tool: require('node:path').basename(process.argv[1]), argv: process.argv.slice(2), file, launch }) + '\\n');
+// The injection of the command: f3 state, which inherits F3_LAUNCH.
+const state = process.env.F3_TEST_STATE ? require('node:child_process').spawnSync('node', [process.env.F3_TEST_F3, 'state', ...process.env.F3_TEST_STATE.split(' ')], { encoding: 'utf8' }) : null;
+fs.appendFileSync(process.env.F3_TEST_RECORD, JSON.stringify({ tool: require('node:path').basename(process.argv[1]), argv: process.argv.slice(2), file, launch, state: state && { status: state.status, stdout: state.stdout, stderr: state.stderr } }) + '\\n');
 process.exit(Number(process.env.F3_TEST_EXIT || 0));
 `;
 
@@ -52,7 +54,7 @@ function setup({ installed = ['claude'], local } = {}) {
   const tmp = join(base, 'tmp');
   mkdirSync(tmp);
   const record = join(base, 'record.jsonl');
-  const env = { ...process.env, HOME: home, PATH: `${bin}:${process.env.PATH}`, F3_TOOLKIT_ROOT: root, F3_TEST_RECORD: record, TMPDIR: tmp };
+  const env = { ...process.env, HOME: home, PATH: `${bin}:${process.env.PATH}`, F3_TOOLKIT_ROOT: root, F3_TEST_RECORD: record, F3_TEST_F3: F3, TMPDIR: tmp };
   for (const k of ['CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'F3_LAUNCH']) delete env[k];
   const f3 = (args, options = {}) => spawnSync('node', [F3, ...args], { cwd: project, env: { ...env, ...options.env }, input: options.input ?? '', encoding: 'utf8' });
   const calls = () => (existsSync(record) ? readFileSync(record, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : []);
@@ -172,6 +174,20 @@ test('a prompt after "--" leaves the arguments and the tool unchanged and appear
       assert.deepEqual(JSON.parse(call.launch.content), { idea: null, prompt: text });
     });
     assert.ok(!existsSync(join(t.project, 'pwned')));
+  }
+});
+
+test('the injection of the launched command gets the note of the user from f3 state, last', () => {
+  for (const tool of ['claude', 'opencode']) {
+    const t = setup({ installed: [tool] });
+    mkdirSync(join(t.project, 'openspec', 'changes', 'add-import'), { recursive: true });
+    writeFileSync(join(t.project, 'openspec', 'config.yaml'), 'schema: f3\n');
+    const r = t.f3(['dev', 'add-import', '--', "reprends à la 2.3, l'autre", 'est faite'], { env: { F3_TEST_STATE: 'dev add-import' } });
+    assert.equal(r.status, 0, r.stderr);
+    const [{ state }] = t.calls();
+    assert.equal(state.status, 0, state.stderr);
+    assert.match(state.stdout, /\n\nNote from the user:\n\nreprends à la 2\.3, l'autre est faite\n$/);
+    assert.doesNotMatch(state.stdout, /Warning|Not started by f3/);
   }
 });
 

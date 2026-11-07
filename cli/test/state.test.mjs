@@ -1,10 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { stateOf } from '../lib/state.mjs';
+
+// A throwaway toolkit (the fixtures and the tools/ of the toolkit) and a throwaway HOME where f3 is
+// installed for both tools: set before the toolkit is loaded, so that no test renders the real toolkit.
+const sandbox = mkdtempSync(join(tmpdir(), 'f3-state-sandbox-'));
+const ROOT = join(sandbox, 'toolkit');
+const HOME = join(sandbox, 'home');
+cpSync(join(import.meta.dirname, 'fixtures', 'modules'), join(ROOT, 'modules'), { recursive: true });
+cpSync(join(import.meta.dirname, '..', '..', 'tools'), join(ROOT, 'tools'), { recursive: true });
+const AGENTS = { claude: join(HOME, '.claude', 'agents'), opencode: join(HOME, '.config', 'opencode', 'agents') };
+for (const [tool, dir] of Object.entries(AGENTS)) {
+  mkdirSync(dir, { recursive: true });
+  symlinkSync(join(ROOT, 'build', tool, 'openspec', 'agents', 'analyst.md'), join(dir, 'analyst.md'));
+}
+Object.assign(process.env, { F3_TOOLKIT_ROOT: ROOT, HOME });
+for (const k of ['CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'F3_LAUNCH']) delete process.env[k];
+const { stateOf } = await import('../lib/state.mjs');
+const { writeLaunchFile } = await import('../lib/launch.mjs');
 
 function project({ framed = true } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'f3-state-'));
@@ -103,6 +119,88 @@ test('init marks the f3 files', () => {
   const r = inDir(framed, () => stateOf('init'));
   assert.match(r.stdout, /openspec\/config\.yaml: present \(f3 marker\)/);
   assert.match(r.stdout, /CLAUDE\.md: absent/);
+});
+
+const launched = (cmd, args, launch, options = {}) => inDir(framed, () => stateOf(cmd, args, { env: { F3_LAUNCH: launch }, ...options }));
+
+test('under f3, the idea and the note of the user come last, and the launch file is removed', () => {
+  const file = writeLaunchFile({ idea: "export d'une facture", prompt: 'line one\n-- line two' });
+  const r = launched('propose', '', file);
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /\n\nIdea from the user:\n\nexport d'une facture\n\nNote from the user:\n\nline one\n-- line two\n$/);
+  assert.doesNotMatch(r.stdout, /Not started by f3/);
+  assert.ok(!existsSync(file) && !existsSync(join(file, '..')));
+});
+
+test('under f3 without a prompt, or once the launch file is consumed: no note', () => {
+  const file = writeLaunchFile({ idea: null, prompt: null });
+  for (let i = 0; i < 2; i++) {
+    const r = launched('dev', 'add-import', file);
+    assert.equal(r.code, 0, r.stderr);
+    assert.doesNotMatch(r.stdout, /from the user|Not started by f3/);
+  }
+});
+
+test('without F3_LAUNCH, a line recommends f3 <step>, and the identifier is still checked', () => {
+  const r = inDir(framed, () => stateOf('ux-design', 'add-import conformity', { env: {} }));
+  assert.match(r.stdout, /\n- Not started by f3: .* here: f3 ux-design add-import conformity\n$/);
+  assert.match(inDir(framed, () => stateOf('dev', "x'; touch pwned", { env: {} })).stderr, /names no change in progress/);
+});
+
+test('a launch file the launcher did not write is neither read nor removed', () => {
+  const mine = join(framed, 'notes.txt');
+  writeFileSync(mine, 'keep');
+  const r = launched('dev', 'add-import', mine);
+  assert.equal(r.code, 1);
+  assert.match(r.stderr, /F3_LAUNCH names a file the launcher of f3 does not write/);
+  assert.ok(existsSync(mine));
+  rmSync(mine);
+  const open = writeLaunchFile({ idea: null, prompt: 'x' });
+  chmodSync(open, 0o644);
+  assert.match(launched('dev', 'add-import', open).stderr, /not a private file of the user/);
+  assert.ok(existsSync(open));
+  const link = writeLaunchFile({ idea: null, prompt: 'x' });
+  rmSync(link);
+  symlinkSync(join(framed, 'BACKLOG.md'), link);
+  assert.match(launched('dev', 'add-import', link).stderr, /not a private file of the user/);
+});
+
+test('the tool of .f3/local is rendered, with its paths; without .f3/local, every installed tool', () => {
+  const rendered = [];
+  const renderTool = (tool) => { rendered.push(tool); return { switched: false }; };
+  const both = inDir(framed, () => stateOf('tres-amigos', 'add-import', { renderTool }));
+  assert.deepEqual(rendered, ['claude', 'opencode']);
+  assert.match(both.stdout, /spec-practice skill: .*\.claude\/skills\/spec-practice\/SKILL\.md \(Claude Code\); .*\.config\/opencode\/skills\/spec-practice\/SKILL\.md \(OpenCode\)\n/);
+  mkdirSync(join(framed, '.f3'), { recursive: true });
+  writeFileSync(join(framed, '.f3', 'local'), 'tool=opencode\n');
+  try {
+    rendered.length = 0;
+    const one = inDir(framed, () => stateOf('tres-amigos', 'add-import', { renderTool }));
+    assert.deepEqual(rendered, ['opencode']);
+    assert.match(one.stdout, new RegExp(`spec-practice skill: ${join(HOME, '.config', 'opencode', 'skills', 'spec-practice', 'SKILL.md')}\n`));
+    writeFileSync(join(framed, '.f3', 'local'), 'tool=vim\n');
+    assert.match(inDir(framed, () => stateOf('dev', 'add-import', { renderTool })).stderr, /unknown tool "vim"/);
+  } finally {
+    rmSync(join(framed, '.f3'), { recursive: true });
+  }
+});
+
+test('a failed render is an error of the launch state', () => {
+  const renderTool = () => { throw new Error('"{{" left in the render of claude: ux/agents/ux.md'); };
+  const r = inDir(framed, () => stateOf('dev', 'add-import', { renderTool }));
+  assert.equal(r.code, 1);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /^f3 state dev: the render of Claude Code failed: "\{\{" left/);
+});
+
+test('a render that switches its link gives one warning line, then none once up to date', () => {
+  // A changed source: the render of each tool differs from the target of its link.
+  writeFileSync(join(ROOT, 'modules', 'ux', 'agents', 'ux.md'), '---\ndescription: "ux"\nmode: primary\n---\nchanged\n');
+  const first = inDir(framed, () => stateOf('dev', 'add-import'));
+  assert.equal(first.code, 0, first.stderr);
+  assert.ok(existsSync(join(ROOT, 'build', 'claude')) && existsSync(join(ROOT, 'build', 'opencode')));
+  assert.equal(first.stdout.match(/^- Warning: the toolkit had changed/gm).length, 2);
+  assert.doesNotMatch(inDir(framed, () => stateOf('dev', 'add-import')).stdout, /Warning/);
 });
 
 test('unknown command', () => {

@@ -12,7 +12,6 @@ export const HOME = homedir();
 export const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(HOME, '.claude');
 export const DATA_DIR = process.env.XDG_DATA_HOME || join(HOME, '.local', 'share');
 export const SCRIPTS_DIR = join(DATA_DIR, 'f3', 'scripts');
-export const SKILLS_DIR = join(CLAUDE_DIR, 'skills');
 export const OPENCODE_DIR = join(process.env.XDG_CONFIG_HOME || join(HOME, '.config'), 'opencode');
 
 // The tools that run the agents: their name for the user and the folder install.sh links into.
