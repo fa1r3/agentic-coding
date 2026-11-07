@@ -4,8 +4,11 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { promptVerdict } from '../lib/guard.mjs';
-import { RESERVED, commands, parseFrontmatter } from '../lib/toolkit.mjs';
+
+// The toolkit reads the test fixtures, not the real sources: set before it is loaded, inherited by f3.
+process.env.F3_TOOLKIT_ROOT = join(import.meta.dirname, 'fixtures');
+const { promptVerdict } = await import('../lib/guard.mjs');
+const { RESERVED, commands, parseFrontmatter } = await import('../lib/toolkit.mjs');
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const root = mkdtempSync(join(tmpdir(), 'f3-guard-'));

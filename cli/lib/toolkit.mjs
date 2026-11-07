@@ -4,7 +4,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 
-export const ROOT = resolve(dirname(realpathSync(fileURLToPath(import.meta.url))), '..', '..');
+// F3_TOOLKIT_ROOT replaces the root, for the tests and their fixtures.
+export const ROOT = process.env.F3_TOOLKIT_ROOT
+  ? resolve(process.env.F3_TOOLKIT_ROOT)
+  : resolve(dirname(realpathSync(fileURLToPath(import.meta.url))), '..', '..');
 export const HOME = homedir();
 export const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(HOME, '.claude');
 export const DATA_DIR = process.env.XDG_DATA_HOME || join(HOME, '.local', 'share');
