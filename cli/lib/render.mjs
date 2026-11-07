@@ -1,13 +1,20 @@
 // f3 render: renders the agents and commands of the toolkit for one tool (analysis, 4.4 and 4.5).
-// The render is built in memory, then named by its SHA-256 fingerprint: build/<tool>.<fingerprint>/.
-// That directory is written only if it does not exist, in build/.tmp.<pid>/ then renamed, so that it
-// has its final name only once complete. build/<tool> is a link switched atomically to it (D17).
+// The render is built in memory and fingerprinted (SHA-256 of its paths and contents). It is written
+// in build/.tmp.<pid>/, then renamed build/<tool>.<fingerprint>.<pid>/, so that a directory has its
+// final name only once complete; build/<tool> is a link switched atomically to it (D17).
+// No lock, and no hole between concurrent renders (D17 revised):
+// - only the creator of a directory (the pid in its name) ever switches the link to it; an existing
+//   directory is reused only when it is already the target, and nothing is written then;
+// - the cleanup removes an entry only once its creator has ended, and reads the link after that
+//   check: a directory it removes can never become the target again;
+// - after its switch, a render checks the sources again and starts over if they changed: the last
+//   render to switch has seen the current sources.
 // A render that fails switches nothing: the link keeps the last complete render (D18).
 // Skills, schemas and scripts are not rendered: they stay linked to the sources (D20).
 import { createHash } from 'node:crypto';
 import {
-  cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
-  symlinkSync, writeFileSync,
+  cpSync, existsSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync, symlinkSync,
+  writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { ROOT } from './toolkit.mjs';
@@ -15,7 +22,10 @@ import { ROOT } from './toolkit.mjs';
 export const TOOLS = ['claude', 'opencode'];
 // The kinds of files that are rendered; every other file of a module is used as is.
 const RENDERED = ['agents', 'commands'];
-const TMP_MAX_AGE_MS = 60 * 60 * 1000;
+// Renders in a row whose sources changed before their check, before giving up.
+const MAX_ROUNDS = 3;
+const TMP = /^\.tmp\.([1-9][0-9]*)(\.link)?$/;
+const renderName = (tool) => new RegExp(`^${tool}\\.([0-9a-f]{64})\\.([1-9][0-9]*)$`);
 
 function modules(root) {
   const dir = join(root, 'modules');
@@ -84,64 +94,107 @@ function writeError(build, error) {
   return error;
 }
 
-// Removes the fingerprint directories of the tool that the link does not target, and the temporary
-// entries older than one hour (interrupted renders). Never fails the render: a read-only toolkit
-// whose render is up to date keeps working.
-function clean(build, tool, target, now = Date.now()) {
-  const own = new RegExp(`^${tool}\\.[0-9a-f]{64}$`);
-  for (const name of readdirSync(build)) {
-    const path = join(build, name);
+// Whether the process that created an entry may still use it. A pid reused by another process
+// only delays the cleanup.
+function running(pid) {
+  if (pid === process.pid) return false; // this render is past its switch
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
+// Makes build/<tool> point at a complete render of these files. Returns { name, written, switched }.
+function place(tool, build, link, hash, files) {
+  const current = readLink(link);
+  const m = current && renderName(tool).exec(current);
+  if (m && m[1] === hash && existsSync(join(build, current))) return { name: current, written: false, switched: false };
+  const name = `${tool}.${hash}.${process.pid}`;
+  const dir = join(build, name);
+  const tmp = join(build, `.tmp.${process.pid}`);
+  mkdirSync(build, { recursive: true });
+  // Leftovers of this pid: an earlier render of this process, or of an ended process with the same
+  // pid. Neither is the target (checked above), and no other process switches to them.
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(tmp, { recursive: true, force: true });
+  try {
+    writeFiles(tmp, files);
+    renameSync(tmp, dir);
+  } catch (error) {
+    rmSync(tmp, { recursive: true, force: true });
+    throw error;
+  }
+  let switched = false;
+  if (readLink(link) !== name) {
+    const next = join(build, `.tmp.${process.pid}.link`);
+    rmSync(next, { force: true });
+    symlinkSync(name, next);
     try {
-      if (own.test(name) && name !== target) rmSync(path, { recursive: true, force: true });
-      else if (name.startsWith('.tmp.') && now - lstatSync(path).mtimeMs > TMP_MAX_AGE_MS) rmSync(path, { recursive: true, force: true });
+      renameSync(next, link);
+    } catch (error) {
+      rmSync(next, { force: true });
+      throw error;
+    }
+    switched = true;
+  }
+  return { name, written: true, switched };
+}
+
+// Removes the renders of the tool and the temporary entries whose creator has ended, except the
+// target of the link, read after that check. Never fails the render: a read-only toolkit whose
+// render is up to date keeps working.
+function clean(build, tool, link) {
+  let names;
+  try {
+    names = readdirSync(build);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    const own = renderName(tool).exec(name);
+    const tmp = TMP.exec(name);
+    if (!own && !tmp) continue;
+    if (running(Number(own ? own[2] : tmp[1]))) continue;
+    try {
+      if (own && readLink(link) === name) continue;
+      rmSync(join(build, name), { recursive: true, force: true });
     } catch {
       // left for a later render
     }
   }
 }
 
-// Renders a tool into <root>/build. Returns { tool, fingerprint, dir, written, switched }.
-export function render(tool, { root = ROOT } = {}) {
-  const files = renderFiles(tool, root);
-  const hash = fingerprint(files);
+// Renders a tool into <root>/build. Returns { tool, fingerprint, dir, written, switched, rounds }.
+// afterSwitch is called after each switch, for the tests only.
+export function render(tool, { root = ROOT, afterSwitch } = {}) {
   const build = join(root, 'build');
-  const name = `${tool}.${hash}`;
-  const dir = join(build, name);
   const link = join(build, tool);
+  let files = renderFiles(tool, root);
   let written = false;
   let switched = false;
-  try {
-    mkdirSync(build, { recursive: true });
-    if (!existsSync(dir)) {
-      const tmp = join(build, `.tmp.${process.pid}`);
-      rmSync(tmp, { recursive: true, force: true }); // left by an earlier process with the same pid
-      try {
-        writeFiles(tmp, files);
-        renameSync(tmp, dir);
-        written = true;
-      } catch (error) {
-        rmSync(tmp, { recursive: true, force: true });
-        // Another render of the same content won the rename: both converge on the same directory.
-        if (!existsSync(dir)) throw error;
-      }
+  for (let round = 1; ; round++) {
+    const hash = fingerprint(files);
+    let placed;
+    try {
+      placed = place(tool, build, link, hash, files);
+    } catch (error) {
+      throw writeError(build, error);
     }
-    if (readLink(link) !== name) {
-      const next = join(build, `.tmp.${process.pid}.link`);
-      rmSync(next, { force: true });
-      symlinkSync(name, next);
-      try {
-        renameSync(next, link);
-      } catch (error) {
-        rmSync(next, { force: true });
-        throw error;
-      }
-      switched = true;
+    written ||= placed.written;
+    switched ||= placed.switched;
+    clean(build, tool, link);
+    afterSwitch?.(round);
+    const now = renderFiles(tool, root);
+    if (fingerprint(now) === hash) {
+      return { tool, fingerprint: hash, dir: join(build, placed.name), written, switched, rounds: round };
     }
-  } catch (error) {
-    throw writeError(build, error);
+    if (round === MAX_ROUNDS) {
+      throw new Error(`the sources of ${tool} changed during each of ${MAX_ROUNDS} renders: render again once they are saved`);
+    }
+    files = now;
   }
-  clean(build, tool, name);
-  return { tool, fingerprint: hash, dir, written, switched };
 }
 
 // Writes the full view of a tool into <to>/<tool>/, laid out like modules/: the rendered files, and a
@@ -179,7 +232,7 @@ export function renderCommand(args) {
       console.log(`${tool}: ${renderView(tool, to)}`);
     } else {
       const r = render(tool);
-      console.log(`${tool}: build/${tool} -> ${tool}.${r.fingerprint}${r.switched ? ' (switched)' : ''}`);
+      console.log(`${tool}: build/${tool} -> ${relative(join(ROOT, 'build'), r.dir)}${r.switched ? ' (switched)' : ''}`);
     }
   }
   return 0;

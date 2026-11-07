@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, renameSync, statSync,
-  utimesSync, writeFileSync,
+  cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
+  statSync, symlinkSync, utimesSync, writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,7 +11,7 @@ import { TOOLS, fingerprint, render, renderFiles, renderView } from '../lib/rend
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'modules');
-const HASH_DIR = /^(claude|opencode)\.[0-9a-f]{64}$/;
+const RENDER_DIR = /^(claude|opencode)\.[0-9a-f]{64}\.[0-9]+$/;
 
 // A toolkit of its own for each test: the agents and commands of the fixtures, plus a skill.
 function toolkit() {
@@ -24,6 +24,16 @@ function toolkit() {
 const build = (root) => join(root, 'build');
 const entries = (root) => readdirSync(build(root)).sort();
 const target = (root, tool) => readlinkSync(join(build(root), tool));
+const name = (tool, hash, pid = process.pid) => `${tool}.${hash}.${pid}`;
+const change = (root, text = 'changed\n') => writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), text);
+const pointAt = (root, tool, dirName) => {
+  const next = join(build(root), 'next-link');
+  symlinkSync(dirName, next);
+  renameSync(next, join(build(root), tool));
+};
+// The pid of a process that has ended, and one of a process still running.
+const endedPid = () => spawnSync('true').pid;
+const runningProcess = () => spawn('sleep', ['30'], { stdio: 'ignore' });
 
 test('the render of each tool is a copy of the agents and commands, and nothing else', () => {
   const root = toolkit();
@@ -37,16 +47,17 @@ test('the render of each tool is a copy of the agents and commands, and nothing 
   }
 });
 
-test('render writes build/<tool>.<fingerprint>/ and points the link build/<tool> at it', () => {
+test('render writes build/<tool>.<fingerprint>.<pid>/ and points the link build/<tool> at it', () => {
   const root = toolkit();
   const r = render('claude', { root });
   assert.equal(r.fingerprint, fingerprint(renderFiles('claude', root)));
   assert.ok(r.written && r.switched);
+  assert.equal(r.rounds, 1);
   assert.ok(lstatSync(join(build(root), 'claude')).isSymbolicLink());
-  assert.equal(target(root, 'claude'), `claude.${r.fingerprint}`);
+  assert.equal(target(root, 'claude'), name('claude', r.fingerprint));
   assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'),
     readFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), 'utf8'));
-  assert.deepEqual(entries(root), ['claude', `claude.${r.fingerprint}`]);
+  assert.deepEqual(entries(root), ['claude', name('claude', r.fingerprint)]);
 });
 
 test('a second render of the same content writes nothing and keeps the link', () => {
@@ -54,9 +65,34 @@ test('a second render of the same content writes nothing and keeps the link', ()
   const first = render('opencode', { root });
   const before = statSync(join(first.dir, 'openspec', 'agents', 'analyst.md')).mtimeMs;
   const second = render('opencode', { root });
-  assert.equal(second.fingerprint, first.fingerprint);
+  assert.equal(second.dir, first.dir);
   assert.ok(!second.written && !second.switched);
   assert.equal(statSync(join(first.dir, 'openspec', 'agents', 'analyst.md')).mtimeMs, before);
+});
+
+test('the target is reused even when its creator has ended', () => {
+  const root = toolkit();
+  const first = render('claude', { root });
+  const theirs = name('claude', first.fingerprint, endedPid());
+  renameSync(first.dir, join(build(root), theirs));
+  pointAt(root, 'claude', theirs);
+  const again = render('claude', { root });
+  assert.ok(!again.written && !again.switched);
+  assert.equal(target(root, 'claude'), theirs);
+  assert.ok(existsSync(join(build(root), theirs)));
+});
+
+test('a directory of the same fingerprint that is not the target is not reused', () => {
+  // Reusing it could race with a cleanup that removes it: only its creator may switch to it.
+  const root = toolkit();
+  const first = render('claude', { root });
+  const theirs = name('claude', first.fingerprint, endedPid());
+  renameSync(first.dir, join(build(root), theirs));
+  rmSync(join(build(root), 'claude'));
+  const again = render('claude', { root });
+  assert.ok(again.written && again.switched);
+  assert.equal(target(root, 'claude'), name('claude', first.fingerprint));
+  assert.ok(!existsSync(join(build(root), theirs)));
 });
 
 test('the fingerprint covers the paths as well as the contents', () => {
@@ -69,13 +105,13 @@ test('the fingerprint covers the paths as well as the contents', () => {
 test('a changed source gives a new directory, switches the link and removes the old directory', () => {
   const root = toolkit();
   const first = render('claude', { root });
-  writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), 'changed\n');
+  change(root);
   const second = render('claude', { root });
   assert.notEqual(second.fingerprint, first.fingerprint);
   assert.ok(second.switched);
-  assert.equal(target(root, 'claude'), `claude.${second.fingerprint}`);
+  assert.equal(target(root, 'claude'), name('claude', second.fingerprint));
   assert.ok(!existsSync(first.dir));
-  assert.deepEqual(entries(root), ['claude', `claude.${second.fingerprint}`]);
+  assert.deepEqual(entries(root), ['claude', name('claude', second.fingerprint)]);
 });
 
 test('a renamed or removed source changes the render', () => {
@@ -93,8 +129,8 @@ test('"{{" left in the render fails it, before any write or switch', () => {
   const first = render('claude', { root });
   writeFileSync(join(root, 'modules', 'openspec', 'commands', 'f3-dev.md'), '---\nf3-agent: developer\n---\nUse {{EXPLORE}}.\n');
   assert.throws(() => render('claude', { root }), /"\{\{" left in the render of claude: openspec\/commands\/f3-dev\.md/);
-  assert.equal(target(root, 'claude'), `claude.${first.fingerprint}`);
-  assert.deepEqual(entries(root), ['claude', `claude.${first.fingerprint}`]);
+  assert.equal(target(root, 'claude'), name('claude', first.fingerprint));
+  assert.deepEqual(entries(root), ['claude', name('claude', first.fingerprint)]);
   assert.throws(() => renderView('claude', join(root, 'view'), { root }), /"\{\{" left/);
   assert.ok(!existsSync(join(root, 'view')));
 });
@@ -102,7 +138,7 @@ test('"{{" left in the render fails it, before any write or switch', () => {
 test('a failed write switches nothing and leaves no temporary directory', () => {
   const root = toolkit();
   const first = render('claude', { root });
-  writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), 'changed\n');
+  change(root);
   // A read-only build/: the temporary directory of the new render cannot be written.
   spawnSync('chmod', ['a-w', build(root)]);
   try {
@@ -110,8 +146,8 @@ test('a failed write switches nothing and leaves no temporary directory', () => 
   } finally {
     spawnSync('chmod', ['u+w', build(root)]);
   }
-  assert.equal(target(root, 'claude'), `claude.${first.fingerprint}`);
-  assert.deepEqual(entries(root), ['claude', `claude.${first.fingerprint}`]);
+  assert.equal(target(root, 'claude'), name('claude', first.fingerprint));
+  assert.deepEqual(entries(root), ['claude', name('claude', first.fingerprint)]);
 });
 
 test('a read-only toolkit works while its render is up to date', () => {
@@ -119,46 +155,76 @@ test('a read-only toolkit works while its render is up to date', () => {
   const first = render('claude', { root });
   spawnSync('chmod', ['a-w', build(root)]);
   try {
-    const again = render('claude', { root });
-    assert.equal(again.fingerprint, first.fingerprint);
+    assert.equal(render('claude', { root }).dir, first.dir);
   } finally {
     spawnSync('chmod', ['u+w', build(root)]);
   }
 });
 
-test('the cleanup removes only the fingerprint directories of the tool not targeted, and old temporaries', () => {
+test('the cleanup removes only the entries of ended processes, whatever their age, and never the target', () => {
   const root = toolkit();
   const other = render('opencode', { root });
-  const old = render('claude', { root });
+  render('claude', { root });
   const b = build(root);
-  const stale = `claude.${'0'.repeat(64)}`;
-  mkdirSync(join(b, stale));
-  mkdirSync(join(b, '.tmp.999999'));
-  mkdirSync(join(b, '.tmp.888888'));
-  const twoHoursAgo = (Date.now() - 2 * 60 * 60 * 1000) / 1000;
-  utimesSync(join(b, '.tmp.999999'), twoHoursAgo, twoHoursAgo);
-  mkdirSync(join(b, 'claude.notahash'));
-  writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), 'changed\n');
-  const now = render('claude', { root });
-  assert.deepEqual(entries(root), [
-    '.tmp.888888', 'claude', 'claude.notahash', `claude.${now.fingerprint}`, 'opencode', `opencode.${other.fingerprint}`,
-  ].sort());
-  assert.ok(!existsSync(old.dir));
+  const sleeper = runningProcess();
+  try {
+    const live = sleeper.pid;
+    const ended = endedPid();
+    // A render of a running process between its rename and its switch, and its temporaries.
+    const pending = name('claude', '1'.repeat(64), live);
+    for (const dir of [pending, name('claude', '2'.repeat(64), ended), `.tmp.${live}`, `.tmp.${ended}`]) mkdirSync(join(b, dir));
+    symlinkSync('nowhere', join(b, `.tmp.${ended}.link`));
+    mkdirSync(join(b, 'claude.notarender'));
+    // Age plays no part: a recent entry of an ended process goes, an old one of a running process stays.
+    const twoHoursAgo = (Date.now() - 2 * 60 * 60 * 1000) / 1000;
+    utimesSync(join(b, `.tmp.${live}`), twoHoursAgo, twoHoursAgo);
+    change(root);
+    const now = render('claude', { root });
+    assert.deepEqual(entries(root), [
+      `.tmp.${live}`, 'claude', 'claude.notarender', name('claude', now.fingerprint), pending,
+      'opencode', name('opencode', other.fingerprint),
+    ].sort());
+    // The pending render can still switch the link to its directory, which exists.
+    pointAt(root, 'claude', pending);
+    assert.ok(existsSync(join(b, 'claude')));
+  } finally {
+    sleeper.kill();
+  }
 });
 
-test('renders running at the same time converge on one directory and a valid link', async () => {
+test('a render whose sources changed before its check starts over on the current sources', () => {
   const root = toolkit();
-  const runs = Array.from({ length: 6 }, () => new Promise((resolve) => {
-    const child = spawn('node', [F3, 'render', 'claude'], { env: { ...process.env, F3_TOOLKIT_ROOT: root } });
+  const r = render('claude', { root, afterSwitch: (round) => { if (round === 1) change(root); } });
+  assert.equal(r.rounds, 2);
+  assert.equal(r.fingerprint, fingerprint(renderFiles('claude', root)));
+  assert.equal(target(root, 'claude'), name('claude', r.fingerprint));
+  assert.deepEqual(entries(root), ['claude', name('claude', r.fingerprint)]);
+});
+
+test('sources that keep changing fail the render, the link on a complete render', () => {
+  const root = toolkit();
+  assert.throws(() => render('claude', { root, afterSwitch: (round) => change(root, `round ${round}\n`) }),
+    /the sources of claude changed during each of 3 renders/);
+  assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'), 'round 2\n');
+});
+
+test('renders running at the same time leave a valid link on the current sources, then a single directory', async () => {
+  const root = toolkit();
+  const env = { ...process.env, F3_TOOLKIT_ROOT: root };
+  const runs = Array.from({ length: 6 }, (_, i) => new Promise((resolve) => {
+    const child = spawn('node', [F3, 'render', 'claude'], { env });
+    // The source changes while they run: some may have read the old one.
+    if (i === 0) child.on('spawn', () => change(root));
     let err = '';
     child.stderr.on('data', (d) => { err += d; });
     child.on('close', (code) => resolve({ code, err }));
   }));
   for (const r of await Promise.all(runs)) assert.equal(r.code, 0, r.err);
-  const names = entries(root);
-  assert.equal(names.filter((n) => HASH_DIR.test(n)).length, 1);
-  assert.deepEqual(names.filter((n) => n.startsWith('.tmp.')), []);
-  assert.ok(existsSync(join(build(root), 'claude', 'openspec', 'agents', 'tester.md')));
+  assert.equal(readFileSync(join(build(root), 'claude', 'ux', 'agents', 'ux.md'), 'utf8'), 'changed\n');
+  assert.deepEqual(entries(root).filter((n) => n.startsWith('.tmp.')), []);
+  render('claude', { root }); // every earlier render has ended: only the target remains
+  assert.match(target(root, 'claude'), RENDER_DIR);
+  assert.deepEqual(entries(root), ['claude', target(root, 'claude')]);
 });
 
 test('a build/<tool> that is not a link is refused', () => {
@@ -186,9 +252,10 @@ test('f3 render renders both tools by default, one when named, and fails on an u
   const env = { ...process.env, F3_TOOLKIT_ROOT: root };
   const both = spawnSync('node', [F3, 'render'], { env, encoding: 'utf8' });
   assert.equal(both.status, 0, both.stderr);
-  assert.match(both.stdout, /^claude: build\/claude -> claude\.[0-9a-f]{64} \(switched\)\nopencode: build\/opencode -> opencode\.[0-9a-f]{64} \(switched\)\n$/);
+  assert.match(both.stdout, /^claude: build\/claude -> claude\.[0-9a-f]{64}\.[0-9]+ \(switched\)\nopencode: build\/opencode -> opencode\.[0-9a-f]{64}\.[0-9]+ \(switched\)\n$/);
   const one = spawnSync('node', [F3, 'render', 'opencode'], { env, encoding: 'utf8' });
-  assert.match(one.stdout, /^opencode: build\/opencode -> opencode\.[0-9a-f]{64}\n$/);
+  assert.match(one.stdout, /^opencode: build\/opencode -> opencode\.[0-9a-f]{64}\.[0-9]+\n$/);
+  assert.ok(entries(root).filter((n) => RENDER_DIR.test(n)).length === 2);
   const bad = spawnSync('node', [F3, 'render', 'vim'], { env, encoding: 'utf8' });
   assert.equal(bad.status, 1);
   assert.match(bad.stderr, /unknown tool "vim"/);
@@ -199,7 +266,7 @@ test('f3 render renders both tools by default, one when named, and fails on an u
 
 test('f3 render reports a failed render with exit code 1', () => {
   const root = toolkit();
-  writeFileSync(join(root, 'modules', 'ux', 'agents', 'ux.md'), '{{GENERAL}}\n');
+  change(root, '{{GENERAL}}\n');
   const r = spawnSync('node', [F3, 'render', 'claude'], { env: { ...process.env, F3_TOOLKIT_ROOT: root }, encoding: 'utf8' });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /^f3: "\{\{" left in the render of claude: ux\/agents\/ux\.md/);
