@@ -159,7 +159,9 @@ const ENTRIES = {
       const files = [...framing, ...TOOLS.flatMap((t) => PROJECT_FILES[t].files)].map((f) => {
         if (!existsSync(f)) return `${f}: absent`;
         const text = readFileSync(f, 'utf8');
-        const marker = text.includes('f3 standards') || firstLine(text).trim() === 'schema: f3' ? ' (f3 marker)' : '';
+        // The marker of AGENTS.md before the commands became f3 <step>: f3 init rewrites it (theme Tools).
+        const former = text.includes('f3 standards: written by /f3-init') ? ', former form' : '';
+        const marker = text.includes('f3 standards') || firstLine(text).trim() === 'schema: f3' ? ` (f3 marker${former})` : '';
         return `${f}: present${marker}`;
       });
       const tools = projectTools(installed).map(({ tool, installed: inst, present }) => {

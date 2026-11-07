@@ -115,7 +115,12 @@ test('a project that is not framed stops every command but init', () => {
   assert.match(init.stdout, /Skills installed in the project by OpenSpec:\n  \.claude\/skills: absent\n  \.opencode\/skills: absent\n/);
 });
 
-test('init marks the f3 files', () => {
+test('init marks the f3 files, and the former form of the marker of AGENTS.md', () => {
+  const p = equipped();
+  for (const [line, label] of [['written by f3 init. To change it, run f3 init again.', '(f3 marker)'], ['written by /f3-init. To change it, run /f3-init again.', '(f3 marker, former form)']]) {
+    p.w('AGENTS.md', `# AGENTS.md\n\n<!-- f3 standards: ${line} -->\n`);
+    assert.ok(inDir(p.dir, () => stateOf('init', '', quiet)).stdout.includes(`AGENTS.md: present ${label}\n`), label);
+  }
   const r = inDir(framed, () => stateOf('init'));
   assert.match(r.stdout, /openspec\/config\.yaml: present \(f3 marker\)/);
   assert.match(r.stdout, /CLAUDE\.md: absent/);
