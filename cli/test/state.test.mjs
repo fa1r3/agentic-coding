@@ -59,6 +59,17 @@ test('propose lists the changes in progress and the backlog', () => {
   assert.match(r.stdout, /## B-001 Export - Status: open/);
 });
 
+test('.f3/local, not yet ignored by Git, is not an uncommitted change; another file of .f3/ is (D41)', () => {
+  const dir = project();
+  mkdirSync(join(dir, '.f3'));
+  writeFileSync(join(dir, '.f3', 'local'), 'tool=claude\n');
+  const r = inDir(dir, () => stateOf('init', ''));
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /Uncommitted changes: none/);
+  writeFileSync(join(dir, '.f3', 'other'), 'x\n');
+  assert.match(inDir(dir, () => stateOf('init', '')).stdout, /Uncommitted changes:\n?\s*\?\? \.f3\//);
+});
+
 test('dev shows branch, uncommitted files, unchecked tasks and fix groups', () => {
   const r = s('dev', 'add-import');
   assert.equal(r.code, 0, r.stderr);

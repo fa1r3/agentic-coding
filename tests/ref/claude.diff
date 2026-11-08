@@ -115,7 +115,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  f3-agent: architect
  disable-model-invocation: true
  allowed-tools: Bash(f3 state:*)
-@@ -13,7 +13,11 @@
+@@ -13,23 +13,27 @@
  
  !`f3 state init`
  
@@ -128,9 +128,10 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  ## Preconditions
  
-@@ -21,15 +25,15 @@
+ If one fails, stop and say what to do.
  
- - A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
+-- A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
++- A Git repository without uncommitted changes: every file this command writes must be comparable and revertible. `.f3/local` does not count: it is never committed, and this command adds it to `.gitignore`.
  - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
 -- If `openspec/` exists, the project has the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` in `.claude/skills/`. If it has none, run `openspec init --tools claude`: on an initialized project, it only adds the files of Claude Code. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, then run `openspec update`.
 +- If `openspec/` exists, each skills folder of the project that has OpenSpec skills (`.claude/skills/`, `.opencode/skills/`) has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit. For a tool of the project that has none: in Update mode, the theme Tools adds them; otherwise, run `openspec init --tools <tool>`: on an initialized project, it only adds the files of that tool.
@@ -152,7 +153,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  2. Write each file following its reference:
     - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
 -   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools claude`, then replace the config.yaml it created;
-+   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created;
++   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created. Then check that each skills folder it wrote has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`; if one is missing, say so in the summary, with what to do before `f3 design`: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit;
     - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
     - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
 -   - `CLAUDE.md`, `.mcp.json` and `.claude/settings.json`: what the f3-standards skill gives for them, without touching any other content.

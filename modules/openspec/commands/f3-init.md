@@ -21,7 +21,7 @@ Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`
 
 If one fails, stop and say what to do.
 
-- A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
+- A Git repository without uncommitted changes: every file this command writes must be comparable and revertible. `.f3/local` does not count: it is never committed, and this command adds it to `.gitignore`.
 - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
 - If `openspec/` exists, each skills folder of the project that has OpenSpec skills (`.claude/skills/`, `.opencode/skills/`) has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit. For a tool of the project that has none: in Update mode, the theme Tools adds them; otherwise, run `openspec init --tools <tool>`: on an initialized project, it only adds the files of that tool.
 
@@ -73,7 +73,7 @@ Take each rule of the existing AGENTS.md and find the principle it expresses: al
 1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
 2. Write each file following its reference:
    - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
-   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created;
+   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created. Then check that each skills folder it wrote has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`; if one is missing, say so in the summary, with what to do before `f3 design`: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit;
    - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
    - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
    - `.gitignore`: the line `.f3/local`, unless the launch state says Git already ignores it;

@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, rmdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { LAUNCH_FILE, LAUNCH_PREFIX, LaunchError, readLocal } from './launch.mjs';
+import { LAUNCH_FILE, LAUNCH_PREFIX, LOCAL, LaunchError, readLocal } from './launch.mjs';
 import { render } from './render.mjs';
 import { PROJECT_FILES, localIgnored, missingFiles, projectTools, toolWarnings } from './project.mjs';
 import { SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
@@ -67,7 +67,8 @@ function tasksLines(id) {
 }
 
 const git = (...args) => run('git', args);
-const uncommitted = (n) => head(git('status', '--porcelain'), n);
+// .f3/local is never committed: the launcher writes it before f3 init adds it to .gitignore (D41).
+const uncommitted = (n) => head(git('status', '--porcelain', '--', '.', `:(exclude)${LOCAL}`), n);
 const firstLine = (text) => head(text, 1)[0] || '';
 
 function checkFramed() {

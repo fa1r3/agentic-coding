@@ -218,10 +218,23 @@ test('an argument that is not an identifier is refused', () => {
   assert.deepEqual(t.calls(), []);
 });
 
-test('an option before "--" is an argument like any other: it does not change the tool', () => {
+test('an option before "--" is refused under every step, and changes no tool (D43)', () => {
   const t = setup({ installed: ['claude', 'opencode'], local: 'tool=claude\n' });
-  assert.equal(t.f3(['dev', '--tool', 'opencode']).status, 0);
-  assert.deepEqual(t.calls().map((c) => [c.tool, c.argv]), [['claude', ['--agent', 'developer', '/f3-dev --tool opencode']]]);
+  for (const words of [['dev', '--tool', 'opencode'], ['init', '--help'], ['propose', '-h'], ['propose', 'export', '--x']]) {
+    const r = t.f3(words);
+    assert.equal(r.status, 1, words.join(' '));
+    assert.match(r.stderr, /is an option, and f3 \w+ takes none/, words.join(' '));
+  }
+  assert.equal(t.f3(['dev', 'add-import', '--', '--tool', 'opencode']).status, 0);
+  assert.deepEqual(t.calls().map((c) => [c.tool, c.argv]), [['claude', ['--agent', 'developer', '/f3-dev add-import']]]);
+});
+
+test('a step is not started from a session that f3 started (D43)', () => {
+  const t = setup();
+  const r = t.f3(['init'], { env: { F3_LAUNCH: '/tmp/f3-launch-x/launch.json' } });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /f3 init is not started from a session that f3 started: run it in a terminal/);
+  assert.deepEqual(t.calls(), []);
 });
 
 test('f3 propose: a single identifier is an argument, other words are the idea, sent through the file', () => {

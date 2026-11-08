@@ -234,7 +234,8 @@ f3 <step> [<arguments>] [-- <prompt>]
 
 From a terminal, in the project, `f3 <step>` starts a new session of the tool of the project (4.4), as the agent the command of the step declares, and runs `/f3-<step>` with the arguments.
 
-- **The arguments are identifiers**: lowercase letters, digits and `-` (`add-invoice-issuing`, `conformity`). Anything else is refused before the launch, with a reminder to give free text after `--`. One exception: under `f3 propose`, words that are not a single identifier are your idea, for example `f3 propose credit notes for issued invoices`.
+- **The arguments are identifiers**: lowercase letters, digits and `-`, not starting with `-` (`add-invoice-issuing`, `conformity`). Anything else is refused before the launch, with a reminder to give free text after `--`. One exception: under `f3 propose`, words that are not a single identifier are your idea, for example `f3 propose credit notes for issued invoices`. `f3 <step>` takes no option: a word starting with `-` before `--`, such as `--help`, is refused under every step.
+- **A step starts from a terminal, never from a session that f3 started**: the launcher refuses it there, so that an agent running `f3 <step>` in its shell does not open a second session inside its own.
 - **The prompt always comes last.** Everything after the first `--` is a prompt for the agent, taken as is and never parsed: a `--`, an option or an identifier written in it is only text, and changes neither the step, nor its arguments, nor the tool. A `--` with nothing after it is refused, to catch a typing error rather than launch the step without the prompt you meant.
 - **The prompt never goes through a shell line.** The launcher writes the prompt and the idea into a private file (mode 600, in a private folder of the temporary directory), and starts the tool with the variable `F3_LAUNCH` naming it. `f3 state` reads the file, shows the idea under "Idea from the user:" and the prompt under "Note from the user:", at the end of the launch state, then removes it. The launcher removes its folder when the tool ends.
 - **The note refines the request; it does not replace the workflow.** Each command says so: a note lifts no precondition and skips no step.
@@ -511,7 +512,7 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 
 > **Claude Code.** At the first f3 session in the project, each developer trusts the folder and approves the servers of `.mcp.json`.
 
-> **OpenCode.** The command proposes to move the user preferences found in the project `opencode.json` (providers, models, agent settings) to `~/.config/opencode/opencode.json`, and moves them only with your agreement. OpenCode reads its configuration at startup: a session opened by hand must be restarted after a change of `opencode.json`.
+> **OpenCode.** The command proposes to move the user preferences found in the project `opencode.json` (providers, models, agent settings) to `~/.config/opencode/opencode.json`, and moves them only with your agreement. OpenCode reads its configuration at startup: a session opened by hand must be restarted after a change of `opencode.json`. The first web search of the agent asks you, in the session, to allow it: answer within a minute, or OpenCode cancels the search.
 
 **Example of a context part** (fictional invoicing product):
 
@@ -1141,6 +1142,9 @@ Then, in a project, launch each step from a terminal with `f3 <step> <arguments>
 | `f3` refuses: ".f3/local names <tool>, for which f3 is not installed" | both | the tool of the project is not installed on this machine | `./install.sh <tool>`, or `f3 tool <other tool>` |
 | `f3` refuses: "no tool chosen" | both | both tools are installed, `.f3/local` is absent, and there is no terminal to ask in | `f3 tool claude` or `f3 tool opencode` |
 | `f3` refuses: "… is not an identifier" | both | free text was given as an argument | write it after `--` (section 4.2) |
+| `f3` refuses: "… is an option, and f3 <step> takes none" | both | a word starting with `-` was given before `--` | leave it out, or write it after `--` (section 4.2) |
+| `f3` refuses: "f3 <step> is not started from a session that f3 started" | both | the step was launched from the shell of an f3 session, by you or by an agent | quit the session, and launch the step from a terminal |
+| The agent says its web search was cancelled | OpenCode | OpenCode asks, at the first web search, whether to allow it, and cancels the search when nobody answers within a minute | answer the question in the session; the agent can search again |
 | The note after `--` does not reach the agent | OpenCode | the command was typed in a session, or the session runs on the managed service | launch the step with `f3 <step> … -- <prompt>` |
 | "schema f3 not found" | both | the toolkit is not installed, or the link is broken | run `./install.sh`; `openspec schema which f3` shows where the schema resolves |
 | `f3 design` stops on a missing skill | both | the OpenSpec profile does not install `openspec-continue-change` | `openspec config profile`, then `openspec update` |

@@ -4,8 +4,11 @@
 //   the file is absent, the only installed tool is taken, or the user is asked once when both are;
 //   the file is then written. f3 tool <tool> changes it. There is no F3_TOOL variable.
 // - The first "--" cuts: what follows is the prompt, taken as is and never parsed. The arguments
-//   before it must be identifiers (^[a-z0-9-]+$). Under f3 propose, words that are not a single
-//   identifier are the idea of the user.
+//   before it must be identifiers (^[a-z0-9][a-z0-9-]*$), and none of them starts with "-": f3 <step>
+//   takes no option (D43). Under f3 propose, words that are not a single identifier are the idea of
+//   the user.
+// - A step is not started from a session that f3 started (F3_LAUNCH set, D43): an agent running
+//   f3 <step> in its shell would open a second session inside the first one.
 // - The idea and the prompt never go through the launch message: they are written in a private file
 //   (mode 600, in a private folder), named by F3_LAUNCH, which f3 state reads, shows and removes.
 // - The tool is rendered before the launch (D4); a failed render launches nothing (D18).
@@ -16,7 +19,7 @@ import { tmpdir } from 'node:os';
 import { createInterface } from 'node:readline';
 import { TOOLS, TOOL_NAMES, installedTools } from './toolkit.mjs';
 
-export const ID = /^[a-z0-9-]+$/;
+export const ID = /^[a-z0-9][a-z0-9-]*$/;
 export const LOCAL = join('.f3', 'local');
 export const LAUNCH_PREFIX = 'f3-launch-';
 export const LAUNCH_FILE = 'launch.json';
@@ -91,6 +94,8 @@ export async function projectTool({ ask, dir = '.', installed = installedTools()
 export function parseLaunch(step, words) {
   const cut = words.indexOf('--');
   let args = cut < 0 ? [...words] : words.slice(0, cut);
+  const option = args.find((a) => a.startsWith('-'));
+  if (option) throw new LaunchError(`"${option}" is an option, and f3 ${step} takes none: give free text after "--".`);
   let prompt = null;
   if (cut >= 0) {
     prompt = words.slice(cut + 1).join(' ');
@@ -130,10 +135,11 @@ async function askTerminal(tools) {
 }
 
 // f3 <step> ...: returns the exit code of the tool, or 1.
-export async function launch(step, agent, words, { render, ask = askTerminal, spawn = spawnSync } = {}) {
+export async function launch(step, agent, words, { render, ask = askTerminal, spawn = spawnSync, env = process.env } = {}) {
   let parsed;
   let tool;
   try {
+    if (env.F3_LAUNCH) throw new LaunchError(`f3 ${step} is not started from a session that f3 started: run it in a terminal.`);
     parsed = parseLaunch(step, words);
     tool = await projectTool({ ask });
   } catch (error) {
