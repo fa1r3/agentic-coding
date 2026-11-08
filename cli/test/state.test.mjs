@@ -215,7 +215,7 @@ function equipped() {
   w('CLAUDE.md', '@AGENTS.md\n@CONTEXT.md\n');
   w('.claude/settings.json', '{}\n');
   w('.mcp.json', '{ "mcpServers": { "playwright": {}, "penpot": {} } }\n');
-  w('opencode.json', '{ "instructions": ["CONTEXT.md"], "mcp": { "penpot": {}, "playwright": {} } }\n');
+  w('opencode.json', '{ "instructions": ["CONTEXT.md"], "mcp": { "servers": { "penpot": {}, "playwright": {} } } }\n');
   w('.claude/skills/openspec-apply-change/SKILL.md', 'x');
   w('.opencode/skills/openspec-apply-change/SKILL.md', 'x');
   w('.gitignore', '.f3/local\n');
@@ -252,8 +252,11 @@ test('.f3/local not ignored by Git is reported; a project that is not framed get
 
 test('MCP servers that differ between opencode.json and .mcp.json are reported (R14)', () => {
   const p = equipped();
-  p.w('opencode.json', '{ "mcp": { "playwright": {} } }\n');
+  p.w('opencode.json', '{ "mcp": { "servers": { "playwright": {} } } }\n');
   assert.deepEqual(toolWarnings(p.dir), ['- Warning: the MCP servers of opencode.json (playwright) and .mcp.json (penpot, playwright) differ: run f3 init, theme Tools.']);
+  // The flat form, servers directly under mcp, is not the one f3 writes: it is reported (D40).
+  p.w('opencode.json', '{ "mcp": { "penpot": {}, "playwright": {} } }\n');
+  assert.deepEqual(toolWarnings(p.dir), ['- Warning: the MCP servers of opencode.json (none) and .mcp.json (penpot, playwright) differ: run f3 init, theme Tools.']);
   p.w('opencode.json', '{ "mcp": ');
   assert.match(toolWarnings(p.dir)[0], /^- Warning: cannot compare the MCP servers of opencode.json and .mcp.json: /);
   p.rm('.mcp.json');

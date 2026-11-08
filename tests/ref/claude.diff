@@ -275,7 +275,7 @@ diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/
 +
 +The project `opencode.json` contains only:
 +- `instructions`: `["CONTEXT.md"]`, so that every agent loads the vocabulary;
-+- under `mcp`, the servers of the Stack section, by the names above.
++- under `mcp.servers`, the servers of the Stack section, by the names above: OpenCode reads its servers there since its configuration V2, not directly under `mcp`.
 +
 +f3 init adds or updates these keys without touching any other key. Providers, models and other user preferences belong to the global configuration (`~/.config/opencode/opencode.json`): OpenCode merges both files, and the project file only wins on conflicting keys. Keys that are user preferences (`provider`, `model`, `small_model`, agent settings such as `reasoningEffort`) are proposed for a move to the global configuration; they are moved only with the user's agreement. OpenCode reads its configuration at startup: after a change, OpenCode must be restarted.
  

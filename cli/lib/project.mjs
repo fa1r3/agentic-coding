@@ -50,9 +50,11 @@ export function localIgnored() {
   }
 }
 
-function serverNames(file, key) {
+// The names of the servers found at the path of keys, in a JSON file: mcpServers in .mcp.json, mcp.servers
+// in opencode.json (OpenCode reads its servers there since its configuration V2).
+function serverNames(file, keys) {
   const config = JSON.parse(readFileSync(file, 'utf8'));
-  const servers = config?.[key];
+  const servers = keys.reduce((node, key) => node?.[key], config);
   return servers && typeof servers === 'object' ? Object.keys(servers).sort() : [];
 }
 
@@ -63,8 +65,8 @@ export function mcpGap() {
   let oc;
   let cc;
   try {
-    oc = serverNames('opencode.json', 'mcp');
-    cc = serverNames('.mcp.json', 'mcpServers');
+    oc = serverNames('opencode.json', ['mcp', 'servers']);
+    cc = serverNames('.mcp.json', ['mcpServers']);
   } catch (error) {
     return `cannot compare the MCP servers of opencode.json and .mcp.json: ${error.message}`;
   }
