@@ -507,7 +507,7 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 5. it writes the Stack section of AGENTS.md, and you validate it;
 6. it adds a first backlog entry: set up the repository according to the Stack section.
 
-**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. Nothing is committed: you review `git diff` and commit.
+**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
 
 > **Claude Code.** At the first f3 session in the project, each developer trusts the folder and approves the servers of `.mcp.json`.
 

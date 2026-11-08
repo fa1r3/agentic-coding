@@ -23,7 +23,7 @@ If one fails, stop and say what to do.
 
 - A Git repository without uncommitted changes: every file this command writes must be comparable and revertible.
 - OpenSpec installed and the schema f3 found; otherwise, run `install.sh` of the toolkit.
-- If `openspec/` exists, the project has the OpenSpec skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` in the skills folder of each tool of the project (`.claude/skills/`, `.opencode/skills/`). For a tool that has none, run `openspec init --tools <tool>`: on an initialized project, it only adds the files of that tool. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, then run `openspec update`.
+- If `openspec/` exists, each skills folder of the project that has OpenSpec skills (`.claude/skills/`, `.opencode/skills/`) has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`. The first belongs to an optional profile: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit. For a tool of the project that has none: in Update mode, the theme Tools adds them; otherwise, run `openspec init --tools <tool>`: on an initialized project, it only adds the files of that tool.
 
 ## Mode
 
@@ -31,7 +31,7 @@ State it in one sentence.
 
 - **Creation**: none of AGENTS.md, CONTEXT.md and openspec/config.yaml exists, or only empty files.
 - **Adoption**: at least one exists, without the f3 marker. Read what exists first (AGENTS.md, config.yaml, CONTEXT.md, CLAUDE.md, .mcp.json, opencode.json, the README files of the modules, `openspec/specs/` by passages) and draw from it a first answer to each question: the interview covers only what is missing or contradictory.
-- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary. If the launch state reports a tool of the project that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or an AGENTS.md marker in its former form, propose the theme Tools first. The theme Tools writes the missing files of the tools of the project, aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the AGENTS.md marker in its current form; it touches nothing else.
+- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary. If the launch state reports a tool of the project that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or an AGENTS.md marker in its former form, propose the theme Tools first. The theme Tools writes the missing files of the tools of the project, runs `openspec init --tools <tool>` for a tool of the project that has no OpenSpec skills (on an initialized project, it only adds the files of that tool), aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the AGENTS.md marker in its current form; it touches nothing else.
 
 ## Interview
 
