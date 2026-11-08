@@ -12,7 +12,14 @@
 // - The idea and the prompt never go through the launch message: they are written in a private file
 //   (mode 600, in a private folder), named by F3_LAUNCH, which f3 state reads, shows and removes.
 // - The tool is rendered before the launch (D4); a failed render launches nothing (D18).
-import { spawnSync } from 'node:child_process';
+// - Under OpenCode, the session is opened through the API of a private server (D45): typed by the TUI
+//   (opencode --prompt), the command was sometimes sent before the TUI knew the commands, as a plain
+//   message to the agent build (E7). The launcher starts opencode serve in the project, creates the
+//   session as the agent of the step, sends the command, which the server expands (F3_LAUNCH is in its
+//   environment), then opens the TUI on that session, and stops the server when the TUI ends. The
+//   password of the server is made by the server and given to the TUI only: never in the environment
+//   of the server, so neither the agent nor its tools can read it.
+import { spawn as spawnAsync, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -112,11 +119,109 @@ export function parseLaunch(step, words) {
   return { args, idea, prompt };
 }
 
-// The program, arguments and launch message of a tool (V-O1: OpenCode needs the trailing space).
+// How a tool is started. Claude Code: its program, arguments and launch message. OpenCode: the private
+// server, and the session that its API creates (agent) and starts (command, text) (D45).
 export function toolCommand(tool, agent, step, args) {
-  const message = `/f3-${step}${args.length ? ' ' + args.join(' ') : ''}`;
-  if (tool === 'claude') return { program: 'claude', argv: ['--agent', agent, message] };
-  return { program: 'opencode', argv: ['--standalone', '--prompt', `${message} `] };
+  if (tool === 'claude') return { program: 'claude', argv: ['--agent', agent, `/f3-${step}${args.length ? ' ' + args.join(' ') : ''}`] };
+  return { program: 'opencode', argv: ['serve', '--hostname', '127.0.0.1', '--port', '0'], agent, command: `f3-${step}`, text: args.join(' ') };
+}
+
+export const SERVER_TIMEOUT_MS = 30000;
+const SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
+// Waits for the address and the password that opencode serve prints; rejects if it ends first.
+function serverReady(server) {
+  return new Promise((resolve, reject) => {
+    let output = '';
+    const timer = setTimeout(() => done(new LaunchError(`the OpenCode server gave no address within ${SERVER_TIMEOUT_MS / 1000} s:\n${output}`)), SERVER_TIMEOUT_MS);
+    const done = (error, value) => {
+      clearTimeout(timer);
+      server.off('exit', onExit);
+      if (error) reject(error); else resolve(value);
+    };
+    const onExit = (code) => done(new LaunchError(`the OpenCode server ended (code ${code}) before it was ready:\n${output}`));
+    const onData = (data) => {
+      if (output === null) return; // ready: the rest of the output is read and dropped
+      output += data;
+      const url = /server listening on (http:\/\/\S+)/.exec(output)?.[1];
+      const password = /server password (\S+)/.exec(output)?.[1];
+      if (url && password) {
+        output = null;
+        done(null, { url, password });
+      }
+    };
+    server.stdout.on('data', onData);
+    server.stderr.on('data', onData);
+    server.on('exit', onExit);
+    server.on('error', (error) => done(new LaunchError(`cannot start OpenCode: ${error.message}`)));
+  });
+}
+
+// POSTs a JSON body to the API of the server; returns the parsed answer (null when empty).
+async function post(url, password, path, body) {
+  let response;
+  let text;
+  try {
+    response = await fetch(url + path, {
+      method: 'POST',
+      headers: { authorization: `Basic ${Buffer.from(`opencode:${password}`).toString('base64')}`, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    text = await response.text();
+  } catch (error) {
+    throw new LaunchError(`the OpenCode server did not answer ${path}: ${error.cause?.message ?? error.message}`);
+  }
+  if (!response.ok) throw new LaunchError(`the OpenCode server refused ${path} (${response.status}): ${text}`);
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    throw new LaunchError(`the OpenCode server gave an unreadable answer to ${path}: ${text}`);
+  }
+}
+
+function exited(child) {
+  return new Promise((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) resolve(child.exitCode);
+    else child.once('exit', (code) => resolve(code));
+  });
+}
+
+// Under OpenCode: starts the private server, opens the session as its agent with its command, then the
+// TUI on it; returns the exit code of the TUI. The server is stopped in every case (D45).
+export async function runOpenCode({ argv, agent, command, text }, { env, cwd = process.cwd() }) {
+  const serverEnv = { ...env };
+  delete serverEnv.OPENCODE_SERVER_PASSWORD;
+  const server = spawnAsync('opencode', argv, { cwd, env: serverEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+  let tui = null;
+  let interrupted = null;
+  // A signal before the TUI stops the launch; after, it goes to the TUI, and the server is stopped below.
+  const forward = (signal) => {
+    interrupted = signal;
+    tui?.kill(signal);
+  };
+  for (const s of SIGNALS) process.on(s, forward);
+  try {
+    const { url, password } = await serverReady(server);
+    const session = await post(url, password, '/api/session', { agent, location: { directory: cwd } });
+    const id = session?.data?.id;
+    if (!id) throw new LaunchError(`the OpenCode server created no session: ${JSON.stringify(session)}`);
+    await post(url, password, `/api/session/${id}/command`, { name: command, text });
+    if (interrupted) throw new LaunchError(`interrupted (${interrupted}) before the session was opened.`);
+    const tuiEnv = { ...env, OPENCODE_SERVER_PASSWORD: password };
+    delete tuiEnv.F3_LAUNCH;
+    tui = spawnAsync('opencode', ['--server', url, '--session', id], { cwd, env: tuiEnv, stdio: 'inherit' });
+    const started = new Promise((resolve, reject) => { tui.once('spawn', resolve); tui.once('error', reject); });
+    await started.catch((error) => { throw new LaunchError(`cannot start OpenCode: ${error.message}`); });
+    return (await exited(tui)) ?? 1;
+  } finally {
+    for (const s of SIGNALS) process.off(s, forward);
+    if (server.pid !== undefined && server.exitCode === null && server.signalCode === null) {
+      const kill = setTimeout(() => server.kill('SIGKILL'), 5000);
+      server.kill('SIGTERM');
+      await exited(server);
+      clearTimeout(kill);
+    }
+  }
 }
 
 // Writes the idea and the prompt (each one null when absent) in a private file; returns its path.
@@ -135,7 +240,7 @@ async function askTerminal(tools) {
 }
 
 // f3 <step> ...: returns the exit code of the tool, or 1.
-export async function launch(step, agent, words, { render, ask = askTerminal, spawn = spawnSync, env = process.env } = {}) {
+export async function launch(step, agent, words, { render, ask = askTerminal, spawn = spawnSync, openCode = runOpenCode, env = process.env } = {}) {
   let parsed;
   let tool;
   try {
@@ -155,10 +260,19 @@ export async function launch(step, agent, words, { render, ask = askTerminal, sp
     console.error(`f3: the render of ${TOOL_NAMES[tool]} failed, so ${TOOL_NAMES[tool]} is not started: ${error.message}`);
     return 1;
   }
-  const { program, argv } = toolCommand(tool, agent, step, parsed.args);
+  const how = toolCommand(tool, agent, step, parsed.args);
   const file = writeLaunchFile(parsed);
   try {
-    const result = spawn(program, argv, { stdio: 'inherit', env: { ...process.env, F3_LAUNCH: file } });
+    if (tool === 'opencode') {
+      try {
+        return await openCode(how, { env: { ...process.env, F3_LAUNCH: file } });
+      } catch (error) {
+        if (!(error instanceof LaunchError)) throw error;
+        console.error(`f3: ${error.message}`);
+        return 1;
+      }
+    }
+    const result = spawn(how.program, how.argv, { stdio: 'inherit', env: { ...process.env, F3_LAUNCH: file } });
     if (result.error) {
       console.error(`f3: cannot start ${TOOL_NAMES[tool]}: ${result.error.message}`);
       return 1;

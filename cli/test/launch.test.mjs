@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync,
+  chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -16,16 +16,60 @@ const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'modules');
 const TOOLS_DIR = join(import.meta.dirname, '..', '..', 'tools');
 
-// A fake tool: records its arguments, F3_LAUNCH and the launch file as it finds it.
+// A fake tool: records its arguments, F3_LAUNCH and the launch file as it finds it. As opencode serve, it
+// is a fake OpenCode server: it prints its address and password, answers the API, records the session
+// and the command it receives, and runs the injection of the command itself (D45). As opencode --server,
+// it is the TUI.
 const FAKE = `#!/usr/bin/env node
 const fs = require('node:fs');
-const file = process.env.F3_LAUNCH;
-let launch = null;
-if (file && fs.existsSync(file)) launch = { content: fs.readFileSync(file, 'utf8'), mode: fs.statSync(file).mode & 0o777, dirMode: fs.statSync(require('node:path').dirname(file)).mode & 0o777 };
-// The injection of the command: f3 state, which inherits F3_LAUNCH.
-const state = process.env.F3_TEST_STATE ? require('node:child_process').spawnSync('node', [process.env.F3_TEST_F3, 'state', ...process.env.F3_TEST_STATE.split(' ')], { encoding: 'utf8' }) : null;
-fs.appendFileSync(process.env.F3_TEST_RECORD, JSON.stringify({ tool: require('node:path').basename(process.argv[1]), argv: process.argv.slice(2), file, launch, state: state && { status: state.status, stdout: state.stdout, stderr: state.stderr } }) + '\\n');
-process.exit(Number(process.env.F3_TEST_EXIT || 0));
+const path = require('node:path');
+const tool = path.basename(process.argv[1]);
+const argv = process.argv.slice(2);
+const append = (entry) => fs.appendFileSync(process.env.F3_TEST_RECORD, JSON.stringify(entry) + '\\n');
+// What the launched command finds: the launch file, and the injection f3 state, which inherits F3_LAUNCH.
+function launched() {
+  const file = process.env.F3_LAUNCH;
+  let launch = null;
+  if (file && fs.existsSync(file)) launch = { content: fs.readFileSync(file, 'utf8'), mode: fs.statSync(file).mode & 0o777, dirMode: fs.statSync(path.dirname(file)).mode & 0o777 };
+  const state = process.env.F3_TEST_STATE ? require('node:child_process').spawnSync('node', [process.env.F3_TEST_F3, 'state', ...process.env.F3_TEST_STATE.split(' ')], { encoding: 'utf8' }) : null;
+  return { file, launch, state: state && { status: state.status, stdout: state.stdout, stderr: state.stderr } };
+}
+if (tool === 'opencode' && argv[0] === 'serve') {
+  if (process.env.F3_TEST_SERVE_FAIL) { console.error('cannot listen'); process.exit(2); }
+  const password = 'pw-' + process.pid;
+  const record = { tool, argv, serverPid: process.pid, serverHasPassword: 'OPENCODE_SERVER_PASSWORD' in process.env };
+  const server = require('node:http').createServer((req, res) => {
+    let body = '';
+    req.on('data', (d) => { body += d; });
+    req.on('end', () => {
+      const request = { path: req.url, auth: req.headers.authorization, body: JSON.parse(body || 'null') };
+      if (req.method === 'POST' && req.url === '/api/session') {
+        record.session = request;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        return res.end(JSON.stringify({ data: { id: 'ses_test' } }));
+      }
+      if (req.method === 'POST' && req.url === '/api/session/ses_test/command') {
+        const status = Number(process.env.F3_TEST_COMMAND_STATUS || 204);
+        append({ ...record, command: request, ...launched() });
+        res.writeHead(status);
+        return res.end(status === 204 ? '' : 'refused');
+      }
+      res.writeHead(404);
+      res.end();
+    });
+  });
+  server.listen(0, '127.0.0.1', () => {
+    console.log('server listening on http://127.0.0.1:' + server.address().port);
+    console.log('server password ' + password);
+  });
+  process.on('SIGTERM', () => { append({ tool: 'opencode-server-stopped', serverPid: process.pid }); process.exit(0); });
+} else if (tool === 'opencode') {
+  append({ tool: 'opencode-tui', argv, password: process.env.OPENCODE_SERVER_PASSWORD, f3Launch: process.env.F3_LAUNCH ?? null });
+  process.exit(Number(process.env.F3_TEST_EXIT || 0));
+} else {
+  append({ tool, argv, ...launched() });
+  process.exit(Number(process.env.F3_TEST_EXIT || 0));
+}
 `;
 
 function setup({ installed = ['claude'], local } = {}) {
@@ -58,7 +102,9 @@ function setup({ installed = ['claude'], local } = {}) {
   for (const k of ['CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME', 'F3_LAUNCH']) delete env[k];
   const f3 = (args, options = {}) => spawnSync('node', [F3, ...args], { cwd: project, env: { ...env, ...options.env }, input: options.input ?? '', encoding: 'utf8' });
   const calls = () => (existsSync(record) ? readFileSync(record, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : []);
-  return { root, home, project, tmp, f3, calls, local: () => readFileSync(join(project, '.f3', 'local'), 'utf8') };
+  // The launches: one record per session, without the records of the TUI and of the stopped server of OpenCode.
+  const launches = () => calls().filter((c) => !c.tool.startsWith('opencode-'));
+  return { root, home, project, tmp, f3, calls, launches, local: () => readFileSync(join(project, '.f3', 'local'), 'utf8') };
 }
 
 test('Claude Code: claude --agent <agent> "/f3-<step> <arguments>", with F3_LAUNCH', () => {
@@ -73,14 +119,56 @@ test('Claude Code: claude --agent <agent> "/f3-<step> <arguments>", with F3_LAUN
   assert.equal(call.launch.dirMode, 0o700);
 });
 
-test('OpenCode: opencode --standalone --prompt "/f3-<step> <arguments> ", with a trailing space', () => {
+test('OpenCode: a private server, a session created as the agent with its command, then the TUI on it (D45)', () => {
   const t = setup({ installed: ['opencode'] });
   assert.equal(t.f3(['dev', 'add-import']).status, 0);
   assert.equal(t.f3(['ux-tokens']).status, 0);
-  assert.deepEqual(t.calls().map((c) => c.argv), [
-    ['--standalone', '--prompt', '/f3-dev add-import '],
-    ['--standalone', '--prompt', '/f3-ux-tokens '],
+  const calls = t.calls();
+  assert.deepEqual(calls.map((c) => c.tool), [
+    'opencode', 'opencode-tui', 'opencode-server-stopped', 'opencode', 'opencode-tui', 'opencode-server-stopped',
   ]);
+  const [server, tui, stopped] = calls;
+  assert.deepEqual(server.argv, ['serve', '--hostname', '127.0.0.1', '--port', '0']);
+  assert.deepEqual(server.session.body, { agent: 'developer', location: { directory: realpathSync(t.project) } });
+  assert.deepEqual(server.command.body, { name: 'f3-dev', text: 'add-import' });
+  assert.deepEqual(calls[3].command.body, { name: 'f3-ux-tokens', text: '' });
+  const auth = `Basic ${Buffer.from(`opencode:pw-${server.serverPid}`).toString('base64')}`;
+  assert.equal(server.session.auth, auth);
+  assert.equal(server.command.auth, auth);
+  assert.match(tui.argv.join(' '), /^--server http:\/\/127\.0\.0\.1:\d+ --session ses_test$/);
+  // The password of the server is given to the TUI only; F3_LAUNCH to the server only.
+  assert.equal(server.serverHasPassword, false);
+  assert.equal(tui.password, `pw-${server.serverPid}`);
+  assert.equal(tui.f3Launch, null);
+  assert.ok(server.file);
+  assert.equal(stopped.serverPid, server.serverPid);
+});
+
+test('OpenCode: a password of the environment does not reach the server', () => {
+  const t = setup({ installed: ['opencode'] });
+  assert.equal(t.f3(['dev', 'add-import'], { env: { OPENCODE_SERVER_PASSWORD: 'mine' } }).status, 0);
+  const [server, tui] = t.calls();
+  assert.equal(server.serverHasPassword, false);
+  assert.equal(tui.password, `pw-${server.serverPid}`);
+});
+
+test('OpenCode: a server that does not start, or a refused command, opens no TUI and leaves nothing', () => {
+  const t = setup({ installed: ['opencode'] });
+  const failed = t.f3(['dev', 'add-import', '--', 'note'], { env: { F3_TEST_SERVE_FAIL: '1' } });
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /^f3: the OpenCode server ended \(code 2\) before it was ready:\ncannot listen/);
+  const refused = t.f3(['dev', 'add-import', '--', 'note'], { env: { F3_TEST_COMMAND_STATUS: '400' } });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /^f3: the OpenCode server refused \/api\/session\/ses_test\/command \(400\): refused/);
+  assert.deepEqual(t.calls().map((c) => c.tool), ['opencode', 'opencode-server-stopped']);
+  assert.deepEqual(readdirSync(t.tmp), []);
+});
+
+test('OpenCode: f3 returns the exit code of the TUI, after stopping the server and removing the launch file', () => {
+  const t = setup({ installed: ['opencode'] });
+  assert.equal(t.f3(['dev', 'add-import', '--', 'note'], { env: { F3_TEST_EXIT: '3' } }).status, 3);
+  assert.equal(t.calls().at(-1).tool, 'opencode-server-stopped');
+  assert.deepEqual(readdirSync(t.tmp), []);
 });
 
 test('the only installed tool is taken and written to .f3/local', () => {
@@ -98,7 +186,7 @@ test('.f3/local chooses between two installed tools, and f3 tool changes it', ()
   assert.equal(t.local(), 'tool=claude\n# mine\n');
   assert.match(t.f3(['tool']).stdout, /^claude \(Claude Code\)\n$/);
   t.f3(['propose']);
-  assert.deepEqual(t.calls().map((c) => c.tool), ['opencode', 'claude']);
+  assert.deepEqual(t.launches().map((c) => c.tool), ['opencode', 'claude']);
 });
 
 test('two installed tools and no .f3/local: the question needs a terminal', () => {
@@ -164,13 +252,17 @@ test('a prompt after "--" leaves the arguments and the tool unchanged and appear
       const r = t.f3(['dev', 'add-import', '--', ...words]);
       assert.equal(r.status, 0, r.stderr);
     }
-    const calls = t.calls();
+    const calls = t.launches();
     assert.equal(calls.length, PROMPTS.length);
     calls.forEach((call, i) => {
       const text = PROMPTS[i].join(' ');
       assert.equal(call.tool, tool);
       assert.deepEqual(call.argv, toolCommand(tool, 'developer', 'dev', ['add-import']).argv);
       assert.ok(!call.argv.join('\n').includes(text), text);
+      if (tool === 'opencode') {
+        assert.deepEqual(call.command.body, { name: 'f3-dev', text: 'add-import' });
+        assert.ok(!JSON.stringify(call.session.body).includes(text), text);
+      }
       assert.deepEqual(JSON.parse(call.launch.content), { idea: null, prompt: text });
     });
     assert.ok(!existsSync(join(t.project, 'pwned')));
@@ -184,7 +276,7 @@ test('the injection of the launched command gets the note of the user from f3 st
     writeFileSync(join(t.project, 'openspec', 'config.yaml'), 'schema: f3\n');
     const r = t.f3(['dev', 'add-import', '--', "reprends à la 2.3, l'autre", 'est faite'], { env: { F3_TEST_STATE: 'dev add-import' } });
     assert.equal(r.status, 0, r.stderr);
-    const [{ state }] = t.calls();
+    const [{ state }] = t.launches();
     assert.equal(state.status, 0, state.stderr);
     assert.match(state.stdout, /\n\nNote from the user:\n\nreprends à la 2\.3, l'autre est faite\n$/);
     assert.doesNotMatch(state.stdout, /Warning: the toolkit had changed|Not started by f3/);
