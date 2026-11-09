@@ -359,7 +359,7 @@ Everything a change produces lives in `openspec/changes/<change-id>/`, in the or
 | `clarification.md` | the analyst (`f3 propose`) | the clarified need, section by section: Need, Scope (in, out, decisions against advice), Vocabulary, Behavior, Rules and edge cases, Examples, Security, Open points | the analyst (proposal, specs), Tres Amigos, the architect | the specs are derived from validated answers, not from the analyst's guesses; an interrupted interview resumes at the first empty section |
 | `proposal.md` | the analyst (`f3 propose`) | why and what: the capabilities added or modified, what is out of scope | every following step | the scope is written once; later steps can detect what exceeds it |
 | `specs/<capability>/spec.md` | the analyst (`f3 propose`), corrected in Tres Amigos | the **delta specs**: requirements and scenarios added, modified, removed or renamed | everyone; `f3-features` turns them into feature files | the contract of the change: what will be built, designed and proven |
-| `tres-amigos.md` | the analyst, chairing `f3 tres-amigos` | the record of each session: the raw reports of the four members, the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13) | you, later sessions | each decision has its reason; a later session does not argue it again |
+| `tres-amigos.md` | the analyst, chairing `f3 tres-amigos` | the record of each session: the reports of the four members (translated into the language of the artifacts when a member answered in another), the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13) | you, later sessions | each decision has its reason; a later session does not argue it again |
 | `validations/amigos.md` | `f3 tres-amigos`, when you declare the specs ready | the validation of the step | OpenSpec (unblocks the next step) | without it, the schema refuses the interface design |
 | `ux.md` | the ux agent (`f3 ux-design`); the analyst may write appearance wishes in it | the design delta: intentions, views, components, icons, tokens, conflicts, proposed cross-cutting decisions. It names and decides; it holds no appearance value | the architect (Interface section of the design), the developer, `f3 archive` | the names the code, the screens and the tests will share are decided once |
 | `ux-design.md` | the ux agent (`f3 ux-design`) | the progress tracking of the design: each step of the impact analysis, each icon, component and screen with its status, and the conformity results | the ux agent, at each run | the design is done one unit per run; each run resumes where the previous one stopped |
@@ -1103,7 +1103,7 @@ A project framed before the toolkit ran under both tools has the files of one to
 
 - Claude Code, OpenCode, or both.
 - Node.js 20.19.0 or later, for OpenSpec, the render and the `f3` command; and `~/.local/bin` in your `PATH`.
-- OpenSpec, with a profile that installs `openspec-continue-change` (`openspec config profile`, then `openspec update` in each project).
+- OpenSpec, with a profile that installs the skills `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change` (`openspec config profile`, then `openspec update` in each project).
 - In each project, an end-to-end test runner that reads Gherkin feature files, decided during `f3 init` (for example Playwright with playwright-bdd).
 - Optionally, a design tool with an MCP server (the toolkit provides the Penpot adapter).
 
