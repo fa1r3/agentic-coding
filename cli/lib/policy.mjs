@@ -1,6 +1,6 @@
 // Permission table of an agent (<agent>.permission, beside its source in modules/) and its evaluation.
 // Semantics of OpenCode: wildcard globs ("*" matches any text, "/" included), the last matching rule wins.
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { HOME, parseYaml, permissionFile } from './toolkit.mjs';
 
@@ -68,13 +68,102 @@ const CODE_FLAGS = { node: ['-e', '--eval', '-p', '--print'], python: ['-c'], py
 const WRAPPERS = new Set(['env', 'nice', 'nohup', 'time', 'timeout', 'command', 'exec', 'sudo', 'stdbuf']);
 const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash']);
 
-function words(part) {
-  const result = [];
-  const re = /"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/g;
-  let m;
-  while ((m = re.exec(part))) result.push(m[1] ?? m[2] ?? m[3]);
-  while (result.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(result[0])) result.shift();
-  return result;
+// Placeholder of a command substitution inside a word: its command is checked on its own.
+const SUBSTITUTION = '$(…)';
+
+// Reads a shell command as bash does: quotes, escapes, operators, command substitutions.
+// Returns { segments: [{ words, piped }], substitutions: [command] }, or null if a quote, a
+// backquote or a substitution is not closed. An operator inside quotes is part of the word;
+// quoted parts glued together make one word ("a "b"" is "a b"); between single quotes nothing is
+// special; between double quotes \ escapes only $ ` " \ and newline, and $( ) and backquotes still
+// run a command, which is returned in substitutions.
+export function parseShell(command) {
+  const segments = [];
+  const substitutions = [];
+  let words = [];
+  let word = null;
+  let piped = false;
+  const endWord = () => { if (word !== null) words.push(word); word = null; };
+  const endSegment = (nextPiped) => {
+    endWord();
+    if (words.length) segments.push({ words, piped });
+    words = [];
+    piped = nextPiped;
+  };
+  const add = (text) => { word = (word ?? '') + text; };
+  // The command of $( at index i (after "$("), up to its closing parenthesis; returns [command, next index] or null.
+  const dollarParen = (i) => {
+    let depth = 1;
+    let quote = null;
+    for (let j = i; j < command.length; j++) {
+      const c = command[j];
+      if (quote === "'") { if (c === "'") quote = null; continue; }
+      if (c === '\\') { j++; continue; }
+      if (quote === '"') { if (c === '"') quote = null; continue; }
+      if (c === "'" || c === '"') { quote = c; continue; }
+      if (c === '(') depth++;
+      if (c === ')' && --depth === 0) return [command.slice(i, j), j + 1];
+    }
+    return null;
+  };
+  const backquote = (i) => {
+    for (let j = i; j < command.length; j++) {
+      if (command[j] === '\\') { j++; continue; }
+      if (command[j] === '`') return [command.slice(i, j), j + 1];
+    }
+    return null;
+  };
+  // A substitution starting at index i ($( or `); returns the next index, or -1 if not closed.
+  const substitution = (i) => {
+    const found = command[i] === '`' ? backquote(i + 1) : dollarParen(i + 2);
+    if (!found) return -1;
+    substitutions.push(found[0]);
+    add(SUBSTITUTION);
+    return found[1];
+  };
+  let i = 0;
+  while (i < command.length) {
+    const c = command[i];
+    const two = command.slice(i, i + 2);
+    if (c === "'") {
+      const end = command.indexOf("'", i + 1);
+      if (end < 0) return null;
+      add(command.slice(i + 1, end));
+      i = end + 1;
+    } else if (c === '"') {
+      add('');
+      i++;
+      for (;;) {
+        if (i >= command.length) return null;
+        const d = command[i];
+        if (d === '"') { i++; break; }
+        if (d === '\\' && i + 1 < command.length && '$`"\\\n'.includes(command[i + 1])) { add(command[i + 1]); i += 2; continue; }
+        if (d === '`' || command.slice(i, i + 2) === '$(') { i = substitution(i); if (i < 0) return null; continue; }
+        add(d);
+        i++;
+      }
+    } else if (c === '\\') {
+      if (i + 1 < command.length && command[i + 1] !== '\n') add(command[i + 1]);
+      i += 2;
+    } else if (c === '`' || two === '$(') {
+      i = substitution(i);
+      if (i < 0) return null;
+    } else if (two === '||' || two === '&&') {
+      endSegment(false);
+      i += 2;
+    } else if ('|;&\n()'.includes(c)) {
+      endSegment(c === '|');
+      i++;
+    } else if (/\s/.test(c)) {
+      endWord();
+      i++;
+    } else {
+      add(c);
+      i++;
+    }
+  }
+  endSegment(false);
+  return { segments, substitutions };
 }
 
 function gitSubcommand(args) {
@@ -150,11 +239,18 @@ function searchPaths(program, args, piped) {
 // Checks a shell command for an agent with shell_read_programs: deny. Returns the reason of a
 // refusal, or null. Reading programs are refused; search programs only outside the readable paths.
 export function shellReadCheck(command, table, root, depth = 0, cwd = root) {
-  const tokens = command.split(/(\|\||&&|;|\||\n|\$\(|`|\(|\))/);
-  let piped = false;
-  for (const token of tokens) {
-    if (/^(\|\||&&|;|\||\n|\$\(|`|\(|\))$/.test(token)) { piped = token === '|'; continue; }
-    let w = words(token.trim());
+  const parsed = parseShell(command);
+  if (!parsed) return { program: 'the shell', reason: 'unreadable' };
+  if (depth < 3) {
+    for (const inner of parsed.substitutions) {
+      const found = shellReadCheck(inner, table, root, depth + 1, cwd);
+      if (found) return found;
+    }
+  } else if (parsed.substitutions.length) return { program: 'the shell', reason: 'unreadable' };
+  for (const segment of parsed.segments) {
+    const { piped } = segment;
+    let w = segment.words;
+    while (w.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(w[0])) w = w.slice(1);
     if (!w.length) continue;
     let program = w[0].split('/').pop();
     let viaXargs = false;
@@ -180,7 +276,10 @@ export function shellReadCheck(command, table, root, depth = 0, cwd = root) {
       const found = searchPaths(program === 'egrep' || program === 'fgrep' ? 'grep' : program, w.slice(1), piped);
       if (found.forbidden) return { program: found.forbidden, reason: 'read' };
       for (const path of [...found.paths, ...found.files]) {
-        const res = resource(path, root, { base: cwd });
+        // A folder named with a final "/", or a path that does not exist yet (nothing to read) and is not a
+        // glob the shell would expand, is matched as a folder: "test-results/*" covers test-results.
+        const absent = !/[*?[]/.test(path) && !existsSync(resolve(cwd, expandHome(path)));
+        const res = resource(path, root, { base: cwd, directory: path.endsWith('/') || absent });
         const effect = evaluate(table.read, res);
         if (effect === 'deny' || effect === 'ask') return { program, reason: 'search', path: res };
       }
@@ -252,6 +351,7 @@ export function decide(agent, table, call, root, cwd = root) {
   if (tool === 'Bash' && table.shell_read_programs === 'deny') {
     const found = shellReadCheck(input.command || '', table, root, 0, cwd);
     if (!found) return null;
+    if (found.reason === 'unreadable') return verdict('deny', `the ${agent}'s shell command could not be read: a quote, a backquote or a $( is not closed, or substitutions are nested too deep`);
     if (found.reason === 'search') return verdict('deny', `the ${agent} may search only in what it may read, not in ${found.path} (${found.program})${readableList(table)}`);
     return verdict('deny', `the ${agent} does not read files through the shell (${found.program}). Use the Read tool, or search with grep, rg or find in what you may read${readableList(table)}`);
   }

@@ -247,7 +247,7 @@ f3 dev add-invoice-issuing -- resume at task 2.3, task 2.2 was done by hand
 f3 init -- the product is in French, Penpot is the design tool
 ```
 
-Your shell reads the line before `f3` does: put the prompt between quotes when it contains characters the shell interprets, such as `;`, `'`, `&` or `*` (`f3 init -- "the product's language is French"`).
+Your shell reads the line before `f3` does: put the prompt between quotes when it contains characters the shell interprets, such as `;`, `'`, `&` or `*` (`f3 init -- "the product's language is French"`). To keep double quotes in the prompt, put it between single quotes: `f3 dev issue-invoice -- 'the label "Draft"'`. Between double quotes, inner double quotes end the quoted text and disappear: `"the label "Draft""` reaches the agent as `the label Draft`.
 
 > **Claude Code.** The launcher runs `claude --agent <agent> "/f3-<step> <arguments>"`.
 

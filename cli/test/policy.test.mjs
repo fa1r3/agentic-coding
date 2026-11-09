@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 
 // The toolkit reads the test fixtures, not the real sources: set before it is loaded.
 process.env.F3_TOOLKIT_ROOT = join(import.meta.dirname, 'fixtures');
-const { decide, loadPolicy, shellReadCheck, wildcard } = await import('../lib/policy.mjs');
+const { decide, loadPolicy, parseShell, shellReadCheck, wildcard } = await import('../lib/policy.mjs');
 const { HOME } = await import('../lib/toolkit.mjs');
 
 const root = mkdtempSync(join(tmpdir(), 'f3-policy-'));
@@ -103,6 +103,24 @@ const CASES = [
   ['tester', 'Bash', { command: 'python3 -c "print(1)"' }, 'deny'],
   ['tester', 'Bash', { command: 'LANG=C /usr/bin/cat src/app.js' }, 'deny'],
   ['tester', 'Bash', { command: 'openspec instructions specs --change demo' }, 'none'],
+  // E12: operators inside quotes, glued quotes, substitutions inside double quotes, unclosed quotes.
+  ['tester', 'Bash', { command: "grep -n 'import|export' src/app.js" }, 'deny'],
+  ['tester', 'Bash', { command: "grep -n 'a;b' src/app.js" }, 'deny'],
+  ['tester', 'Bash', { command: "grep -n '^## \\|^### ' openspec/changes/demo/design.md" }, 'none'],
+  ['tester', 'Bash', { command: 'grep -n "Changement d\'année\\|heure" openspec/changes/demo' }, 'none'],
+  ['tester', 'Bash', { command: 'grep -rn "x "a|b"" tests' }, 'deny'], // bash: grep -rn "x a" (searches .) | b tests
+  ['tester', 'Bash', { command: 'grep -rn "x "a"|b" tests' }, 'none'], // bash: grep -rn "x a|b" tests
+  ['tester', 'Bash', { command: 'grep "x "a|cat src/app.js' }, 'deny'],
+  ['tester', 'Bash', { command: 'grep "$(cat src/app.js)" tests' }, 'deny'],
+  ['tester', 'Bash', { command: 'grep "`head -1 src/app.js`" tests' }, 'deny'],
+  ['tester', 'Bash', { command: "grep '$(cat src/app.js)' tests" }, 'none'],
+  ['tester', 'Bash', { command: 'grep "unclosed tests' }, 'deny'],
+  ['tester', 'Bash', { command: "grep 'unclosed tests" }, 'deny'],
+  ['tester', 'Bash', { command: 'echo $(echo $(echo $(echo $(cat src/app.js))))' }, 'deny'],
+  ['tester', 'Bash', { command: 'find test-results/ -name x' }, 'none'],
+  ['tester', 'Bash', { command: 'find test-results -name x' }, 'none'],
+  ['tester', 'Bash', { command: 'grep x src/*' }, 'deny'],
+  ['tester', 'Bash', { command: 'grep x missing-folder' }, 'deny'],
   ['tester', 'Agent', { subagent_type: 'tester' }, 'none'],
   ['tester', 'Agent', { subagent_type: 'Explore' }, 'deny'],
   ['tester', 'Agent', { subagent_type: 'general-purpose' }, 'deny'],
@@ -120,6 +138,19 @@ for (const [agent, tool, input, expected] of CASES) {
     assert.equal(effect(agent, tool, input), expected);
   });
 }
+
+test('the shell is read as bash reads it', () => {
+  const w = (c) => parseShell(c).segments.map((s) => s.words);
+  assert.deepEqual(w('f3 dev id -- "libellé "test""'), [['f3', 'dev', 'id', '--', 'libellé test']]);
+  assert.deepEqual(w('echo "libellé \\"test\\""'), [['echo', 'libellé "test"']]);
+  assert.deepEqual(w("echo 'libellé \"test\"'"), [['echo', 'libellé "test"']]);
+  assert.deepEqual(w('printf "x "a|b""'), [['printf', 'x a'], ['b']]);
+  assert.equal(parseShell('printf "x "a|b""').segments[1].piped, true);
+  assert.deepEqual(w("grep 'a|b' x && ls"), [['grep', 'a|b', 'x'], ['ls']]);
+  assert.deepEqual(parseShell('grep "$(cat a)" `head b` x').substitutions, ['cat a', 'head b']);
+  assert.equal(parseShell('echo "a'), null);
+  assert.equal(parseShell('echo $(ls'), null);
+});
 
 test('every agent table loads', () => {
   for (const agent of ['analyst', 'architect', 'developer', 'tester', 'ux']) assert.ok(loadPolicy(agent));
