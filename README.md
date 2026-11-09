@@ -74,7 +74,7 @@ Each step is launched from a terminal, in the project, with `f3 <step> [<argumen
 | 5 | Design review | `f3 design-review <change>` | architect + 3 exploration subagents | review.md, amended design and tasks, amendments of the specs | Schema: needs the tasks |
 | 6 | Development | `f3 dev <change>` | developer | code, unit and integration tests | Apply needs the review; permissions: the developer does not edit end-to-end tests or specs |
 | 7 | User check, then conformity | `f3 ux-design <change> conformity` | ux + general subagent | conformity deviations, decided by the user | Instruction |
-| 8 | Acceptance | `f3 acceptance <change>` | tester (+ itself as fidelity reviewer) | feature files, step definitions, page objects, pass report, tickets | Permissions: the tester does not read the code, and calls no subagent but itself (what they cover differs by tool: guide, section 12); missing steps detected by the test runner |
+| 8 | Acceptance | `f3 acceptance <change>` | tester (+ itself as fidelity reviewer) | the end-to-end test project at the first acceptance, feature files, step definitions, page objects, pass report, tickets | Permissions: the tester does not read the code, and calls no subagent but itself (what they cover differs by tool: guide, section 12); missing steps detected by the test runner |
 | | Loop 6 to 8 until green | | | | |
 | 9 | Archiving | `f3 archive <change>` | architect | archive, ux/decisions.md, merge | Instruction: last acceptance green and no application change since its commit |
 

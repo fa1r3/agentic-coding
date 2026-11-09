@@ -414,7 +414,7 @@ The thread is the name. A scenario names an action; a view of `ux.md` gets a nam
 
 ### 5.6 Languages
 
-The toolkit, its templates and every **stable keyword** are in English: headings, field labels, statuses, file names. Commands read these keywords to resume work, so they never change. The **prose** of the artifacts is written in the language chosen in the `context` (for example French). Agents answer in the language you write in.
+The toolkit, its templates and every **stable keyword** are in English: headings, field labels, statuses, file names. Commands read these keywords to resume work, so they never change. The **prose** of the artifacts is written in the language chosen in the `context` (for example French). Agents answer in the language you write in. The members of a review do not read the language of the project: when a member answers in another language, the chair writes a faithful translation of its report in the record, keeping the quoted passages as they are.
 
 ---
 
@@ -506,7 +506,7 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 3. it presents two or three really different combinations, with how each answers the constraints, the architecture, the workflow (design tool, end-to-end driving, observation of the running app) and durability, and recommends one;
 4. you decide; the decision becomes entry A-001 of `arch/decisions.md`;
 5. it writes the Stack section of AGENTS.md, and you validate it;
-6. it adds a first backlog entry: set up the repository according to the Stack section.
+6. it adds a first backlog entry: set up the repository according to the Stack section, with its verification command. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
 
 **Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
 
@@ -641,7 +641,7 @@ A decision that commits the following changes (new technology, new storage) is p
 - the first group builds what the tests need before any scenario: the views register if it is missing or incomplete, then the test entry points;
 - if the Interface section lists tokens, one task carries them over into the code before the views that use them;
 - a task on a view or a component ends with `Screens:` and the screens to open;
-- no task writes an end-to-end test;
+- no task writes in `tests/e2e/`, the end-to-end test project and its configuration included: the tester writes them; a task may add what the application needs to be tested, such as the script that starts it in test mode;
 - the last group, **Verification**, runs the verification command.
 
 Why functional slices: a component built and unit-tested in one group and never wired into a page in another is a classic agent failure. A slice is only done when the scenario works from end to end.
@@ -660,7 +660,7 @@ Why functional slices: a component built and unit-tested in one group and never 
 
 Same mechanism as Tres Amigos: grid, your decisions, application to design.md and tasks.md, record in `review.md`. A point that requires changing the specs is proposed as an amendment (section 13); you may prefer to bring it to a Tres Amigos session instead. When you declare the design ready, `validations/review.md` unlocks implementation.
 
-**What to watch.** The chair is the author of the design. Read the raw reports of the members in `review.md`, not only the grid.
+**What to watch.** The chair is the author of the design. Read the reports of the members in `review.md`, not only the grid.
 
 ### Step 6: development (`f3 dev <change-id>`)
 
@@ -692,6 +692,8 @@ It stops and reports when the design contradicts the specs, when a state of the 
 **Purpose.** Prove each scenario on the launched application, and catch regressions.
 
 **Agent.** tester, who never reads the application code.
+
+At the first acceptance of a project, the tester first creates the end-to-end test project in `tests/e2e/`, with its configuration, following the End-to-end tests subsection of the Stack section (section 10.7).
 
 What happens:
 1. the feature files are regenerated from the specs with the delta of the change; the manual scenarios are tagged `@manual` and excluded;
@@ -985,7 +987,7 @@ tests/e2e/
 └── manual-scenarios.md    the manual scenarios register
 ```
 
-The runner and the exact commands are in the End-to-end tests subsection of the Stack section of AGENTS.md.
+The tester creates this project at the first acceptance of the project, configuration included; no task of the developer writes in it. The runner and the exact commands are in the End-to-end tests subsection of the Stack section of AGENTS.md.
 
 ---
 
@@ -1049,7 +1051,7 @@ These depend on the tool:
 | The guard itself fails (error, `f3` not found) | **mechanism**: the call is refused | no guard: OpenCode applies the permissions itself |
 | An f3 agent called as a subagent stays within its scope | **mechanism**: its guard hook applies in subagent mode too; that it writes nothing at all is an **instruction** of the f3-agent skill | its own permissions apply (section 16); that it writes nothing at all is an **instruction** of the f3-agent skill |
 
-Why the difference: OpenCode applies the permissions of an agent itself, and Claude Code does not, so under Claude Code the guard hook of each agent applies its permission table. The same table is written once for both tools. Under OpenCode, closing the tester's gap through the shell would take a plugin: it is not part of the toolkit, and the gap is documented here and in section 16.
+Why the difference: OpenCode applies the permissions of an agent itself, and Claude Code does not, so under Claude Code the guard hook of each agent applies its permission table. The guard reads the paths of the table against the project folder that Claude Code gives its hooks (`CLAUDE_PROJECT_DIR`), whatever folder the session moved to with `cd`; without it, it refuses the call. It reads a shell command as bash does: quotes, escapes and operators, and the commands of `$( )` and backquotes, even between double quotes; it refuses a command whose quote or substitution is not closed. The same table is written once for both tools. Under OpenCode, closing the tester's gap through the shell would take a plugin: it is not part of the toolkit, and the gap is documented here and in section 16.
 
 The `operations` guidance of `openspec/config.yaml` is advisory in OpenSpec: the toolkit never relies on it. Rules that must hold live in the schema, the agents and the commands.
 
@@ -1134,6 +1136,8 @@ Then, in a project, launch each step from a terminal with `f3 <step> <arguments>
 | A command is refused with "runs as the <agent> agent" | Claude Code | it was typed in a session started otherwise | quit, and launch it from a terminal with `f3 <step> <arguments>` |
 | A command stops with "Shell command failed" | Claude Code | `f3 state` refused the argument or the state of the project; its message says why | pass the identifier of a change in progress; frame the project with `f3 init` |
 | The agent shows an error of the launch state and stops | OpenCode | the same: `f3 state` refused the argument or the state of the project | the same |
+| Under Claude Code, every call of an agent refused with "f3 guard failed: CLAUDE_PROJECT_DIR is not set" | Claude Code | the guard ran outside a session of Claude Code, which gives the project folder to its hooks | run the step with `f3 <step>`; run `f3 guard` by hand only with `CLAUDE_PROJECT_DIR` set |
+| A shell command of an agent is refused: "… shell command could not be read" | Claude Code | a quote, a backquote or a `$(` of the command is not closed, or substitutions are nested more than three deep | nothing to fix in the toolkit: the agent rewrites the command |
 | `f3: command not found`; under Claude Code, every call of an agent refused with "f3 guard failed"; under OpenCode, the launch state answers "command not found" | both | `~/.local/bin` is not in the `PATH`, or the toolkit folder moved | add `~/.local/bin` to the `PATH`; run `./install.sh` again |
 | In a session opened by hand, an f3 agent or command is unknown | both, mostly OpenCode | `build/` disappeared (`git clean -fdX`, a new clone): the installation links are dead | launch the step with `f3 <step>`, which renders before starting the tool, or run `f3 render`; then open a new session |
 | `f3` refuses: "the render of <tool> failed", or the launch state reports it | both | a source of the toolkit has an unknown `{{` marker or an unreadable frontmatter, the toolkit is read-only, or the disk is full | fix the source and launch again; for a read-only toolkit, run `./install.sh <tool>` with the rights to write in it |
@@ -1179,7 +1183,7 @@ Launched with `f3 <step>`, a command only ever receives identifiers as arguments
 
   > **OpenCode.** A subagent applies its own permissions; check it on your version.
 - **The tester's reading rules differ by tool** (section 12).
-  > **Claude Code.** The tester searches through the shell: Claude Code 2.1.318 gives its sessions no Grep or Glob tool. It may run `grep`, `rg` and `find` only when every path they search is one it may read; the guard reads their arguments, so an unusual option can make it refuse a legitimate search. The guard stops habits, not intent: it refuses the reading tools and programs, not a script written to read a file. A step definition that would read the code is caught by the fidelity review of the acceptance.
+  > **Claude Code.** The tester searches through the shell: Claude Code 2.1.318 gives its sessions no Grep or Glob tool. It may run `grep`, `rg` and `find` only when every path they search is one it may read; the guard reads their arguments as bash does, so an unusual option can make it refuse a legitimate search, and a search folder that does not exist yet counts as a folder. The guard stops habits, not intent: it refuses the reading tools and programs, not a script written to read a file. A step definition that would read the code is caught by the fidelity review of the acceptance.
 
   > **OpenCode.** Only the read tool is restricted: glob, grep and the shell can still read the application code. Closing this gap would take a plugin, which the toolkit does not have. The fidelity review of the acceptance is the remaining check.
 - **A failing launch state does not stop an OpenCode command.** Under OpenCode, the command goes on after a failed injection; the line that follows it tells the agent to show the error and stop. Under Claude Code, the command does not start.
