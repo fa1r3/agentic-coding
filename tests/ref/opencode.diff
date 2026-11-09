@@ -334,6 +334,15 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  ## Interview
  
+@@ -59,7 +60,7 @@
+ 3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); durability (maturity, licenses, lock-in).
+ 4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-001: decision, constraints, options set aside and why, consequences.
+ 5. **Stack section.** Write the Stack section of AGENTS.md, each subsection as the template defines it, after validation.
+-6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command and the end-to-end test project. It goes through the whole workflow.
++6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command. It goes through the whole workflow. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
+ 
+ In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request.
+ 
 @@ -72,10 +73,12 @@
  1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
  2. Write each file following its reference:
@@ -501,7 +510,7 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
        - Split by functional slice, never by technical layer. Each group delivers one or more scenarios of the specs end to end, from storage to screen, with the unit and integration tests of its own code. Under its title, a line "Delivered scenarios:" cites each scenario as <capability> › <requirement> › <scenario>, separated by semicolons. Each scenario added or modified by the change is delivered by exactly one group.
        - The first group builds what the tests need before any scenario, in this order: the views register, if the product has a user interface (the User interface subsection of the Stack section of AGENTS.md is not "None.") and ux/views.md does not exist or does not list every view of the code, with one task that builds or completes it following references/views-md.md of the f3-standards skill; then the test entry points of the Test strategy. If there is neither, this group does not exist. Its line "Delivered scenarios:" contains "none" when it delivers no scenario.
 -      - No task writes or modifies an end-to-end test, a feature file, a step definition or a page object: the tester writes them with /f3-acceptance.
-+      - No task writes or modifies an end-to-end test, a feature file, a step definition or a page object: the tester writes them with f3 acceptance.
++      - No task writes or modifies a file of `tests/e2e/`, the end-to-end test project and its configuration included: the tester creates and writes it with f3 acceptance. A task may add what the application needs to be tested, such as the script that starts it in test mode.
        - A task that creates or modifies a view or a component names it exactly as the Interface section of design.md, and ends with "Screens:" followed by the design screens to open before coding, as <view>/<state>, or the component name. Its appearance comes from the design tool, never from the text of ux.md.
        - If the Interface section lists tokens, one task carries them over into the code, where the User interface subsection of the Stack section says they live, with their names and values read in the design tool, before the tasks of the views and components that use them.
        - A task is finished when its unit and integration tests and the verification command of the Stack section pass.
@@ -524,9 +533,12 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
 diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/SKILL.md
 --- a/openspec/skills/e2e-practice/SKILL.md
 +++ b/openspec/skills/e2e-practice/SKILL.md
-@@ -22,7 +22,7 @@
+@@ -20,9 +20,9 @@
  
- The end-to-end test project lives in `tests/e2e/`:
+ ## Organization
+ 
+-The end-to-end test project lives in `tests/e2e/`:
++The end-to-end test project lives in `tests/e2e/`. The tester creates it at the first acceptance of the project, with its configuration, following the End-to-end tests subsection of the Stack section of `AGENTS.md`:
  
 -- `features/`: the feature files, one per capability, generated by `node ~/.config/opencode/scripts/f3-features.mjs <change-id>` and versioned. They are never edited by hand: a scenario changes in the specs, then the files are regenerated. The test code the runner generates from them is not versioned.
 +- `features/`: the feature files, one per capability, generated by `node ~/.local/share/f3/scripts/f3-features.mjs <change-id>` and versioned. They are never edited by hand: a scenario changes in the specs, then the files are regenerated. The test code the runner generates from them is not versioned.

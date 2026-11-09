@@ -60,7 +60,7 @@ In creation mode:
 3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); durability (maturity, licenses, lock-in).
 4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-001: decision, constraints, options set aside and why, consequences.
 5. **Stack section.** Write the Stack section of AGENTS.md, each subsection as the template defines it, after validation.
-6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command and the end-to-end test project. It goes through the whole workflow.
+6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command. It goes through the whole workflow. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
 
 In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request.
 
