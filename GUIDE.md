@@ -707,7 +707,7 @@ Green means every scenario passes (except, during a migration, the scenarios out
 
 **Agent.** architect.
 
-1. It checks that the last acceptance is green and that no application file changed since the tested commit.
+1. It checks that the last acceptance is green and that no application file changed since the tested commit: only the end-to-end tests, `openspec/`, `BACKLOG.md` and `.gitignore` may have changed. Otherwise it stops, and `f3 acceptance` must run again.
 2. It adds the cross-cutting design decisions of `ux.md` to `ux/decisions.md`.
 3. It archives the change with OpenSpec: the delta specs are merged into `openspec/specs/`.
 4. It regenerates the feature files from the merged specs: they must be **identical** to the tested ones, which proves the archived specs are the tested specs.
