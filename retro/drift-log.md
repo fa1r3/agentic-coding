@@ -100,3 +100,15 @@ Branch `feat/multi-harness`: the user chooses the tool; the workflow and OpenSpe
 - **Project files:** `f3 init` writes the files of each tool of the project, so a team can use both tools. The MCP servers are decided once in the Stack section, and the two files name them the same way. Every launch state warns about missing tool files, `.f3/local` not ignored by Git, and MCP servers that differ; no migration command: `f3 init` proposes its theme Tools.
 - **Guarantees by tool:** one permission table per agent, the union of the files of both tools, applied by the guard under Claude Code and natively under OpenCode. The guide says, control by control, what each tool enforces (section 12).
 - **Non-regression:** the render of each tool is compared with its reference (tags `ref/opencode`, `ref/claude-code`); every intended difference is written first in `tests/ref/<tool>.diff`, and any other one fails the tests.
+
+## 2026-11-09: end-to-end run of the multi-tool toolkit
+
+A full change, from `f3 propose` to `f3 archive`, under Claude Code; under OpenCode up to Tres Amigos and the blocked `f3 design`, stopped there by the user. Each gap was reported with its evidence before any fix.
+
+- **Launch under OpenCode:** `opencode --prompt` sometimes sent the command as plain text to the default agent, before the TUI knew the commands. The launcher now starts a private OpenCode server, creates the session under the agent of the step through its API, sends the command, then opens the TUI on that session. The server password never reaches the agent's environment.
+- **Guard root:** the guard read its rules against the current folder of the session, which follows the `cd` of the shell. After a `cd`, it refused legitimate writes and let the developer edit the end-to-end tests. It now reads them against `CLAUDE_PROJECT_DIR`, and refuses every call without it.
+- **Guard and shell quotes:** the guard split a command on its operators before reading the quotes, so `grep 'import|export'` on the application code passed. It now reads a command as bash does, checks command substitutions even between double quotes, and refuses an unclosed quote.
+- **End-to-end test project:** the first backlog entry included it, so it became a task of the developer, whose scope forbids `tests/e2e/`; the developer wrote it through the shell without reporting the conflict. The tester now creates it at the first acceptance, and no task writes in `tests/e2e/`.
+- **Language of review records:** the members of a review are built-in exploration subagents that do not read the language of the project; their English reports went into a French record, and the chair then answered in English. The chair now writes a faithful translation.
+- **Archive precondition:** a `.gitignore` commit after the tested commit made the architect offer to archive anyway, which the command does not allow. `.gitignore` is now accepted and named; for any other file the architect stops without offering to go on.
+- **Smaller fixes:** the ux agent, which has no shell, was told to run `openspec instructions`; the guide now says how to keep double quotes in the prompt after `--`.
