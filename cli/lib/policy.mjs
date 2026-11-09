@@ -29,10 +29,11 @@ function expandHome(p) {
   return p === '~' ? HOME : p.startsWith('~/') ? join(HOME, p.slice(2)) : p;
 }
 
-// Resource of a path: relative to the project root inside it, absolute outside it.
+// Resource of a path: relative to the project root inside it, absolute outside it. A relative path is
+// resolved against base, the current folder of the call (the root by default).
 // A directory ends with "/", so that "tests/*" covers the folder tests itself; the root is ".".
-export function resource(path, root, { directory = false } = {}) {
-  const abs = resolve(root, expandHome(path));
+export function resource(path, root, { directory = false, base = root } = {}) {
+  const abs = resolve(base, expandHome(path));
   const rel = relative(root, abs);
   if (rel === '') return '.';
   const inside = !rel.startsWith('..') && !isAbsolute(rel);
@@ -148,7 +149,7 @@ function searchPaths(program, args, piped) {
 
 // Checks a shell command for an agent with shell_read_programs: deny. Returns the reason of a
 // refusal, or null. Reading programs are refused; search programs only outside the readable paths.
-export function shellReadCheck(command, table, root, depth = 0) {
+export function shellReadCheck(command, table, root, depth = 0, cwd = root) {
   const tokens = command.split(/(\|\||&&|;|\||\n|\$\(|`|\(|\))/);
   let piped = false;
   for (const token of tokens) {
@@ -168,7 +169,7 @@ export function shellReadCheck(command, table, root, depth = 0) {
     if (SHELLS.has(program)) {
       const i = w.indexOf('-c');
       if (i > 0 && w[i + 1] !== undefined && depth < 3) {
-        const inner = shellReadCheck(w[i + 1], table, root, depth + 1);
+        const inner = shellReadCheck(w[i + 1], table, root, depth + 1, cwd);
         if (inner) return inner;
       }
       continue;
@@ -179,8 +180,9 @@ export function shellReadCheck(command, table, root, depth = 0) {
       const found = searchPaths(program === 'egrep' || program === 'fgrep' ? 'grep' : program, w.slice(1), piped);
       if (found.forbidden) return { program: found.forbidden, reason: 'read' };
       for (const path of [...found.paths, ...found.files]) {
-        const effect = evaluate(table.read, resource(path, root));
-        if (effect === 'deny' || effect === 'ask') return { program, reason: 'search', path: resource(path, root) };
+        const res = resource(path, root, { base: cwd });
+        const effect = evaluate(table.read, res);
+        if (effect === 'deny' || effect === 'ask') return { program, reason: 'search', path: res };
       }
       continue;
     }
@@ -213,14 +215,16 @@ function readableList(table) {
 }
 
 // Decision on one tool call: { effect: 'deny' | 'ask', reason } or null (no decision).
-export function decide(agent, table, call, root) {
+// root is the project folder, against which the rules are written; cwd is the current folder of the
+// call, against which its relative paths are resolved.
+export function decide(agent, table, call, root, cwd = root) {
   const { tool, input = {} } = call;
   const verdict = (effect, reason) => (effect === 'deny' || effect === 'ask' ? { effect, reason: `f3 guard (${agent}): ${reason}` } : null);
 
   if (['Edit', 'Write', 'MultiEdit', 'NotebookEdit'].includes(tool)) {
     const path = input.file_path ?? input.notebook_path;
     if (!path) return null;
-    const res = resource(path, root);
+    const res = resource(path, root, { base: cwd });
     const effect = evaluate(table.edit, res);
     return verdict(effect, effect === 'ask' ? `editing ${res} needs the user's confirmation` : `the ${agent} may not edit ${res}`);
   }
@@ -233,12 +237,12 @@ export function decide(agent, table, call, root) {
       paths.push([base, tool === 'Glob']);
       if (tool === 'Glob' && input.pattern) {
         const prefix = staticPrefix(input.pattern);
-        if (prefix) paths.push([isAbsolute(prefix) ? prefix : join(resolve(root, expandHome(base)), prefix), false]);
+        if (prefix) paths.push([isAbsolute(prefix) ? prefix : join(resolve(cwd, expandHome(base)), prefix), false]);
       }
     }
     for (const [path, directory] of paths) {
       if (!path) continue;
-      const res = resource(path, root, { directory });
+      const res = resource(path, root, { directory, base: cwd });
       const effect = evaluate(table.read, res);
       if (effect === 'deny' || effect === 'ask') return verdict(effect, `the ${agent} may not read ${res}${readableList(table)}`);
     }
@@ -246,7 +250,7 @@ export function decide(agent, table, call, root) {
   }
 
   if (tool === 'Bash' && table.shell_read_programs === 'deny') {
-    const found = shellReadCheck(input.command || '', table, root);
+    const found = shellReadCheck(input.command || '', table, root, 0, cwd);
     if (!found) return null;
     if (found.reason === 'search') return verdict('deny', `the ${agent} may search only in what it may read, not in ${found.path} (${found.program})${readableList(table)}`);
     return verdict('deny', `the ${agent} does not read files through the shell (${found.program}). Use the Read tool, or search with grep, rg or find in what you may read${readableList(table)}`);

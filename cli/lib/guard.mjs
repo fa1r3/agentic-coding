@@ -8,8 +8,12 @@ import { commands } from './toolkit.mjs';
 export function guard(agent) {
   try {
     const call = JSON.parse(readFileSync(0, 'utf8'));
+    // The rules are written against the project folder, which Claude Code gives its hooks; the current folder
+    // of the session follows the cd of the shell, and only resolves the relative paths of the call.
+    const root = process.env.CLAUDE_PROJECT_DIR;
+    if (!root) throw new Error('CLAUDE_PROJECT_DIR is not set');
     const table = loadPolicy(agent);
-    const result = decide(agent, table, { tool: call.tool_name, input: call.tool_input }, call.cwd || process.cwd());
+    const result = decide(agent, table, { tool: call.tool_name, input: call.tool_input }, root, call.cwd || root);
     if (!result) return 0;
     if (result.effect === 'ask') {
       process.stdout.write(JSON.stringify({
