@@ -1,15 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tempDir } from './tmp.mjs';
 
 // The toolkit reads the test fixtures, not the real sources: set before it is loaded.
 process.env.F3_TOOLKIT_ROOT = join(import.meta.dirname, 'fixtures');
 const { decide, loadPolicy, parseShell, shellReadCheck, wildcard } = await import('../lib/policy.mjs');
 const { HOME } = await import('../lib/toolkit.mjs');
 
-const root = mkdtempSync(join(tmpdir(), 'f3-policy-'));
+const root = tempDir('f3-policy-');
 for (const d of ['tests/e2e/steps', 'src', 'openspec/changes/demo', 'ux']) mkdirSync(join(root, d), { recursive: true });
 
 const effect = (agent, tool, input) => decide(agent, loadPolicy(agent), { tool, input }, root)?.effect ?? 'none';

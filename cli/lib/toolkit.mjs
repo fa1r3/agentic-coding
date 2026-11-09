@@ -20,6 +20,15 @@ export const TOOL_NAMES = { claude: 'Claude Code', opencode: 'OpenCode' };
 export const TOOL_DIRS = { claude: CLAUDE_DIR, opencode: OPENCODE_DIR };
 export const skillsDir = (tool) => join(TOOL_DIRS[tool], 'skills');
 
+// The permission table of an agent (<agent>.permission) with its variables filled for a tool:
+// {{SKILLS}} is the skills folder of the tool, written from ~ when it is under the home folder, so
+// that the render does not depend on the home folder of the machine.
+export function fillPermission(text, tool) {
+  const dir = skillsDir(tool);
+  const shown = dir.startsWith(HOME + sep) ? '~' + dir.slice(HOME.length) : dir;
+  return text.replaceAll('{{SKILLS}}', shown.split(sep).join('/'));
+}
+
 // Subcommands of f3 that are not workflow steps: no command may be named /f3-<one of them>.
 export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'tool', 'render'];
 
@@ -63,7 +72,8 @@ function unquote(value) {
 }
 
 // Parses the YAML subset used by the toolkit frontmatter: scalars and nested mappings.
-// List items ("- ...") are skipped: the only lists are the hooks, which f3 does not read.
+// A list ("- ..." items, and what is indented under them) is skipped with its key left empty: no
+// source of the toolkit has one, and f3 would not read it.
 export function parseFrontmatter(text) {
   const lines = text.split(/\r?\n/);
   if (lines[0] !== '---') throw new Error('no frontmatter');
@@ -76,16 +86,24 @@ export function parseFrontmatter(text) {
 export function parseYaml(text) {
   const root = {};
   const stack = [{ indent: -1, node: root }];
+  // Indentation of the "- " of the list being skipped, or -1. A list may be written at the indentation
+  // of its key: the list is followed by its indentation, never by the nodes of the stack.
+  let listIndent = -1;
   for (const raw of text.split(/\r?\n/)) {
     if (!raw.trim() || raw.trim().startsWith('#')) continue;
     const indent = raw.length - raw.trimStart().length;
     const line = raw.trim();
-    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
-    const parent = stack[stack.length - 1];
-    if (line.startsWith('- ') || line === '-' || parent.node === null) {
-      parent.node = null; // inside a list: ignored
+    const item = line.startsWith('- ') || line === '-';
+    if (listIndent >= 0) {
+      if (indent > listIndent || (indent === listIndent && item)) continue; // still inside the list
+      listIndent = -1;
+    }
+    if (item) {
+      listIndent = indent;
       continue;
     }
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
+    const parent = stack[stack.length - 1];
     const m = /^("[^"]*"|'[^']*'|[^:]+):(?:\s+(.*))?$/.exec(line);
     if (!m) throw new Error(`unreadable frontmatter line: ${line}`);
     const key = unquote(m[1]);

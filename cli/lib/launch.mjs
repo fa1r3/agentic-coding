@@ -19,10 +19,10 @@
 //   environment), then opens the TUI on that session, and stops the server when the TUI ends. The
 //   password of the server is made by the server and given to the TUI only: never in the environment
 //   of the server, so neither the agent nor its tools can read it.
-import { spawn as spawnAsync, spawnSync } from 'node:child_process';
+import { spawn as spawnAsync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { constants as osConstants, tmpdir } from 'node:os';
 import { createInterface } from 'node:readline';
 import { TOOLS, TOOL_NAMES, installedTools } from './toolkit.mjs';
 
@@ -224,6 +224,23 @@ export async function runOpenCode({ argv, agent, command, text }, { env, cwd = p
   }
 }
 
+// Under Claude Code: runs claude in the terminal; returns its exit code (128 + the signal number when a
+// signal ended it). A signal that f3 receives (the terminal closed, SIGTERM) goes to claude: f3 waits
+// for it to end, so that launch() removes the launch folder; without a handler, f3 would end at once.
+export async function runClaude({ program, argv }, { env, cwd = process.cwd() }) {
+  const child = spawnAsync(program, argv, { cwd, env, stdio: 'inherit' });
+  const forward = (signal) => child.kill(signal);
+  for (const s of SIGNALS) process.on(s, forward);
+  try {
+    return await new Promise((resolve, reject) => {
+      child.once('error', (error) => reject(new LaunchError(`cannot start ${TOOL_NAMES.claude}: ${error.message}`)));
+      child.once('exit', (code, signal) => resolve(code ?? (signal ? 128 + (osConstants.signals[signal] ?? 0) : 1)));
+    });
+  } finally {
+    for (const s of SIGNALS) process.off(s, forward);
+  }
+}
+
 // Writes the idea and the prompt (each one null when absent) in a private file; returns its path.
 // The file is written even when both are absent: F3_LAUNCH tells f3 state that f3 started the session.
 export function writeLaunchFile({ idea, prompt }) {
@@ -240,7 +257,7 @@ async function askTerminal(tools) {
 }
 
 // f3 <step> ...: returns the exit code of the tool, or 1.
-export async function launch(step, agent, words, { render, ask = askTerminal, spawn = spawnSync, openCode = runOpenCode, env = process.env } = {}) {
+export async function launch(step, agent, words, { render, ask = askTerminal, claude = runClaude, openCode = runOpenCode, env = process.env } = {}) {
   let parsed;
   let tool;
   try {
@@ -263,21 +280,12 @@ export async function launch(step, agent, words, { render, ask = askTerminal, sp
   const how = toolCommand(tool, agent, step, parsed.args);
   const file = writeLaunchFile(parsed);
   try {
-    if (tool === 'opencode') {
-      try {
-        return await openCode(how, { env: { ...process.env, F3_LAUNCH: file } });
-      } catch (error) {
-        if (!(error instanceof LaunchError)) throw error;
-        console.error(`f3: ${error.message}`);
-        return 1;
-      }
-    }
-    const result = spawn(how.program, how.argv, { stdio: 'inherit', env: { ...process.env, F3_LAUNCH: file } });
-    if (result.error) {
-      console.error(`f3: cannot start ${TOOL_NAMES[tool]}: ${result.error.message}`);
-      return 1;
-    }
-    return result.status ?? 1;
+    const run = tool === 'opencode' ? openCode : claude;
+    return await run(how, { env: { ...env, F3_LAUNCH: file } });
+  } catch (error) {
+    if (!(error instanceof LaunchError)) throw error;
+    console.error(`f3: ${error.message}`);
+    return 1;
   } finally {
     rmSync(join(file, '..'), { recursive: true, force: true });
   }

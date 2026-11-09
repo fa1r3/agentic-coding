@@ -3,14 +3,15 @@
 // links are simulated, and a PATH whose claude and opencode record how they were called.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
-  chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync,
+  chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { constants } from 'node:os';
 import { PassThrough } from 'node:stream';
 import { askTool, parseLaunch, toolCommand } from '../lib/launch.mjs';
+import { tempDir } from './tmp.mjs';
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'modules');
@@ -32,7 +33,7 @@ function launched() {
   let launch = null;
   if (file && fs.existsSync(file)) launch = { content: fs.readFileSync(file, 'utf8'), mode: fs.statSync(file).mode & 0o777, dirMode: fs.statSync(path.dirname(file)).mode & 0o777 };
   const state = process.env.F3_TEST_STATE ? require('node:child_process').spawnSync('node', [process.env.F3_TEST_F3, 'state', ...process.env.F3_TEST_STATE.split(' ')], { encoding: 'utf8' }) : null;
-  return { file, launch, state: state && { status: state.status, stdout: state.stdout, stderr: state.stderr } };
+  return { file, launch, mark: process.env.F3_TEST_MARK ?? null, state: state && { status: state.status, stdout: state.stdout, stderr: state.stderr } };
 }
 if (tool === 'opencode' && argv[0] === 'serve') {
   if (process.env.F3_TEST_SERVE_FAIL) { console.error('cannot listen'); process.exit(2); }
@@ -68,12 +69,14 @@ if (tool === 'opencode' && argv[0] === 'serve') {
   process.exit(Number(process.env.F3_TEST_EXIT || 0));
 } else {
   append({ tool, argv, ...launched() });
-  process.exit(Number(process.env.F3_TEST_EXIT || 0));
+  // F3_TEST_WAIT: the session goes on until a signal ends it.
+  if (process.env.F3_TEST_WAIT) setInterval(() => {}, 1000);
+  else process.exit(Number(process.env.F3_TEST_EXIT || 0));
 }
 `;
 
 function setup({ installed = ['claude'], local } = {}) {
-  const base = mkdtempSync(join(tmpdir(), 'f3-launch-test-'));
+  const base = tempDir('f3-launch-test-');
   const root = join(base, 'toolkit');
   cpSync(FIXTURES, join(root, 'modules'), { recursive: true });
   cpSync(TOOLS_DIR, join(root, 'tools'), { recursive: true });
@@ -104,7 +107,7 @@ function setup({ installed = ['claude'], local } = {}) {
   const calls = () => (existsSync(record) ? readFileSync(record, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : []);
   // The launches: one record per session, without the records of the TUI and of the stopped server of OpenCode.
   const launches = () => calls().filter((c) => !c.tool.startsWith('opencode-'));
-  return { root, home, project, tmp, f3, calls, launches, local: () => readFileSync(join(project, '.f3', 'local'), 'utf8') };
+  return { root, home, project, tmp, env, f3, calls, launches, local: () => readFileSync(join(project, '.f3', 'local'), 'utf8') };
 }
 
 test('Claude Code: claude --agent <agent> "/f3-<step> <arguments>", with F3_LAUNCH', () => {
@@ -117,6 +120,26 @@ test('Claude Code: claude --agent <agent> "/f3-<step> <arguments>", with F3_LAUN
   assert.equal(JSON.parse(call.launch.content).prompt, null);
   assert.equal(call.launch.mode, 0o600);
   assert.equal(call.launch.dirMode, 0o700);
+});
+
+test('Claude Code: a signal to f3 goes to the session, and the launch folder is removed when it ends', async () => {
+  const t = setup({ installed: ['claude'] });
+  const f3 = spawn('node', [F3, 'dev', 'add-import', '--', 'note'], { cwd: t.project, env: { ...t.env, F3_TEST_WAIT: '1' }, stdio: 'ignore' });
+  const ended = new Promise((resolve) => f3.once('exit', (code) => resolve(code)));
+  for (let i = 0; i < 200 && !t.calls().length; i++) await new Promise((r) => setTimeout(r, 25));
+  assert.equal(t.calls().length, 1, 'the session did not start');
+  f3.kill('SIGTERM');
+  assert.equal(await ended, 128 + constants.signals.SIGTERM);
+  assert.deepEqual(readdirSync(t.tmp).filter((n) => n.startsWith('f3-launch-')), []);
+});
+
+test('Claude Code: the session gets the environment given to launch()', () => {
+  const t = setup({ installed: ['claude'], local: 'tool=claude\n' });
+  const LAUNCH = join(import.meta.dirname, '..', 'lib', 'launch.mjs');
+  const code = `import { launch } from ${JSON.stringify(LAUNCH)}; process.exitCode = await launch('dev', 'developer', ['add-import'], { render() {}, env: { ...process.env, F3_TEST_MARK: 'given' } });`;
+  const r = spawnSync('node', ['--input-type=module', '-e', code], { cwd: t.project, env: t.env, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(t.calls()[0].mark, 'given');
 });
 
 test('OpenCode: a private server, a session created as the agent with its command, then the TUI on it (D45)', () => {

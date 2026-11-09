@@ -5,17 +5,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readlinkSync, rmSync, symlinkSync,
+  chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readlinkSync, rmSync, symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tempDir } from './tmp.mjs';
 
 const TOOLKIT = resolve(import.meta.dirname, '..', '..');
 const NODE = process.execPath;
 
 function setup({ programs = ['claude', 'opencode', 'openspec'] } = {}) {
-  const base = mkdtempSync(join(tmpdir(), 'f3-install-test-'));
+  const base = tempDir('f3-install-test-');
   const root = join(base, 'toolkit');
   for (const part of ['install.sh', 'cli', 'modules', 'tools']) {
     cpSync(join(TOOLKIT, part), join(root, part), { recursive: true, filter: (src) => !src.includes(`${join(TOOLKIT, 'cli', 'test')}`) });

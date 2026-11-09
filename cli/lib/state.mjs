@@ -71,10 +71,14 @@ const git = (...args) => run('git', args);
 const uncommitted = (n) => head(git('status', '--porcelain', '--', '.', `:(exclude)${LOCAL}`), n);
 const firstLine = (text) => head(text, 1)[0] || '';
 
-function checkFramed() {
+// Whether the project is framed with f3: openspec/config.yaml starts with "schema: f3".
+function isFramed() {
   const config = 'openspec/config.yaml';
-  const first = existsSync(config) ? firstLine(readFileSync(config, 'utf8')) : '';
-  if (first.trim() !== 'schema: f3') {
+  return existsSync(config) && firstLine(readFileSync(config, 'utf8')).trim() === 'schema: f3';
+}
+
+function checkFramed() {
+  if (!isFramed()) {
     throw new StateError('This project is not framed with f3: openspec/config.yaml does not start with "schema: f3". Frame it first, in a terminal: f3 init');
   }
 }
@@ -290,8 +294,7 @@ export function stateOf(command, rawArgs, { env = process.env, renderTool = rend
     if (entry.args.includes('mode?') && args[1] !== undefined && args[1] !== 'conformity') {
       throw new StateError(`Unknown mode "${args[1]}": the only mode is "conformity". Usage: ${usage}.`);
     }
-    const framed = existsSync('openspec/config.yaml') && firstLine(readFileSync('openspec/config.yaml', 'utf8')).trim() === 'schema: f3';
-    const lines = [...entry.lines(args, { tools, installed }), ...warnings, ...(framed ? toolWarnings(installed) : [])];
+    const lines = [...entry.lines(args, { tools, installed }), ...warnings, ...(isFramed() ? toolWarnings(installed) : [])];
     if (!env.F3_LAUNCH) {
       lines.push(`- Not started by f3: this command was typed in a session. Recommend to the user to start each step in a terminal with f3 <step>, here: f3 ${[command, ...args].join(' ')}`);
     }

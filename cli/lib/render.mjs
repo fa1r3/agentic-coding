@@ -21,7 +21,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { ROOT, TOOLS } from './toolkit.mjs';
+import { ROOT, TOOLS, fillPermission } from './toolkit.mjs';
 
 export { TOOLS };
 // The kinds of files that are rendered; every other file of a module is used as is.
@@ -115,7 +115,7 @@ function assemble(tool, root, mod, kind, file, tables) {
     values.DENY = denyLines(deny ? deny.line.slice('deny-tools: '.length).trim().split(/\s+/) : [], tables.tools, path);
     const permission = join(root, 'modules', mod, kind, `${name}.permission`);
     if (!existsSync(permission)) throw new Error(`${path}: no permission table ${name}.permission`);
-    values.PERMISSION = readFileSync(permission, 'utf8').replace(/\n$/, '').split('\n').map((l) => (l ? `  ${l}` : l));
+    values.PERMISSION = fillPermission(readFileSync(permission, 'utf8'), tool).replace(/\n$/, '').split('\n').map((l) => (l ? `  ${l}` : l));
   }
   values.FRONTMATTER = frontmatterLines(common, tables.keys);
   const head = kind === 'agents' ? tables.agentHead : tables.commandHead;

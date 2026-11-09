@@ -1,13 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tempDir } from './tmp.mjs';
 
 // A throwaway toolkit (the fixtures and the tools/ of the toolkit) and a throwaway HOME where f3 is
 // installed for both tools: set before the toolkit is loaded, so that no test renders the real toolkit.
-const sandbox = mkdtempSync(join(tmpdir(), 'f3-state-sandbox-'));
+const sandbox = tempDir('f3-state-sandbox-');
+// The temporary folder of the tests, launch files included, is inside the sandbox.
+process.env.TMPDIR = sandbox;
 const ROOT = join(sandbox, 'toolkit');
 const HOME = join(sandbox, 'home');
 cpSync(join(import.meta.dirname, 'fixtures', 'modules'), join(ROOT, 'modules'), { recursive: true });
@@ -23,7 +25,7 @@ const { stateOf } = await import('../lib/state.mjs');
 const { writeLaunchFile } = await import('../lib/launch.mjs');
 
 function project({ framed = true } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'f3-state-'));
+  const dir = tempDir('f3-state-');
   const w = (f, t) => { mkdirSync(join(dir, f, '..'), { recursive: true }); writeFileSync(join(dir, f), t); };
   execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: dir });
   if (framed) w('openspec/config.yaml', 'schema: f3\ncontext: |\n  Design tool:\n    Penpot, skill ux-penpot\n');

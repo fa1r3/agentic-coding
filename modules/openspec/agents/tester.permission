@@ -8,7 +8,7 @@ read:
   "ux/views.md": allow
   "BACKLOG.md": allow
   "package.json": allow
-  "~/.claude/skills/*": allow
+  "{{SKILLS}}/*": allow
 edit:
   "*": deny
   "tests/e2e/*": allow

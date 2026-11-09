@@ -2,15 +2,16 @@
 // Semantics of OpenCode: wildcard globs ("*" matches any text, "/" included), the last matching rule wins.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { HOME, parseYaml, permissionFile } from './toolkit.mjs';
+import { HOME, fillPermission, parseYaml, permissionFile } from './toolkit.mjs';
 
 const KEYS = ['edit', 'read', 'shell_read_programs', 'subagent'];
 const VALUES = ['allow', 'ask', 'deny'];
 
+// The table as the guard applies it, under Claude Code: {{SKILLS}} is the skills folder of Claude Code.
 export function loadPolicy(agent) {
   const file = permissionFile(agent);
   if (!file) throw new Error(`unknown agent "${agent}"`);
-  const table = parseYaml(readFileSync(file, 'utf8'));
+  const table = parseYaml(fillPermission(readFileSync(file, 'utf8'), 'claude'));
   for (const [key, value] of Object.entries(table)) {
     if (!KEYS.includes(key)) throw new Error(`unknown key "${key}" in ${agent}.permission`);
     const values = typeof value === 'string' ? [value] : Object.values(value);

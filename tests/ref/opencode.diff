@@ -85,7 +85,7 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
      "ux/views.md": allow
      "BACKLOG.md": allow
      "package.json": allow
-+    "~/.claude/skills/*": allow
++    "~/.config/opencode/skills/*": allow
    edit:
      "*": deny
      "tests/e2e/*": allow

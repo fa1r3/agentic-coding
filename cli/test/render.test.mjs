@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
+  cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
   statSync, symlinkSync, utimesSync, writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { TOOLS, fingerprint, render, renderFiles, renderView } from '../lib/render.mjs';
+import { tempDir } from './tmp.mjs';
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'modules');
@@ -17,7 +17,7 @@ const RENDER_DIR = /^(claude|opencode)\.[0-9a-f]{64}\.[0-9]+$/;
 // A toolkit of its own for each test: the agents and commands of the fixtures, the tools/ of the
 // toolkit, plus a skill.
 function toolkit() {
-  const root = mkdtempSync(join(tmpdir(), 'f3-render-'));
+  const root = tempDir('f3-render-');
   cpSync(FIXTURES, join(root, 'modules'), { recursive: true });
   cpSync(TOOLS_DIR, join(root, 'tools'), { recursive: true });
   mkdirSync(join(root, 'modules', 'ux', 'skills', 'ux-practice'), { recursive: true });

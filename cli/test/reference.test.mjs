@@ -5,10 +5,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
 import { renderFiles } from '../lib/render.mjs';
+import { tempDir } from './tmp.mjs';
 
 const TOOLKIT = resolve(import.meta.dirname, '..', '..');
 const REFERENCES = { claude: 'ref/claude-code', opencode: 'ref/opencode' };
@@ -20,9 +20,11 @@ function actualDiff(dir) {
   return r.stdout.replace(/^(---|\+\+\+) (\S+)\t.*$/gm, '$1 $2');
 }
 
-const work = mkdtempSync(join(tmpdir(), 'f3-reference-'));
+const work = tempDir('f3-reference-');
 const env = { ...process.env };
 delete env.F3_TOOLKIT_ROOT; // the real sources, not the fixtures
+// The default folders of the tools: the skills folder is written in the permission tables.
+for (const k of ['CLAUDE_CONFIG_DIR', 'XDG_CONFIG_HOME']) delete env[k];
 const rendered = spawnSync('bash', [join(TOOLKIT, 'install.sh'), '--render', join(work, 'views')], { env, encoding: 'utf8' });
 
 for (const [tool, tag] of Object.entries(REFERENCES)) {
@@ -49,7 +51,7 @@ for (const [tool, tag] of Object.entries(REFERENCES)) {
 // The fixtures are the agents and commands of ref/claude-code converted to the format of the sources:
 // rendered for Claude Code with the tools/ of the toolkit, they must give back those files exactly.
 test('the Claude Code render of the fixtures gives back the agents and commands of ref/claude-code', () => {
-  const root = mkdtempSync(join(tmpdir(), 'f3-roundtrip-'));
+  const root = tempDir('f3-roundtrip-');
   cpSync(join(import.meta.dirname, 'fixtures', 'modules'), join(root, 'modules'), { recursive: true });
   cpSync(join(TOOLKIT, 'tools'), join(root, 'tools'), { recursive: true });
   const files = renderFiles('claude', root);

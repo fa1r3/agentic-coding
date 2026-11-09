@@ -2,16 +2,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { mkdirSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { tempDir } from './tmp.mjs';
 
 // The toolkit reads the test fixtures, not the real sources: set before it is loaded, inherited by f3.
 process.env.F3_TOOLKIT_ROOT = join(import.meta.dirname, 'fixtures');
 const { promptVerdict } = await import('../lib/guard.mjs');
-const { RESERVED, commands, parseFrontmatter } = await import('../lib/toolkit.mjs');
+const { RESERVED, commands, parseFrontmatter, parseYaml } = await import('../lib/toolkit.mjs');
 
 const F3 = join(import.meta.dirname, '..', 'f3.mjs');
-const root = mkdtempSync(join(tmpdir(), 'f3-guard-'));
+const root = tempDir('f3-guard-');
 // Claude Code gives its hooks the project folder in CLAUDE_PROJECT_DIR.
 const run = (args, input, env = { CLAUDE_PROJECT_DIR: root }) => spawnSync('node', [F3, ...args], { input, encoding: 'utf8', cwd: root, env: { ...process.env, CLAUDE_PROJECT_DIR: undefined, ...env } });
 
@@ -103,4 +104,22 @@ test('frontmatter parser: scalars, nested tables, quoted keys, lists skipped', (
   assert.deepEqual(fm['f3-permission'], { edit: { '*': 'deny', 'a/*': 'allow' }, bash: 'deny' });
   assert.equal(fm.description, 'x: y');
   assert.equal(fm.after, 'z');
+});
+
+test('YAML parser: a list at the indentation of its key loses none of the keys after it', () => {
+  assert.deepEqual(parseYaml('hooks:\n- matcher: x\n  hooks:\n  - type: command\nagent: developer\nread:\n  "*": deny'),
+    { hooks: {}, agent: 'developer', read: { '*': 'deny' } });
+});
+
+test('YAML parser: a list indented under its key loses none of the keys after it, at any level', () => {
+  assert.deepEqual(parseYaml('a:\n  hooks:\n    - matcher: x\n      hooks:\n        - type: command\n  b: 1\nagent: developer'),
+    { a: { hooks: {}, b: '1' }, agent: 'developer' });
+});
+
+test('f3 guard: the tester reads its skills in the skills folder of Claude Code, CLAUDE_CONFIG_DIR included', () => {
+  const read = (file, env = {}) => run(['guard', 'tester'], JSON.stringify({ tool_name: 'Read', tool_input: { file_path: file }, cwd: root }), { CLAUDE_PROJECT_DIR: root, ...env });
+  const config = tempDir('f3-config-');
+  assert.equal(read(join(config, 'skills/f3-agent/references/review.md'), { CLAUDE_CONFIG_DIR: config }).status, 0);
+  assert.equal(read(join(homedir(), '.claude/skills/f3-agent/SKILL.md'), { CLAUDE_CONFIG_DIR: config }).status, 2);
+  assert.equal(read(join(homedir(), '.claude/skills/f3-agent/SKILL.md'), { CLAUDE_CONFIG_DIR: '' }).status, 0);
 });
