@@ -15,7 +15,7 @@ The workflow is the same under both tools. The guide ([GUIDE.md](GUIDE.md)) says
 
 ## Modules
 
-- `openspec`: the schema `f3`, the agents `analyst`, `architect`, `developer` and `tester`, the commands of the workflow, the skills `f3-agent` (shared working rules and review sessions), `f3-standards`, `spec-practice` and `e2e-practice`, and the script `f3-features.mjs`.
+- `openspec`: the schema `f3`, the agents `analyst`, `architect`, `developer` and `tester`, the commands of the workflow, the skills `f3-agent` (shared working rules, the light and full tracks of a change, and review sessions), `f3-standards`, `spec-practice` and `e2e-practice`, and the script `f3-features.mjs`.
 - `ux`: the agent `ux`, the design commands, and the skills `ux-practice` and `ux-penpot`.
 
 A module is a folder of `modules/`. It may contain `agents/`, `commands/`, `skills/` (each skill is a folder containing a `SKILL.md`), `scripts/` and `schemas/`. Everything in it is common to both tools. What differs between them (the frontmatter of the agents and commands, the names of the built-in subagents and tools) is in `tools/claude/` and `tools/opencode/`: the agents and commands are rendered for each tool into `build/<tool>`, a folder ignored by Git; the skills, scripts and schemas are not rendered.
@@ -67,16 +67,18 @@ Each step is launched from a terminal, in the project, with `f3 <step> [<argumen
 |---|---|---|---|---|---|
 | 0 | Framing, once per project | `f3 init` | architect | AGENTS.md, config.yaml, CONTEXT.md, arch/decisions.md, BACKLOG.md, the files of each tool of the project (CLAUDE.md, .mcp.json, .claude/settings.json; opencode.json), the `.f3/local` line of .gitignore | Marker in AGENTS.md |
 | 0' | Design, once per project | `f3 ux-calibrate`, `f3 ux-direction`, `f3 ux-tokens` | ux | cookbook, brief, tokens | Permissions of the ux agent |
-| 1 | Clarification, proposal and specs | `f3 propose` | analyst | clarification.md, proposal.md, specs, backlog entries | Schema; step form checked by f3-features |
+| 1 | Clarification, calibration, proposal and specs | `f3 propose` | analyst | clarification.md with the track of the change, proposal.md, specs, backlog entries; on the light track, the amigos and ux validations as not-applicable | Schema; step form checked by f3-features; calibration: instruction |
 | 2 | Tres Amigos | `f3 tres-amigos <change>` | analyst + 4 exploration subagents | tres-amigos.md, amended specs | Schema: needs the specs |
 | 3 | Interface design | `f3 ux-design <change>` | ux | ux.md, ux-design.md, design screens | Schema: needs the Tres Amigos validation |
-| 4 | Technical design and tasks | `f3 design <change>` | architect | design.md, tasks.md, arch/decisions.md entries | Schema: needs the ux validation |
+| 4 | Technical design and tasks | `f3 design <change>` | architect | design.md, tasks.md, arch/decisions.md entries; on the light track, the traceability check and the review validation as not-applicable | Schema: needs the ux validation |
 | 5 | Design review | `f3 design-review <change>` | architect + 3 exploration subagents | review.md, amended design and tasks, amendments of the specs | Schema: needs the tasks |
 | 6 | Development | `f3 dev <change>` | developer | code, unit and integration tests | Apply needs the review; permissions: the developer does not edit end-to-end tests or specs |
 | 7 | User check, then conformity | `f3 ux-design <change> conformity` | ux + general subagent | conformity deviations, decided by the user | Instruction |
 | 8 | Acceptance | `f3 acceptance <change>` | tester (+ itself as fidelity reviewer) | the end-to-end test project at the first acceptance, feature files, step definitions, page objects, pass report, tickets | Permissions: the tester does not read the code, and calls no subagent but itself (what they cover differs by tool: guide, section 12); missing steps detected by the test runner |
 | | Loop 6 to 8 until green | | | | |
 | 9 | Archiving | `f3 archive <change>` | architect | archive, ux/decisions.md, merge | Instruction: last acceptance green and no application change since its commit |
+
+This table is the **full track**. `f3 propose` calibrates each change with seven criteria (interface, structural decision, security, capabilities, size, consistency, testability; guide, section 7), and you decide its track. A change with no true criterion can take the **light track**: steps 1, 4, 6, 8 and 9, the user's check only when a scenario goes through a view, and no conformity. The steps it skips are closed by not-applicable validations, so the schema keeps its order. An agent that finds a criterion true later proposes to move the change to the full track, while no task is checked.
 
 "Permissions" means the control is a mechanism: Claude Code applies them through the guard hook of each agent (`f3 guard`), OpenCode natively. "Instruction" means the control is a rule given to the agent: OpenSpec cannot block archiving, and no permission covers files written through the shell.
 

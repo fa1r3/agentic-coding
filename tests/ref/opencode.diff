@@ -1,7 +1,7 @@
 diff -ru a/openspec/agents/analyst.md b/openspec/agents/analyst.md
 --- a/openspec/agents/analyst.md
 +++ b/openspec/agents/analyst.md
-@@ -28,8 +28,8 @@
+@@ -28,8 +28,10 @@
  
  | File | When |
  |---|---|
@@ -9,6 +9,8 @@ diff -ru a/openspec/agents/analyst.md b/openspec/agents/analyst.md
 -| tres-amigos.md, validations/amigos.md of a change | /f3-tres-amigos; amendments are added to tres-amigos.md |
 +| clarification.md, proposal.md, specs of a change | f3 propose; then f3 tres-amigos; then an amendment |
 +| tres-amigos.md, validations/amigos.md of a change | f3 tres-amigos; amendments are added to tres-amigos.md |
++| validations/amigos.md and validations/ux.md of a change, as not-applicable | f3 propose, on the light track; deleted by an escalation to the full track |
++| the Calibration section of clarification.md | f3 propose; then an escalation or a light track kept against advice (f3-agent skill) |
  | Intentions and Proposed cross-cutting decisions of a change's ux.md | an appearance wish expressed during the clarification |
  | `CONTEXT.md`, `BACKLOG.md` | a term or an entry the user validated |
 -| `tests/e2e/manual-scenarios.md` | a decision of the user in /f3-tres-amigos, or an amendment |
@@ -28,7 +30,7 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
      "ux/decisions.md": allow
      "tests/e2e/manual-scenarios.md": allow
      "~/.config/opencode/opencode.json": ask
-@@ -34,11 +38,11 @@
+@@ -34,11 +38,13 @@
  
  | File | When |
  |---|---|
@@ -40,6 +42,8 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 +| the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
 +| design.md, tasks.md of a change | f3 design, f3 design-review |
 +| review.md, validations/review.md of a change | f3 design-review |
++| validations/review.md of a change, as not-applicable | f3 design, on the light track |
++| the Calibration section of clarification.md, and the deletion of the not-applicable validations of a change | an escalation to the full track, or a light track kept against advice, in f3 design (f3-agent skill) |
  | `arch/decisions.md` | a structural decision the user validated |
 -| `CONTEXT.md`, `BACKLOG.md` | a term or an entry the user validated; at /f3-archive, the status `done` of the archived change |
 -| `ux/decisions.md`, the files OpenSpec moves | /f3-archive |
@@ -66,7 +70,7 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
  # End of session
  
 -List the tasks checked, what remains, and what you reported, including the displays of `ux/views.md` without screen and the screens reached through no display. When every task is checked, the next steps, each in a new session: the user's check of the journeys in the running application, including what the entries of `tests/e2e/manual-scenarios.md` that concern this change ask to check by hand, each listed; the conformity check with `/f3-ux-design <change-id> conformity` if the change has an interface impact; then `/f3-acceptance <change-id>`.
-+List the tasks checked, what remains, and what you reported, including the displays of `ux/views.md` without screen and the screens reached through no display. When every task is checked, the next steps, each in a new session: the user's check of the journeys in the running application, including what the entries of `tests/e2e/manual-scenarios.md` that concern this change ask to check by hand, each listed; the conformity check with `f3 ux-design <change-id> conformity` if the change has an interface impact; then `f3 acceptance <change-id>`.
++List the tasks checked, what remains, and what you reported, including the displays of `ux/views.md` without screen and the screens reached through no display. When every task is checked, the next steps, each in a new session: the user's check of the journeys in the running application, including what the entries of `tests/e2e/manual-scenarios.md` that concern this change ask to check by hand, each listed (on the light track, given by the Track line of the launch state, only when a scenario of the change goes through a view); the conformity check with `f3 ux-design <change-id> conformity` if the change has an interface impact, never on the light track; then `f3 acceptance <change-id>`.
  
  # Writing scope
  
@@ -139,8 +143,8 @@ diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.
  
 -1. **Preconditions.** `validations/review.md` exists and no task is unchecked; otherwise `/f3-dev $ARGUMENTS` comes first. No file outside `tests/e2e/` is uncommitted: the application under test must match a commit.
 -2. **Feature files.** Run `node ~/.config/opencode/scripts/f3-features.mjs $ARGUMENTS`. An error in the specs is corrected by an amendment, or in a Tres Amigos session if the user prefers; an error in `tests/e2e/manual-scenarios.md` is corrected there with the user's agreement; then run it again. Keep its list of the delta, and look at `git diff --stat tests/e2e/features/` to see which scenarios changed.
-+1. **Preconditions.** `validations/review.md` exists and no task is unchecked; otherwise `f3 dev $ARGUMENTS` comes first. No file outside `tests/e2e/` is uncommitted: the application under test must match a commit.
-+2. **Feature files.** Run `node ~/.local/share/f3/scripts/f3-features.mjs $ARGUMENTS`. An error in the specs is corrected by an amendment, or in a Tres Amigos session if the user prefers; an error in `tests/e2e/manual-scenarios.md` is corrected there with the user's agreement; then run it again. Keep its list of the delta, and look at `git diff --stat tests/e2e/features/` to see which scenarios changed.
++1. **Preconditions.** `validations/review.md` exists (approved, or not-applicable on the light track) and no task is unchecked; otherwise `f3 dev $ARGUMENTS` comes first. No file outside `tests/e2e/` is uncommitted: the application under test must match a commit.
++2. **Feature files.** Run `node ~/.local/share/f3/scripts/f3-features.mjs $ARGUMENTS`. An error in the specs is corrected by an amendment, or in a Tres Amigos session if the user prefers (on the light track, always an amendment: tasks are checked, so the change can no longer escalate); an error in `tests/e2e/manual-scenarios.md` is corrected there with the user's agreement; then run it again. Keep its list of the delta, and look at `git diff --stat tests/e2e/features/` to see which scenarios changed.
  3. **Tests of the delta.** Read the Test strategy section of design.md and the Impact section of ux.md, if any. Run the "generate the tests" command of the Stack section: it lists the steps without definition. During a migration where such scenarios are skipped, list the steps of the delta without definition yourself, against the output of "export the step catalog". Then write the missing step definitions, adapt those of the requirements the delta modifies, write or adapt the page objects of the views the scenarios go through (impacted views first), discovering the interface on the running application, and delete the step definitions no scenario uses any more. Write none for a manual scenario.
 -4. **Fidelity review.** Convene the built-in subagent `explore` through the task tool, with this prompt, `<files>` being the step definitions and page objects created or changed in this pass: "You review end-to-end test code. Read the e2e-practice skill at ~/.config/opencode/skills/e2e-practice/SKILL.md, the feature files of tests/e2e/features/, the views register ux/views.md, and these files: <files>. Modify no file. Check each step definition against the rules of Writing step definitions, and each page object against the rules of Writing page objects. Answer with one line per finding: the file, the step sentence or the method, the finding in one sentence, and the correction. If there is no finding, answer 'No finding.'." Correct each finding and note it for the report. If `explore` is not available or the call fails, stop and report it.
 +4. **Fidelity review.** Convene the `tester` agent as a subagent through the subagent tool (subagent type `tester`, the only subagent you may call): it reviews in a fresh context, under the same reading rules as you. Prompt, `<files>` being the step definitions and page objects created or changed in this pass: "You are consulted as a subagent: you review end-to-end test code. Apply the e2e-practice skill, and read the feature files of tests/e2e/features/, the views register ux/views.md, and these files: <files>. Modify no file. Check each step definition against the rules of Writing step definitions, and each page object against the rules of Writing page objects. Answer with one line per finding: the file, the step sentence or the method, the finding in one sentence, and the correction. If there is no finding, answer 'No finding.'." Correct each finding and note it for the report. If the `tester` subagent is not available or the call fails, stop and report it.
@@ -152,7 +156,7 @@ diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.
  7. **Report.** Write the report of the pass in the format of the skill.
  8. **Commits.** Following the Git section of AGENTS.md: the files of `tests/e2e/` with the type `test`, then the report, tasks.md, BACKLOG.md and the other files changed by an amendment with the type `docs`.
 -9. **End.** Sum up the conclusion. Green: `/f3-archive $ARGUMENTS`. Red with tickets: `/f3-dev $ARGUMENTS`, then `/f3-acceptance $ARGUMENTS` again; if a ticket touches a journey the user already checked, say they should check it again after the fix.
-+9. **End.** Sum up the conclusion. Green: `f3 archive $ARGUMENTS`. Red with tickets: `f3 dev $ARGUMENTS`, then `f3 acceptance $ARGUMENTS` again; if a ticket touches a journey the user already checked, say they should check it again after the fix.
++9. **End.** Sum up the conclusion. Green: `f3 archive $ARGUMENTS`. Red with tickets: `f3 dev $ARGUMENTS`, then `f3 acceptance $ARGUMENTS` again; if a ticket touches a journey the user already checked, say they should check it again after the fix. On the light track, there is no conformity step: never name `f3 ux-design`.
 diff -ru a/openspec/commands/f3-archive.md b/openspec/commands/f3-archive.md
 --- a/openspec/commands/f3-archive.md
 +++ b/openspec/commands/f3-archive.md
@@ -226,7 +230,10 @@ diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-r
 diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 --- a/openspec/commands/f3-design.md
 +++ b/openspec/commands/f3-design.md
-@@ -3,17 +3,22 @@
+@@ -1,19 +1,26 @@
+ ---
+-description: "Writes the technical design (design.md) and the tasks (tasks.md) of an OpenSpec change with the architect agent, through the OpenSpec continue workflow. Can be run again: it resumes from the first missing artifact. Argument: the identifier of the change."
++description: "Writes the technical design (design.md) and the tasks (tasks.md) of an OpenSpec change with the architect agent, through the OpenSpec continue workflow. On the light track, checks the traceability itself and closes the design review as not-applicable. Can be run again: it resumes from the first missing artifact. Argument: the identifier of the change."
  agent: architect
  ---
  
@@ -245,15 +252,20 @@ diff -ru a/openspec/commands/f3-design.md b/openspec/commands/f3-design.md
 -- Architecture decisions: !`if [ -f arch/decisions.md ]; then grep -E '^## A-|^- Status:' arch/decisions.md | paste -d' ' - -; else echo "arch/decisions.md absent"; fi`
 +A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
  
- Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments.
+-Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments.
++Produces: design.md, tasks.md, entries of `arch/decisions.md`, amendments; on the light track, `validations/review.md` as not-applicable.
  
 -1. If `validations/ux.md` does not exist in the change, stop: the interface design step must first be closed with `/f3-ux-design $ARGUMENTS`.
+-2. Load the skill openspec-continue-change and follow it until design.md and tasks.md both exist, applying the instructions of each artifact.
 +1. If `validations/ux.md` does not exist in the change, stop: the interface design step must first be closed with `f3 ux-design $ARGUMENTS`.
- 2. Load the skill openspec-continue-change and follow it until design.md and tasks.md both exist, applying the instructions of each artifact.
++2. Load the skill openspec-continue-change and follow it until design.md and tasks.md both exist, applying the instructions of each artifact. If they already exist and the Calibration section of clarification.md says the change was escalated to the full track, they are drafts written before the Tres Amigos and interface design steps: revise them with the user against the current specs and ux.md, following the same instructions, before going on.
  3. If writing the design shows that a spec of the change is missing, ambiguous or contradicts another, propose an amendment before writing the part of the design that depends on it.
- 4. Present design.md, then tasks.md, and apply the user's corrections. Run `openspec validate $ARGUMENTS` and fix every error.
+-4. Present design.md, then tasks.md, and apply the user's corrections. Run `openspec validate $ARGUMENTS` and fix every error.
 -5. End with the entries added to `arch/decisions.md` and the amendments made. Next step: `/f3-design-review $ARGUMENTS`.
-+5. End with the entries added to `arch/decisions.md` and the amendments made. Next step: `f3 design-review $ARGUMENTS`.
++4. On the light track (the Track line of the launch state), before writing a decision in `arch/decisions.md`, or as soon as the design creates or modifies an attack surface: C2 or C3 of the f3-agent skill is true, apply its escalation. If the user moves the change to the full track, stop there: the next step is `f3 tres-amigos $ARGUMENTS`.
++5. Present design.md, then tasks.md, and apply the user's corrections. Run `openspec validate $ARGUMENTS` and fix every error.
++6. On the light track, check the traceability yourself, without subagent, and correct the tasks with the user's agreement: each scenario added or modified by the change is cited on the "Delivered scenarios:" line of exactly one group; no task serves no scenario, except those of the first group and of the Verification group; the test entry points of the Test strategy have their tasks; no task writes a file of `tests/e2e/`. Then write `validations/review.md` following `openspec instructions review --change $ARGUMENTS`: Decision "not-applicable: light track, see Calibration in clarification.md"; Record "none"; Summary: the groups of tasks and the scenarios they deliver, in one or two sentences; Left open: "none".
++7. End with the entries added to `arch/decisions.md` and the amendments made. Next step: `f3 design-review $ARGUMENTS` on the full track, `f3 dev $ARGUMENTS` on the light track.
 diff -ru a/openspec/commands/f3-dev.md b/openspec/commands/f3-dev.md
 --- a/openspec/commands/f3-dev.md
 +++ b/openspec/commands/f3-dev.md
@@ -364,7 +376,10 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
 --- a/openspec/commands/f3-propose.md
 +++ b/openspec/commands/f3-propose.md
-@@ -3,15 +3,17 @@
+@@ -1,25 +1,27 @@
+ ---
+-description: "Starts or resumes an OpenSpec change. Without argument, offers to resume a clarification in progress or to pick the next change from the backlog. With an idea, clarifies it through functional questions asked one at a time, keeps the change focused and sends what is out of scope to the backlog, then writes the clarification, the proposal and the specs. Argument: nothing, an idea in a few words, or the identifier of a change to resume."
++description: "Starts or resumes an OpenSpec change. Without argument, offers to resume a clarification in progress or to pick the next change from the backlog. With an idea, clarifies it through functional questions asked one at a time, keeps the change focused and sends what is out of scope to the backlog, calibrates it on the light or the full track, then writes the clarification, the proposal and the specs. Argument: nothing, an idea in a few words, or the identifier of a change to resume."
  agent: analyst
  ---
  
@@ -381,28 +396,52 @@ diff -ru a/openspec/commands/f3-propose.md b/openspec/commands/f3-propose.md
  
 -If `openspec/config.yaml` does not start with `schema: f3`, stop: the project must first be framed with `/f3-init`.
 +!`f3 state propose`
-+
+ 
+-Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
 +If the launch state is missing, empty or reports an error, show it and stop.
 +
 +A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
++
++Produces: `clarification.md` with its Calibration, `proposal.md` and the specs of the change; on the light track, `validations/amigos.md` and `validations/ux.md` as not-applicable; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
  
- Produces: `clarification.md`, `proposal.md` and the specs of the change; terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `<change-id>, propose`; the Intentions and Proposed cross-cutting decisions of the change's ux.md for an appearance wish.
+ ## 1. Subject
  
-@@ -19,7 +21,7 @@
- 
- - **A change in progress:** resume it from the first section of clarification.md without content, then from the first missing artifact (proposal, then specs). If it has `validations/amigos.md`, stop: its specs are closed, and change only through an amendment.
+-- **A change in progress:** resume it from the first section of clarification.md without content, then from the first missing artifact (proposal, then specs). If it has `validations/amigos.md`, stop: its specs are closed, and change only through an amendment.
++- **A change in progress:** resume it from the first section of clarification.md without content, then from the provisional calibration if any, then from the first missing artifact (proposal, then specs, then, on the light track, the validations of step 4). If it has `validations/amigos.md`, stop: its specs are closed, and change only through an amendment.
  - **An idea:** go to step 2.
 -- **No argument:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
 +- **No argument and no idea:** propose to resume a change that has a clarification.md but no specs. Otherwise, present the open entries of `BACKLOG.md` in their order, propose a sorting if it helps (merging duplicates, reordering, dropping what no longer makes sense), apply each move only with the user's agreement, and recommend the next change with your reason (value, dependencies, size). The chosen entry starts step 2. Without backlog or open entry, ask for the idea.
  
  ## 2. Interview
  
-@@ -43,4 +45,4 @@
+@@ -34,13 +36,24 @@
  
- ## 4. End
+ Writing:
+ - As soon as need and scope are validated, create the change with `openspec new change <change-id>`, in kebab-case starting with a verb (`add-invoice-issuing`), and write the Need and Scope sections of clarification.md following `openspec instructions clarification --change <change-id>`. A backlog entry it comes from gets the status `in-progress <change-id>`.
++- Then the provisional calibration: with the criteria of the Tracks section of the f3-agent skill, say in two or three lines which track the scope suggests and which criteria are still unknown, and write it in the Calibration section with `(provisional)`. It is not a decision yet: the interview goes on through every angle, whatever the track.
+ - Each other angle goes into its section as soon as it is validated; a section left empty contains "None.".
+ - An out-of-scope item the user keeps for later becomes a `BACKLOG.md` entry, in the format of the f3-standards skill (create the file from its template if needed); a new or clarified term goes into `CONTEXT.md`.
+ 
+-## 3. Proposal and specs
++## 3. Calibration
++
++Once the Security angle is written, before the proposal: present each criterion C1 to C7 of the f3-agent skill with yes or no and the passage of clarification.md that decides it (for C5, the number of requirements you expect), then recommend a track with its reason. The user decides; a light track the user chooses against a true criterion goes under Decisions against advice. Write the Calibration section in the format of its template, without `(provisional)`.
++
++## 4. Proposal and specs
+ 
+ Write proposal.md following `openspec instructions proposal --change <change-id>`, then the specs following `openspec instructions specs --change <change-id>` and the spec-practice skill, one file at a time. Before the first scenario, build the step catalog. Every validated example becomes a scenario; every rule a requirement or a scenario. Then check the specs as spec-practice says.
+ 
+-## 4. End
++If writing the proposal or the specs makes a criterion true on the light track (a second capability, a fourth requirement, a scenario that cannot be automated, a term to create), apply the escalation of the f3-agent skill before going on.
++
++On the light track, once the specs are written, close the two review steps the track skips:
++1. Run `node ~/.local/share/f3/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error.
++2. Write `validations/amigos.md`, then `validations/ux.md`, following `openspec instructions amigos --change <change-id>` and `openspec instructions ux --change <change-id>`: Decision "not-applicable: light track, see Calibration in clarification.md"; Record "none"; Summary: the capabilities and the number of requirements and scenarios of the change; Left open: "none".
++
++## 5. End
  
 -Present the requirements written with the names of their scenarios; the new steps, each with the existing sentences you considered; the backlog entries and terms added; the appearance wishes written in ux.md. Next step: `/f3-tres-amigos <change-id>`.
-+Present the requirements written with the names of their scenarios; the new steps, each with the existing sentences you considered; the backlog entries and terms added; the appearance wishes written in ux.md. Next step: `f3 tres-amigos <change-id>`.
++Present the track and its reason; the requirements written with the names of their scenarios; the new steps, each with the existing sentences you considered; the backlog entries and terms added; the appearance wishes written in ux.md. Next step: `f3 tres-amigos <change-id>` on the full track, `f3 design <change-id>` on the light track.
 diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigos.md
 --- a/openspec/commands/f3-tres-amigos.md
 +++ b/openspec/commands/f3-tres-amigos.md
@@ -440,7 +479,11 @@ diff -ru a/openspec/commands/f3-tres-amigos.md b/openspec/commands/f3-tres-amigo
 diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
 --- a/openspec/schemas/f3/schema.yaml
 +++ b/openspec/schemas/f3/schema.yaml
-@@ -4,10 +4,10 @@
+@@ -1,13 +1,15 @@
+ name: f3
+ version: 1
+-description: 'f3 workflow: clarification, proposal, specs, Tres Amigos, interface design, technical design, tasks, design review, then implementation by the developer agent'
++description: 'f3 workflow: clarification and calibration, proposal, specs, Tres Amigos, interface design, technical design, tasks, design review, then implementation by the developer agent. On the light track, the Tres Amigos, interface design and design review validations are not-applicable'
  artifacts:
    - id: clarification
      generates: clarification.md
@@ -450,10 +493,12 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
      instruction: |
 -      Only /f3-propose writes this artifact, under the analyst agent, during its interview: each decision is written as soon as the user validates it. If you are not running /f3-propose, stop and tell the user to run /f3-propose <change-id> in a new session.
 +      Only f3 propose writes this artifact, under the analyst agent, during its interview: each decision is written as soon as the user validates it. If you are not running f3 propose, stop and tell the user to run f3 propose <change-id> in a new session.
++
++      Its Calibration section holds the track of the change (light or full), with the criteria of the Tracks section of the f3-agent skill: provisional after Need and Scope, confirmed after Security.
      requires: []
  
    - id: proposal
-@@ -15,7 +15,7 @@
+@@ -15,7 +17,7 @@
      description: Why the change is needed and what it changes
      template: proposal.md
      instruction: |
@@ -462,7 +507,7 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
  
        - Why: one or two sentences on the problem it solves.
        - What Changes: one bullet per behavior added, modified or removed; a breaking change is marked **BREAKING**. The scope comes from the Scope section of clarification.md, and nothing is decided that is not written there. The list ends with an "Out of scope" sub-list that repeats each out-of-scope item of clarification.md with its backlog entry.
-@@ -35,7 +35,7 @@
+@@ -35,7 +37,7 @@
      description: Delta specs of the change, written as executable scenarios
      template: spec.md
      instruction: |
@@ -471,25 +516,25 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
  
        - Every decision of clarification.md ends in a requirement or a scenario, or is explicitly out of scope.
        - An appearance wish is not written in the specs. If the context of openspec/config.yaml names a design tool, load the ux-practice skill and write it in the change's ux.md, in its format: Intentions if it concerns this change, Proposed cross-cutting decisions if it holds for the whole product. Mention it in your closing message.
-@@ -60,7 +60,7 @@
+@@ -60,7 +62,7 @@
      description: 'Validation of the Tres Amigos step: the specs are complete and unambiguous'
      template: validation.md
      instruction: |
 -      Validation of the Tres Amigos step. Only /f3-tres-amigos writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run /f3-tres-amigos <change-id> in a new session.
-+      Validation of the Tres Amigos step. Only f3 tres-amigos writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run f3 tres-amigos <change-id> in a new session.
++      Validation of the Tres Amigos step. Only f3 tres-amigos writes it, when the user declares the step finished; on the light track, f3 propose writes it as not-applicable once the specs are checked. When it is the next artifact to produce, stop and tell the user to run f3 tres-amigos <change-id> in a new session.
      requires:
        - specs
  
-@@ -69,7 +69,7 @@
+@@ -69,7 +71,7 @@
      description: Validation of the interface design of the change, or statement that the change has none
      template: validation.md
      instruction: |
 -      Validation of the interface design step. Only /f3-ux-design writes it, when the user declares the step finished or not applicable. When it is the next artifact to produce, stop and tell the user to run /f3-ux-design <change-id> in a new session.
-+      Validation of the interface design step. Only f3 ux-design writes it, when the user declares the step finished or not applicable. When it is the next artifact to produce, stop and tell the user to run f3 ux-design <change-id> in a new session.
++      Validation of the interface design step. Only f3 ux-design writes it, when the user declares the step finished or not applicable; on the light track, f3 propose writes it as not-applicable once the specs are checked. When it is the next artifact to produce, stop and tell the user to run f3 ux-design <change-id> in a new session.
      requires:
        - amigos
  
-@@ -78,7 +78,7 @@
+@@ -78,7 +80,7 @@
      description: Technical design of the change
      template: design.md
      instruction: |
@@ -498,7 +543,7 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
  
        design.md is always created, with the sections of its template. It explains how, with the reason of each choice; it points to the proposal and the specs instead of restating them. A question that would change the specs, the approach or the tasks is asked now, never deferred.
        - Context: only the current state and the constraints that explain the approach.
-@@ -97,13 +97,13 @@
+@@ -97,13 +99,13 @@
      description: Implementation checklist, split by functional slice
      template: tasks.md
      instruction: |
@@ -514,22 +559,41 @@ diff -ru a/openspec/schemas/f3/schema.yaml b/openspec/schemas/f3/schema.yaml
        - A task that creates or modifies a view or a component names it exactly as the Interface section of design.md, and ends with "Screens:" followed by the design screens to open before coding, as <view>/<state>, or the component name. Its appearance comes from the design tool, never from the text of ux.md.
        - If the Interface section lists tokens, one task carries them over into the code, where the User interface subsection of the Stack section says they live, with their names and values read in the design tool, before the tasks of the views and components that use them.
        - A task is finished when its unit and integration tests and the verification command of the Stack section pass.
-@@ -117,7 +117,7 @@
+@@ -117,7 +119,7 @@
      description: 'Validation of the design review: the design and the tasks are ready for implementation'
      template: validation.md
      instruction: |
 -      Validation of the design review step. Only /f3-design-review writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run /f3-design-review <change-id> in a new session.
-+      Validation of the design review step. Only f3 design-review writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run f3 design-review <change-id> in a new session.
++      Validation of the design review step. Only f3 design-review writes it, when the user declares the step finished; on the light track, f3 design writes it as not-applicable once its own checks pass. When it is the next artifact to produce, stop and tell the user to run f3 design-review <change-id> in a new session.
      requires:
        - tasks
  
-@@ -126,5 +126,5 @@
+@@ -126,5 +128,5 @@
      - review
    tracks: tasks.md
    instruction: |
 -    Implementation is conducted by the developer agent, launched by /f3-dev <change-id>. If you are not the developer agent, stop and tell the user to run /f3-dev <change-id> in a new session.
 +    Implementation is conducted by the developer agent, launched by f3 dev <change-id>. If you are not the developer agent, stop and tell the user to run f3 dev <change-id> in a new session.
      Work through the pending tasks; groups titled "Acceptance fixes" or "Conformity fixes" come first. Mark each task complete as soon as it is finished and verified. Pause on a blocker or a decision to take.
+diff -ru a/openspec/schemas/f3/templates/clarification.md b/openspec/schemas/f3/templates/clarification.md
+--- a/openspec/schemas/f3/templates/clarification.md
++++ b/openspec/schemas/f3/templates/clarification.md
+@@ -18,6 +18,15 @@
+ 
+ <!-- One bullet per point where the user overrode the agent's advice: the advice, then the user's decision. "None." if none -->
+ 
++## Calibration
++
++<!-- The track of the change, decided by the user: provisional after Need and Scope, confirmed after Security. Format:
++- Track: light | full, followed by " (provisional)" until it is confirmed
++- Criteria: C1 yes|no; C2 yes|no; C3 yes|no; C4 yes|no; C5 yes|no (<number> requirements); C6 yes|no; C7 yes|no
++- Reason: one sentence
++- Decided by the user on YYYY-MM-DD
++Then, if the track changes later, one bullet "Escalated to full on YYYY-MM-DD, in <step>: <criterion and reason>", or "Kept light against advice on YYYY-MM-DD: <criterion>" -->
++
+ ## Vocabulary
+ 
+ <!-- One bullet per term or action added to or confirmed in CONTEXT.md for this change -->
 diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/SKILL.md
 --- a/openspec/skills/e2e-practice/SKILL.md
 +++ b/openspec/skills/e2e-practice/SKILL.md
@@ -552,11 +616,11 @@ diff -ru a/openspec/skills/f3-agent/SKILL.md b/openspec/skills/f3-agent/SKILL.md
  ---
  name: f3-agent
 -description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments and language. Load at startup."
-+description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments, language, and the rules of an agent consulted as a subagent. Load at startup."
++description: "Working rules shared by every agent of the f3 workflow: the user decides, writing and reading discipline, frame check, sessions, OpenSpec blocks, amendments, the light and full tracks of a change and their criteria, language, and the rules of an agent consulted as a subagent. Load at startup."
  ---
  
  # f3 working rules
-@@ -28,8 +28,8 @@
+@@ -28,15 +28,44 @@
  
  ## Commands and sessions
  
@@ -567,21 +631,44 @@ diff -ru a/openspec/skills/f3-agent/SKILL.md b/openspec/skills/f3-agent/SKILL.md
  12. If OpenSpec says an artifact or the implementation is blocked, show its message and stop: never work around a block.
  13. Commit nothing, unless your agent or your command says otherwise: the user reviews the diff and commits.
  
-@@ -40,3 +40,14 @@
+ ## Amendments
+ 
+-14. Once the Tres Amigos step of a change is validated, a change to its specs, its proposal, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment, made only as the Amendments section of the spec-practice skill says.
++14. Once the Tres Amigos step of a change is closed (`validations/amigos.md` exists, approved or not-applicable on the light track), a change to its specs, its proposal, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment, made only as the Amendments section of the spec-practice skill says.
++
++## Tracks
++
++15. A change follows one of two tracks, decided by the user during f3 propose and written in the Calibration section of its clarification.md, whose line `- Track:` is the only source of the track:
++   - **full**: propose, tres-amigos, ux-design, design, design-review, dev, the user's check and conformity, acceptance, archive;
++   - **light**: propose, design, dev, acceptance, archive. f3 propose closes the Tres Amigos and interface design steps, and f3 design closes the design review, each with a validation whose Decision is "not-applicable: light track, see Calibration in clarification.md".
++16. The track is full when at least one of these criteria is true; otherwise it is light:
++   - **C1 interface**: a view, a component, an icon or a token is created or changes in appearance, or an appearance wish was expressed.
++   - **C2 structure**: a decision that commits the following changes is likely: a new technology, storage, external dependency or kind of entry point, as `arch/decisions.md` defines it.
++   - **C3 security**: an attack surface is created or modified: untrusted input, access to files or to the network, sensitive data.
++   - **C4 capabilities**: a new capability, or more than one capability touched.
++   - **C5 size**: more than 3 requirements added or modified, or a change marked **BREAKING**.
++   - **C6 consistency**: a contradiction with the existing specs was found, or a term of `CONTEXT.md` is created or redefined.
++   - **C7 testability**: a scenario cannot be automated as written.
++   A change without behavior change (`skip_specs: true`) is light unless C2 or C3 is true.
++17. **Escalation.** An agent that finds a criterion true on a light-track change stops and proposes to move it to the full track, citing the criterion and the passage that makes it true. The user decides:
++   - **Full**, possible while no task of tasks.md is checked: set the line `- Track:` to `full`, add "Escalated to full on <YYYY-MM-DD>, in <step>: <criterion and reason>" to the Calibration section, delete the not-applicable validations of the change (`validations/amigos.md`, `validations/ux.md`, and `validations/review.md` if it exists), and name the next step: `f3 tres-amigos <change-id>`. design.md and tasks.md, if they exist, stay as drafts that f3 design resumes after the interface design. Once a task is checked, the point becomes a ticket, an amendment or a backlog entry, as the user decides.
++   - **Light kept**: add "Kept light against advice on <YYYY-MM-DD>: <criterion>" to the Calibration section, and go on.
+ 
  ## Language
  
- 15. Answer in the language the user writes in. The prose you write in files follows the Language part of the context of `openspec/config.yaml`. Headings, field labels, statuses and file names stay in English, as the templates write them. Code, comments and commit messages are in English.
+-15. Answer in the language the user writes in. The prose you write in files follows the Language part of the context of `openspec/config.yaml`. Headings, field labels, statuses and file names stay in English, as the templates write them. Code, comments and commit messages are in English.
++18. Answer in the language the user writes in. The prose you write in files follows the Language part of the context of `openspec/config.yaml`. Headings, field labels, statuses and file names stay in English, as the templates write them. Code, comments and commit messages are in English.
 +
 +## Consulted as a subagent
 +
 +These rules apply when you were not started by an f3 command but called as a subagent, by a session or by another agent. You cannot ask the user anything: the calling session presents your report to the user.
 +
-+16. Analyze within your domain, with your skills, as usual.
-+17. Instead of asking your questions, return them in your report: each with its options, their consequences and your recommendation, as rules 2 and 3 say.
-+18. Write nothing in the project: you analyze and propose. The calling session presents your proposals to the user, then writes them itself or runs the f3 step concerned.
-+19. Run no step of the workflow: create no change, validate no step, archive nothing. If the request belongs to a step, say so and name its command (`f3 <step> <arguments>`).
-+20. Convene no review session (Tres Amigos, design review): those reviews are steps of the workflow, chaired in a session of their own.
-+21. A command that convenes you as a subagent, such as the fidelity review of `f3 acceptance`, gives you your task in its prompt: follow it, within rules 16 to 20.
++19. Analyze within your domain, with your skills, as usual.
++20. Instead of asking your questions, return them in your report: each with its options, their consequences and your recommendation, as rules 2 and 3 say.
++21. Write nothing in the project: you analyze and propose. The calling session presents your proposals to the user, then writes them itself or runs the f3 step concerned.
++22. Run no step of the workflow: create no change, validate no step, archive nothing. If the request belongs to a step, say so and name its command (`f3 <step> <arguments>`).
++23. Convene no review session (Tres Amigos, design review): those reviews are steps of the workflow, chaired in a session of their own.
++24. A command that convenes you as a subagent, such as the fidelity review of `f3 acceptance`, gives you your task in its prompt: follow it, within rules 19 to 23.
 diff -ru a/openspec/skills/f3-agent/references/review.md b/openspec/skills/f3-agent/references/review.md
 --- a/openspec/skills/f3-agent/references/review.md
 +++ b/openspec/skills/f3-agent/references/review.md
@@ -602,9 +689,13 @@ diff -ru a/openspec/skills/f3-agent/references/review.md b/openspec/skills/f3-ag
  
  ### Grid and decisions
  
-@@ -36,7 +36,7 @@
+@@ -34,9 +34,10 @@
+ ## Steps
+ 
  1. **Opening.**
-    - If the validation file exists, the step is closed: start no session. Say so, with the date of the validation, list the files of the following steps that exist, and ask whether the user wants to reopen the step, knowing those files will have to be reviewed. If what they want to change concerns a few requirements of the specs, propose an amendment instead. Go on only on an explicit answer.
+-   - If the validation file exists, the step is closed: start no session. Say so, with the date of the validation, list the files of the following steps that exist, and ask whether the user wants to reopen the step, knowing those files will have to be reviewed. If what they want to change concerns a few requirements of the specs, propose an amendment instead. Go on only on an explicit answer.
++   - If the validation file says "not-applicable: light track", the step was skipped by the light track: start no session. Say so, and propose the escalation to the full track of the Tracks section of the f3-agent skill; go on only once the user has accepted it and it is applied.
++   - If the validation file exists otherwise, the step is closed: start no session. Say so, with the date of the validation, list the files of the following steps that exist, and ask whether the user wants to reopen the step, knowing those files will have to be reviewed. If what they want to change concerns a few requirements of the specs, propose an amendment instead. Go on only on an explicit answer.
     - If the record does not exist, create it with its title. Then look at its last session: rows still "pending", resume at step 5 for those rows; every report but no grid, step 3; missing reports and no grid, step 2 for the missing members; otherwise, or without session, a new session, numbered next and dated today, then step 2.
 -2. **Convening.** Convene the members whose report is missing, one after the other, never two at the same time, through the task tool with the built-in subagent `explore`. As soon as a report arrives, write it unchanged in the session, under the title of its member. Go on only when every report is written. If `explore` is not available, or a call fails, stop and report it: never play a member, never review in place of a member.
 +2. **Convening.** Convene the members whose report is missing, one after the other, never two at the same time, through your subagent tool (the Agent tool under Claude Code, the subagent tool under OpenCode) with the built-in exploration subagent: `Explore` under Claude Code, `explore` under OpenCode. As soon as a report arrives, write it unchanged in the session, under the title of its member; if it is not in the language of the prose of the artifacts (Language part of the context of `openspec/config.yaml`), write its faithful translation into that language instead, keeping the quotations of the passages as they are. Go on only when every report is written. If the exploration subagent is not available, or a call fails, stop and report it: never play a member, never review in place of a member.
@@ -772,9 +863,12 @@ diff -ru a/openspec/skills/spec-practice/SKILL.md b/openspec/skills/spec-practic
  
  ## Example
  
-@@ -80,10 +80,10 @@
+@@ -78,14 +78,14 @@
  
- Once the Tres Amigos step of a change is validated (`validations/amigos.md` exists), a change to its specs, its `proposal.md`, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment. It corrects them without sending the change back to the start: no step is reopened, and the validations stay valid, because the user validates each amendment.
+ ## Amendments
+ 
+-Once the Tres Amigos step of a change is validated (`validations/amigos.md` exists), a change to its specs, its `proposal.md`, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment. It corrects them without sending the change back to the start: no step is reopened, and the validations stay valid, because the user validates each amendment.
++Once the Tres Amigos step of a change is closed (`validations/amigos.md` exists, approved or, on the light track, not-applicable), a change to its specs, its `proposal.md`, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment. It corrects them without sending the change back to the start: no step is reopened, and the validations stay valid, because the user validates each amendment.
  
 -- **Who.** The agent of the step in progress, when its command offers it: the ux agent in /f3-ux-design, the architect in /f3-design and /f3-design-review, the tester in /f3-acceptance, and the analyst whenever the user asks. The developer never amends: it reports what it finds.
 -- **Scope.** Within the proposal of the change, its capabilities and its What Changes section. A need outside them is a backlog entry or a new change with /f3-propose. The proposal itself is amended only to describe the specs as validated or amended, never to add a need the specs do not contain.
@@ -782,10 +876,13 @@ diff -ru a/openspec/skills/spec-practice/SKILL.md b/openspec/skills/spec-practic
 +- **Scope.** Within the proposal of the change, its capabilities and its What Changes section. A need outside them is a backlog entry or a new change with f3 propose. The proposal itself is amended only to describe the specs as validated or amended, never to add a need the specs do not contain.
  - **Proposal.** For each element concerned (requirement, scenario, part of the proposal, entry of the register, term): the current text, the proposed text, the reason in one sentence, and the files of the following steps it affects. If it changes an expected result (a THEN step), removes a scenario or reduces what a scenario proves, say so explicitly in one sentence. When it is a pragmatic way around a problem rather than the right formulation of the need, also propose a `BACKLOG.md` entry to rework the requirement in a Tres Amigos session.
 -- **Validation.** Nothing is written before the user validates this exact text. If the user prefers a Tres Amigos session, write nothing: `/f3-tres-amigos <change-id>` reopens the step.
-+- **Validation.** Nothing is written before the user validates this exact text. If the user prefers a Tres Amigos session, write nothing: `f3 tres-amigos <change-id>` reopens the step.
++- **Validation.** Nothing is written before the user validates this exact text. If the user prefers a Tres Amigos session, write nothing: `f3 tres-amigos <change-id>` reopens the step; on the light track, that is an escalation to the full track (Tracks section of the f3-agent skill).
  - **Writing.** Write the validated text following the rules above, then the checks. A renamed scenario that has an entry in `tests/e2e/manual-scenarios.md` gets its heading changed in the same amendment.
- - **Record.** At the end of the change's `tres-amigos.md`, numbered in its own sequence from 1:
+-- **Record.** At the end of the change's `tres-amigos.md`, numbered in its own sequence from 1:
++- **Record.** At the end of the change's `tres-amigos.md`, numbered in its own sequence from 1. On the light track, the first amendment creates it, titled "# Tres Amigos of change <change-id>", with only its amendments:
  
+ ~~~markdown
+ ## Amendment <number>: <date as YYYY-MM-DD>
 @@ -100,4 +100,4 @@
  - Backlog: <B-<number>, or "none">
  ~~~
@@ -808,7 +905,7 @@ diff -ru a/ux/agents/ux.md b/ux/agents/ux.md
  |---|---|
  | `ux/`, except `ux/views.md` | the design commands |
 -| ux.md, ux-design.md, validations/ux.md of a change | /f3-ux-design |
-+| ux.md, ux-design.md, validations/ux.md of a change | f3 ux-design |
++| ux.md, ux-design.md, validations/ux.md of a change | f3 ux-design; a validations/ux.md not-applicable for the light track is written by f3 propose, and replaced only after an escalation to the full track |
  | the design tool | the design commands |
  | a new group "Conformity fixes" at the end of the change's tasks.md | a conformity ticket the user decided |
  | `BACKLOG.md` | a deviation the user sends to the backlog |
@@ -856,16 +953,23 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
  
  If the mode is "conformity", follow only the section Conformity mode. Otherwise, follow the design mode.
  
-@@ -57,7 +62,7 @@
+@@ -57,10 +62,11 @@
  
  Check it first, in this order:
  
 -1. `validations/amigos.md` exists; otherwise, stop: the specs must first be closed with `/f3-tres-amigos $1`.
+-2. If `validations/ux.md` exists, the step is closed: start no unit of work. Say so, with the date of the validation, list the files of the following steps that exist (design.md, tasks.md, review.md, validations/review.md, acceptance/), and ask whether to reopen it and which element to review, knowing those files will have to be reviewed. On an explicit answer, set that element to `todo` and go on; otherwise, stop.
+-3. If the context says "No design tool", propose to close the step as not-applicable, with the reason "the project has no design tool".
+-4. If, from the proposal and the titles of the requirements, the change creates or modifies no view and no component, propose to close the step as not-applicable, with your reason.
 +1. `validations/amigos.md` exists; otherwise, stop: the specs must first be closed with `f3 tres-amigos $1`.
- 2. If `validations/ux.md` exists, the step is closed: start no unit of work. Say so, with the date of the validation, list the files of the following steps that exist (design.md, tasks.md, review.md, validations/review.md, acceptance/), and ask whether to reopen it and which element to review, knowing those files will have to be reviewed. On an explicit answer, set that element to `todo` and go on; otherwise, stop.
- 3. If the context says "No design tool", propose to close the step as not-applicable, with the reason "the project has no design tool".
- 4. If, from the proposal and the titles of the requirements, the change creates or modifies no view and no component, propose to close the step as not-applicable, with your reason.
-@@ -80,18 +85,18 @@
++2. If `validations/ux.md` says "not-applicable: light track", the step was skipped by the light track: start no unit of work. Say so, and propose the escalation to the full track of the Tracks section of the f3-agent skill; the next step is then `f3 tres-amigos $1`.
++3. Otherwise, if `validations/ux.md` exists, the step is closed: start no unit of work. Say so, with the date of the validation, list the files of the following steps that exist (design.md, tasks.md, review.md, validations/review.md, acceptance/), and ask whether to reopen it and which element to review, knowing those files will have to be reviewed. On an explicit answer, set that element to `todo` and go on; otherwise, stop.
++4. If the context says "No design tool", propose to close the step as not-applicable, with the reason "the project has no design tool".
++5. If, from the proposal and the titles of the requirements, the change creates or modifies no view and no component, propose to close the step as not-applicable, with your reason.
+ 
+ A not-applicable closing writes the validation on the user's confirmation, then stops. Otherwise, check the preconditions tool, brief, tokens and change of ux-practice.
+ 
+@@ -80,18 +86,18 @@
     c. **Components,** by coherent group: those one view assembles, starting with the first view of the impact.
     d. **Screens of one view,** all its states, in the order of the views of the impact, once every component it assembles is `approved`. Before presenting a screen, check it against the specs: every action, piece of information and state they require for this view is present, nothing absent from them is added.
     Each component or screen is drawn once at its final place, exported, looked at, set to `drawn`, then presented with your presentation choices and their reasons; a limited choice inside it is shown as options in a preview. Apply the feedback, then set it to `approved`. A missing behavior follows rule 3, a contradiction with the brief or the register rule 2. A preference that holds for the whole product is proposed for the Proposed cross-cutting decisions section of ux.md.
@@ -876,8 +980,9 @@ diff -ru a/ux/commands/f3-ux-design.md b/ux/commands/f3-ux-design.md
  
  Goal: after implementation, check that the running application conforms to the approved screens of the change, and have the user decide on each deviation. Each run handles all the impacted views.
  
- 1. **Preconditions.** Tool. `validations/ux.md` says "approved by the user"; otherwise there is nothing to compare. No task of tasks.md is unchecked; otherwise the implementation is not finished.
+-1. **Preconditions.** Tool. `validations/ux.md` says "approved by the user"; otherwise there is nothing to compare. No task of tasks.md is unchecked; otherwise the implementation is not finished.
 -2. **Capture.** Delegate it to the built-in subagent `general` through the task tool, `<screens>` being the screens `<view>/<state>` of the Views section of the tracking that are `approved`: "Read the Observing the running application subsection of the Stack section of AGENTS.md, and start the application as it describes, if it is not running. For each of these screens: <screens>, navigate to the view through the display under which ux/views.md lists the screen, and bring it into the state, using only the actions a user has. Take a screenshot of the window and save it as openspec/changes/$1/conformity/<view>--<state>.png. Do not modify any other file. Answer with the list of the screens captured, and for each screen not captured, the reason in one sentence." If the subagent is not available, or the call fails, stop and report it.
++1. **Preconditions.** Tool. `validations/ux.md` says "approved by the user"; otherwise there is nothing to compare (on the light track, there is never a conformity step). No task of tasks.md is unchecked; otherwise the implementation is not finished.
 +2. **Capture.** Delegate it to the built-in subagent `general` through the subagent tool, `<screens>` being the screens `<view>/<state>` of the Views section of the tracking that are `approved`: "Read the Observing the running application subsection of the Stack section of AGENTS.md, and start the application as it describes, if it is not running. For each of these screens: <screens>, navigate to the view through the display under which ux/views.md lists the screen, and bring it into the state, using only the actions a user has. Take a screenshot of the window and save it as openspec/changes/$1/conformity/<view>--<state>.png. Do not modify any other file. Answer with the list of the screens captured, and for each screen not captured, the reason in one sentence." If the subagent is not available, or the call fails, stop and report it.
  3. **Comparison.** For each capture, export the matching design screen, look at both images, and note the presentation deviations: a missing, extra or different component, a different composition or place, a different icon, a color, spacing or text style that does not match the tokens applied in the design. A behavior deviation (a missing action or piece of information) belongs to the acceptance, but is reported too. Note the reason of each screen not captured. Then read `ux/views.md`: each display whose screens are `none` is a display coded without design, each screen of the tool attached to no display of its view is a screen without display; each is a deviation of its own.
  4. **Decisions.** One grid, screen by screen, with your proposal for each deviation: a ticket for the developer, a design update because the implementation is better, or a backlog entry. For a display coded without design, the design update means drawing its screens, and the developer then completes the entry of the view in `ux/views.md` through a ticket. The user decides row by row; apply each decision at once:

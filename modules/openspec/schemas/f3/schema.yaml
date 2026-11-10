@@ -1,6 +1,6 @@
 name: f3
 version: 1
-description: 'f3 workflow: clarification, proposal, specs, Tres Amigos, interface design, technical design, tasks, design review, then implementation by the developer agent'
+description: 'f3 workflow: clarification and calibration, proposal, specs, Tres Amigos, interface design, technical design, tasks, design review, then implementation by the developer agent. On the light track, the Tres Amigos, interface design and design review validations are not-applicable'
 artifacts:
   - id: clarification
     generates: clarification.md
@@ -8,6 +8,8 @@ artifacts:
     template: clarification.md
     instruction: |
       Only f3 propose writes this artifact, under the analyst agent, during its interview: each decision is written as soon as the user validates it. If you are not running f3 propose, stop and tell the user to run f3 propose <change-id> in a new session.
+
+      Its Calibration section holds the track of the change (light or full), with the criteria of the Tracks section of the f3-agent skill: provisional after Need and Scope, confirmed after Security.
     requires: []
 
   - id: proposal
@@ -60,7 +62,7 @@ artifacts:
     description: 'Validation of the Tres Amigos step: the specs are complete and unambiguous'
     template: validation.md
     instruction: |
-      Validation of the Tres Amigos step. Only f3 tres-amigos writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run f3 tres-amigos <change-id> in a new session.
+      Validation of the Tres Amigos step. Only f3 tres-amigos writes it, when the user declares the step finished; on the light track, f3 propose writes it as not-applicable once the specs are checked. When it is the next artifact to produce, stop and tell the user to run f3 tres-amigos <change-id> in a new session.
     requires:
       - specs
 
@@ -69,7 +71,7 @@ artifacts:
     description: Validation of the interface design of the change, or statement that the change has none
     template: validation.md
     instruction: |
-      Validation of the interface design step. Only f3 ux-design writes it, when the user declares the step finished or not applicable. When it is the next artifact to produce, stop and tell the user to run f3 ux-design <change-id> in a new session.
+      Validation of the interface design step. Only f3 ux-design writes it, when the user declares the step finished or not applicable; on the light track, f3 propose writes it as not-applicable once the specs are checked. When it is the next artifact to produce, stop and tell the user to run f3 ux-design <change-id> in a new session.
     requires:
       - amigos
 
@@ -117,7 +119,7 @@ artifacts:
     description: 'Validation of the design review: the design and the tasks are ready for implementation'
     template: validation.md
     instruction: |
-      Validation of the design review step. Only f3 design-review writes it, when the user declares the step finished. When it is the next artifact to produce, stop and tell the user to run f3 design-review <change-id> in a new session.
+      Validation of the design review step. Only f3 design-review writes it, when the user declares the step finished; on the light track, f3 design writes it as not-applicable once its own checks pass. When it is the next artifact to produce, stop and tell the user to run f3 design-review <change-id> in a new session.
     requires:
       - tasks
 
