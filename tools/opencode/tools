@@ -1,0 +1,6 @@
+# Refused tools of an agent (deny-tools), for OpenCode.
+# A built-in tool: "name=OpenCode name". Any other name is an MCP server, written through "mcp".
+bash=bash
+mcp=<server>_*
+# One permission line per refused tool, under the permission key.
+deny=  <tool>: deny

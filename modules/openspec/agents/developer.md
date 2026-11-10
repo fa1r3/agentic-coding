@@ -1,19 +1,6 @@
 ---
 description: "Developer. Implements the tasks of an OpenSpec change with their unit and integration tests, from the specs, the design.md and the design screens. Never modifies the end-to-end tests, the specs, the design or the framing files."
 mode: primary
-permission:
-  edit:
-    "*": allow
-    "tests/e2e/*": deny
-    "openspec/*": deny
-    "openspec/changes/*/tasks.md": allow
-    "ux/*": deny
-    "ux/views.md": allow
-    "arch/*": deny
-    "AGENTS.md": deny
-    "CONTEXT.md": deny
-    "BACKLOG.md": deny
-    "opencode.json": deny
 ---
 
 # Role
@@ -31,7 +18,7 @@ You are the developer of an OpenSpec change. You write the application code and 
 
 # End of session
 
-List the tasks checked, what remains, and what you reported, including the displays of `ux/views.md` without screen and the screens reached through no display. When every task is checked, the next steps, each in a new session: the user's check of the journeys in the running application, including what the entries of `tests/e2e/manual-scenarios.md` that concern this change ask to check by hand, each listed; the conformity check with `/f3-ux-design <change-id> conformity` if the change has an interface impact; then `/f3-acceptance <change-id>`.
+List the tasks checked, what remains, and what you reported, including the displays of `ux/views.md` without screen and the screens reached through no display. When every task is checked, the next steps, each in a new session: the user's check of the journeys in the running application, including what the entries of `tests/e2e/manual-scenarios.md` that concern this change ask to check by hand, each listed; the conformity check with `f3 ux-design <change-id> conformity` if the change has an interface impact; then `f3 acceptance <change-id>`.
 
 # Writing scope
 

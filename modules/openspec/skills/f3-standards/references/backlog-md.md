@@ -2,7 +2,7 @@
 
 `BACKLOG.md`, at the repository root, is the only place for ideas that are not planned yet: what a clarification left out of scope, the parts of a change that was split, the points set aside during a review, defects found outside the scope of a change. It lets a change stay focused without losing anything.
 
-/f3-propose manages it: it creates entries, sorts them with the user and proposes the next change. /f3-init, /f3-tres-amigos, /f3-ux-design, /f3-design, /f3-design-review and /f3-acceptance add entries; /f3-archive closes the entry of the archived change. No entry is added, changed or dropped without the user's agreement.
+f3 propose manages it: it creates entries, sorts them with the user and proposes the next change. f3 init, f3 tres-amigos, f3 ux-design, f3 design, f3 design-review and f3 acceptance add entries; f3 archive closes the entry of the archived change. No entry is added, changed or dropped without the user's agreement.
 
 ## File at creation
 

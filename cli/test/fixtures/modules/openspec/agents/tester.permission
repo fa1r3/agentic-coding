@@ -1,0 +1,25 @@
+read:
+  "*": deny
+  "openspec/*": allow
+  "tests/*": allow
+  "test-results/*": allow
+  "AGENTS.md": allow
+  "CONTEXT.md": allow
+  "ux/views.md": allow
+  "BACKLOG.md": allow
+  "package.json": allow
+  "{{SKILLS}}/*": allow
+edit:
+  "*": deny
+  "tests/e2e/*": allow
+  "openspec/changes/*/acceptance/*": allow
+  "openspec/changes/*/tasks.md": allow
+  "openspec/changes/*/specs/*": allow
+  "openspec/changes/*/tres-amigos.md": allow
+  "openspec/changes/*/proposal.md": allow
+  "CONTEXT.md": allow
+  "BACKLOG.md": allow
+shell_read_programs: deny
+subagent:
+  "*": deny
+  tester: allow

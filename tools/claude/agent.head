@@ -1,0 +1,13 @@
+---
+name: {{NAME}}
+{{FRONTMATTER}}
+{{DENY}}
+f3-permission:
+{{PERMISSION}}
+hooks:
+  PreToolUse:
+    - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
+      hooks:
+        - type: command
+          command: '"$HOME/.local/bin/f3" guard {{NAME}} || exit 2'
+---

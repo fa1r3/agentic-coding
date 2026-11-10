@@ -1,0 +1,7 @@
+# Variables of the OpenCode render, substituted as {{NAME}} in the agents and commands (analysis, 4.5).
+# OpenCode 2.2.5 names its subagent tool "subagent" (V-O3).
+EXPLORE=explore
+GENERAL=general
+SUBAGENT_TOOL=the subagent tool
+ARG1=$1
+ARG2=$2

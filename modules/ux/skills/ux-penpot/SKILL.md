@@ -11,7 +11,7 @@ You handle Penpot with the tools of its MCP server. The MCP server also provides
 
 ## Cookbook
 
-The file `ux/cookbook.md` of the project contains the ways of doing things verified in Penpot, and the pitfalls met. Before writing code for Penpot, read it and start from its recipes. If it does not exist, recommend that the user run `/f3-ux-calibrate` before any work in Penpot.
+The file `ux/cookbook.md` of the project contains the ways of doing things verified in Penpot, and the pitfalls met. Before writing code for Penpot, read it and start from its recipes. If it does not exist, recommend that the user run `f3 ux-calibrate` before any work in Penpot.
 
 File format:
 

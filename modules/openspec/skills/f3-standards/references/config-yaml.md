@@ -50,10 +50,10 @@ rules:
 operations:
   apply:
     guidance:
-      - "Implementation is conducted by the developer agent through /f3-dev <change-id>. If you are not the developer agent, stop and tell the user to run /f3-dev <change-id>."
+      - "Implementation is conducted by the developer agent through f3 dev <change-id>. If you are not the developer agent, stop and tell the user to run f3 dev <change-id>."
   archive:
     guidance:
-      - "Archiving is conducted by /f3-archive <change-id>. If you are not running /f3-archive, stop and tell the user to run it."
+      - "Archiving is conducted by f3 archive <change-id>. If you are not running f3 archive, stop and tell the user to run it."
 ~~~
 
 ## Writing rules for the context

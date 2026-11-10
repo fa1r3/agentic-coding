@@ -3,6 +3,16 @@ description: "Sets the art direction of the project. Two contrasting directions 
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-direction`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-direction`.
+
+State at launch (from `f3 state ux-direction`):
+
+!`f3 state ux-direction`
+
+If the launch state is missing, empty or reports an error, show it and stop.
+
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Goal: set the art direction of the project and write `ux/brief.md` in the format of the ux-practice skill, section by section as soon as they are validated; create `ux/decisions.md` if it does not exist.
 
 Preconditions: tool.
@@ -24,4 +34,4 @@ Preconditions: tool.
 7. Conduct the interview on the sections still empty, in the order of the template. For each, propose a first version with your recommendation, show in a preview what is judged by eye, ask one question at a time, and write the section in the brief as soon as the user validates it. Apply the rule of the template on behavior: any behavior idea is reported as a requirement to have written in the specs.
 8. Review the complete brief against the rules of its template and the consistency between its sections. If you find a problem, propose the correction, and write it as soon as it is validated.
 9. Delete the previews created by this command.
-10. End by listing what was written in the files and in the design tool, and say that the next step is `/f3-ux-tokens`.
+10. End by listing what was written in the files and in the design tool, and say that the next step is `f3 ux-tokens`.

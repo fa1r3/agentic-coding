@@ -3,6 +3,16 @@ description: "Creates or adjusts the tokens of the project in the design tool, d
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-tokens`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-tokens`.
+
+State at launch (from `f3 state ux-tokens`):
+
+!`f3 state ux-tokens`
+
+If the launch state is missing, empty or reports an error, show it and stop.
+
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Goal: create or adjust in the design tool the tokens of the project, compliant with `references/tokens.md` of the ux-practice skill and with the art direction of `ux/brief.md`, have the user validate them on a preview, then update their token board. This command creates no component and no screen.
 
 Preconditions: tool, brief.
@@ -26,4 +36,4 @@ Preconditions: tool, brief.
 5. Draw a preview of the tokens: elements representative of the product, chosen from the brief and the specs, with the tokens applied. It contains at least a primary button and a secondary button with real labels of the product, a title and body text with realistic content, a typical content element of the product, one message per state color, and an element with its keyboard focus visible. Export it in each theme, look at each image, then present them with a table of the contrasts (pair, ratio, threshold, result), given as a report and not as a question. Ask the user what they think of it.
 6. For each feedback, if a token to modify is already used by a component or a screen validated in the design tool, first list these elements and wait for the user's agreement. Then modify the tokens concerned, compute again the contrasts affected, export the preview again in each theme, and present the result. Repeat until the user validates.
 7. After validation, delete the preview, export the token board, look at it, and invite the user to look at it in the tool.
-8. End by listing what was created or modified, and say that the next step is `/f3-ux-design <change-id>` for the change in progress.
+8. End by listing what was created or modified, and say that the next step is `f3 ux-design <change-id>` for the change in progress.

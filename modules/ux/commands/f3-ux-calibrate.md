@@ -3,6 +3,16 @@ description: "Checks on a fixed and minimal case how to perform in the design to
 agent: ux
 ---
 
+This command runs as the ux agent, in a session started by `f3 ux-calibrate`. If you are not the ux agent, stop and tell the user to run, in a terminal: `f3 ux-calibrate`.
+
+State at launch (from `f3 state ux-calibrate`):
+
+!`f3 state ux-calibrate`
+
+If the launch state is missing, empty or reports an error, show it and stop.
+
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
 Goal: establish or check again `ux/cookbook.md`, on a fixed and minimal case, independent of the product. This command uses neither the brief, nor the specs, nor the tokens of the project.
 
 Preconditions: tool.

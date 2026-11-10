@@ -1,0 +1,6 @@
+# Variables of the Claude Code render, substituted as {{NAME}} in the agents and commands (analysis, 4.5).
+EXPLORE=Explore
+GENERAL=general-purpose
+SUBAGENT_TOOL=the Agent tool
+ARG1=$0
+ARG2=$1

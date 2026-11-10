@@ -35,7 +35,7 @@ The f3-features script converts every scenario literally into Gherkin: the capab
 
 ## Checks
 
-After writing or amending specs, run `node ~/.config/opencode/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
+After writing or amending specs, run `node ~/.local/share/f3/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error. The first checks the form of the steps only (keywords and order), not the rules above.
 
 ## Example
 
@@ -80,10 +80,10 @@ The steps "the accountant opens the invoice", "the accountant issues the invoice
 
 Once the Tres Amigos step of a change is validated (`validations/amigos.md` exists), a change to its specs, its `proposal.md`, the entries of `tests/e2e/manual-scenarios.md` for its scenarios or a term of `CONTEXT.md` is an amendment. It corrects them without sending the change back to the start: no step is reopened, and the validations stay valid, because the user validates each amendment.
 
-- **Who.** The agent of the step in progress, when its command offers it: the ux agent in /f3-ux-design, the architect in /f3-design and /f3-design-review, the tester in /f3-acceptance, and the analyst whenever the user asks. The developer never amends: it reports what it finds.
-- **Scope.** Within the proposal of the change, its capabilities and its What Changes section. A need outside them is a backlog entry or a new change with /f3-propose. The proposal itself is amended only to describe the specs as validated or amended, never to add a need the specs do not contain.
+- **Who.** The agent of the step in progress, when its command offers it: the ux agent in f3 ux-design, the architect in f3 design and f3 design-review, the tester in f3 acceptance, and the analyst whenever the user asks. The developer never amends: it reports what it finds.
+- **Scope.** Within the proposal of the change, its capabilities and its What Changes section. A need outside them is a backlog entry or a new change with f3 propose. The proposal itself is amended only to describe the specs as validated or amended, never to add a need the specs do not contain.
 - **Proposal.** For each element concerned (requirement, scenario, part of the proposal, entry of the register, term): the current text, the proposed text, the reason in one sentence, and the files of the following steps it affects. If it changes an expected result (a THEN step), removes a scenario or reduces what a scenario proves, say so explicitly in one sentence. When it is a pragmatic way around a problem rather than the right formulation of the need, also propose a `BACKLOG.md` entry to rework the requirement in a Tres Amigos session.
-- **Validation.** Nothing is written before the user validates this exact text. If the user prefers a Tres Amigos session, write nothing: `/f3-tres-amigos <change-id>` reopens the step.
+- **Validation.** Nothing is written before the user validates this exact text. If the user prefers a Tres Amigos session, write nothing: `f3 tres-amigos <change-id>` reopens the step.
 - **Writing.** Write the validated text following the rules above, then the checks. A renamed scenario that has an entry in `tests/e2e/manual-scenarios.md` gets its heading changed in the same amendment.
 - **Record.** At the end of the change's `tres-amigos.md`, numbered in its own sequence from 1:
 
@@ -100,4 +100,4 @@ Once the Tres Amigos step of a change is validated (`validations/amigos.md` exis
 - Backlog: <B-<number>, or "none">
 ~~~
 
-- **Following files.** Update those within your writing scope in the same step. Report the others, each with the command that handles it: a screen to redraw with `/f3-ux-design <change-id>`, a task to change with `/f3-design <change-id>`, or, when the tasks concerned are already checked, a ticket for the developer.
+- **Following files.** Update those within your writing scope in the same step. Report the others, each with the command that handles it: a screen to redraw with `f3 ux-design <change-id>`, a task to change with `f3 design <change-id>`, or, when the tasks concerned are already checked, a ticket for the developer.

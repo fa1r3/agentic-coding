@@ -1,15 +1,20 @@
 ---
 description: "Tres Amigos session on the specs of an OpenSpec change. Four members (interface, system, test, security) review the specs, each in their own subagent context; the chair sorts their objections into a grid the user decides, applies each decision, records the session and, when the user declares it finished, writes the validation of the step. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: analyst
 ---
 
+This command runs as the analyst agent, in a session started by `f3 tres-amigos`. If you are not the analyst agent, stop and tell the user to run, in a terminal: `f3 tres-amigos <arguments>`.
+
 You chair a Tres Amigos session on the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. The user represents the business. Goal: complete and unambiguous specs, written as short reusable steps, ready to be designed, developed and turned into executable tests.
 
-State at launch:
+State at launch (from `f3 state tres-amigos`):
 
-- Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
-- Path of the spec-practice skill: !`echo "$HOME/.config/opencode/skills/spec-practice/SKILL.md"`
-- Step form check: !`node "$HOME/.config/opencode/scripts/f3-features.mjs" --check $ARGUMENTS 2>&1 | head -40`
+!`f3 state tres-amigos '$ARGUMENTS'`
+
+If the launch state is missing, empty or reports an error, show it and stop.
+
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 
 Produces: the record `tres-amigos.md`, titled "# Tres Amigos of change $ARGUMENTS"; the corrections of the specs, of `proposal.md` and of `clarification.md` (a decision may reduce the scope, up to removing a feature); terms of `CONTEXT.md`; `BACKLOG.md` entries with the origin `$ARGUMENTS, tres-amigos`; entries of `tests/e2e/manual-scenarios.md`; `validations/amigos.md` at closing.
 
@@ -33,6 +38,6 @@ Step catalog for the Test member: the output of the "export the step catalog" co
 - Natures of the rows: correction, decision. For a scenario that cannot be automated, the options are a rewording that makes it automatable, or an entry in `tests/e2e/manual-scenarios.md` with its replacement coverage.
 - A feature removed from the scope that the user keeps for later also updates the Out of scope section of clarification.md.
 - Application: a decision becomes a requirement or a scenario, following the spec-practice skill; a term goes into CONTEXT.md, in its format; a scenario the user agrees not to automate gets its entry in the register, in the format of the e2e-practice skill; an appearance wish removed from the specs goes to the place the specs artifact gives (`openspec instructions specs --change $ARGUMENTS`).
-- Checks: `node ~/.config/opencode/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
+- Checks: `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` and `openspec validate $ARGUMENTS`.
 - Summary: the changes requirement by requirement, and the new steps still present.
-- Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `/f3-ux-design $ARGUMENTS`.
+- Validation: Record "tres-amigos.md, sessions 1 to <last>"; Summary: what the sessions changed in the specs; Left open: the dismissed points of critical or high severity, or "none". Next step: `f3 ux-design $ARGUMENTS`.

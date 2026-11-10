@@ -9,7 +9,7 @@ description: "Design conventions of a project, independent of the design tool. C
 
 - **Design tool**: the software where art directions, components and screens are drawn, and tokens are defined. Its skill translates the notions of this skill into its own terms.
 - **Art direction**: the overall visual intention of the project, chosen by the user among directions drawn in the design tool. It is recorded in `ux/brief.md`.
-- **Preview**: a temporary drawing in the design tool that shows a proposal to the user so that they decide by seeing it. It assembles elements representative of the product (real labels, typical content), in each theme concerned. A preview is neither a component nor a screen: it is deleted as soon as the proposal is validated and carried over to its final place. The directions drawn by `/f3-ux-direction` are not previews: they are kept.
+- **Preview**: a temporary drawing in the design tool that shows a proposal to the user so that they decide by seeing it. It assembles elements representative of the product (real labels, typical content), in each theme concerned. A preview is neither a component nor a screen: it is deleted as soon as the proposal is validated and carried over to its final place. The directions drawn by `f3 ux-direction` are not previews: they are kept.
 - **Interface part**: a group of pages defined by the project in its code, for example a feature.
 - **Component**: a reusable interface block, which ignores where it is displayed. It is drawn once, with its variants and states. Its scope is either the design system (pure presentation, no business knowledge, usable anywhere) or an interface part (it knows the business and is only used in that part). A component used by several interface parts belongs to the design system.
 - **Icon**: a pictogram of the icon set chosen by `ux/brief.md`, designated by its name in that set.
@@ -50,6 +50,6 @@ For tokens, read `references/tokens.md`. For any work in the design tool, also l
 Each command says which ones apply. Check them before any other work. If one fails, stop and tell the user what they must do.
 
 - **tool**: you can act in the design tool. Check it with a single minimal call to the tool, without reading its documentation or the content of the open file. If the call fails, diagnose the cause yourself (configuration, environment variables, connection to the tool) and tell the user what they must do. Never simulate work you cannot do, and never modify a configuration without their validation.
-- **brief**: `ux/brief.md` exists, contains every section defined in `references/brief.md`, and each one is filled. Otherwise, the command to run is `/f3-ux-direction`.
-- **tokens**: the tokens described in `references/tokens.md` exist in the design tool. Otherwise, list what is missing; the command to run is `/f3-ux-tokens`.
-- **change**: the folder `openspec/changes/<id>/` exists and contains specs. Otherwise, say that the specs of the change must be created with `/f3-propose`.
+- **brief**: `ux/brief.md` exists, contains every section defined in `references/brief.md`, and each one is filled. Otherwise, the command to run is `f3 ux-direction`.
+- **tokens**: the tokens described in `references/tokens.md` exist in the design tool. Otherwise, list what is missing; the command to run is `f3 ux-tokens`.
+- **change**: the folder `openspec/changes/<id>/` exists and contains specs. Otherwise, say that the specs of the change must be created with `f3 propose`.

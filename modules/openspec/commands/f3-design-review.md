@@ -1,16 +1,22 @@
 ---
 description: "Design review of an OpenSpec change, before implementation. Three members (architect, technical security, product) review the technical design and the tasks, each in their own subagent context; the chair sorts their objections into a grid the user decides, corrects design.md and the tasks, amends the specs when the user validates it, records the session and, when the user declares it finished, writes the validation that unlocks implementation. Can be run again in successive sessions; a closed step is reopened only on explicit request. Argument: the identifier of the change."
+argument-hint: "<change-id>"
 agent: architect
 ---
 
+This command runs as the architect agent, in a session started by `f3 design-review`. If you are not the architect agent, stop and tell the user to run, in a terminal: `f3 design-review <arguments>`.
+
 You chair the design review of the OpenSpec change $ARGUMENTS, following `references/review.md` of the f3-agent skill. Goal: a design and tasks that deliver each scenario of the specs, comply with AGENTS.md and arch/decisions.md, and carry no identifiable security risk, before a line of code is written.
 
-State at launch:
+State at launch (from `f3 state design-review`):
 
-- Files of the change: !`ls -1 openspec/changes/$ARGUMENTS/ openspec/changes/$ARGUMENTS/validations/ 2>&1`
-- Progress of OpenSpec: !`openspec status --change "$ARGUMENTS" 2>&1 | tail -12`
+!`f3 state design-review '$ARGUMENTS'`
 
-If design.md or tasks.md is missing, stop: they are written with `/f3-design $ARGUMENTS`.
+If the launch state is missing, empty or reports an error, show it and stop.
+
+A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
+
+If design.md or tasks.md is missing, stop: they are written with `f3 design $ARGUMENTS`.
 
 Produces: the record `review.md`, titled "# Design review of change $ARGUMENTS"; the corrections of design.md and tasks.md; entries of `arch/decisions.md`; amendments; `BACKLOG.md` entries with the origin `$ARGUMENTS, design-review`; `validations/review.md` at closing.
 
@@ -29,6 +35,6 @@ Review named in the prompt: "a design review before implementation". "High": wou
 - Natures of the rows: correction, decision, specs. For a row of nature "specs", your recommendation is an amendment, with its proposed text; the user may prefer to bring it to a Tres Amigos session.
 - A row "to bring to Tres Amigos" counts as pending when the session is resumed: present it again with its amendment, unless the user confirms that it goes to a Tres Amigos session.
 - Application: in design.md, the tasks or arch/decisions.md, following `openspec instructions design --change $ARGUMENTS` and `openspec instructions tasks --change $ARGUMENTS`; a row of nature "specs" validated as an amendment follows the Amendments section of the spec-practice skill, then design.md and the tasks are updated with it; a row the user brings to Tres Amigos receives "to bring to Tres Amigos".
-- Checks: `openspec validate $ARGUMENTS`, and `node ~/.config/opencode/scripts/f3-features.mjs --check $ARGUMENTS` if an amendment was applied.
-- Closing: if rows "to bring to Tres Amigos" remain, write no validation; say that `/f3-tres-amigos $ARGUMENTS` must reopen the specs, then `/f3-design $ARGUMENTS` redo the affected design.
-- Validation: Record "review.md, sessions 1 to <last>"; Summary: what the review changed in the design and the tasks; Left open: the dismissed points of critical or high severity, and the rows brought to Tres Amigos, or "none". Next step: `/f3-dev $ARGUMENTS`.
+- Checks: `openspec validate $ARGUMENTS`, and `node ~/.local/share/f3/scripts/f3-features.mjs --check $ARGUMENTS` if an amendment was applied.
+- Closing: if rows "to bring to Tres Amigos" remain, write no validation; say that `f3 tres-amigos $ARGUMENTS` must reopen the specs, then `f3 design $ARGUMENTS` redo the affected design.
+- Validation: Record "review.md, sessions 1 to <last>"; Summary: what the review changed in the design and the tasks; Left open: the dismissed points of critical or high severity, and the rows brought to Tres Amigos, or "none". Next step: `f3 dev $ARGUMENTS`.
