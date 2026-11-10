@@ -55,8 +55,8 @@ test('propose lists the changes in progress and the backlog', () => {
   const r = s('propose');
   assert.equal(r.code, 0, r.stderr);
   assert.match(r.stdout, /Project schema: schema: f3/);
-  assert.match(r.stdout, /add-import: clarification\.md proposal\.md validations\/amigos\.md/);
-  assert.match(r.stdout, /empty-one: \(empty\)/);
+  assert.match(r.stdout, /add-import: clarification\.md proposal\.md validations\/amigos\.md; track: not calibrated/);
+  assert.match(r.stdout, /empty-one: \(empty\); track: not calibrated/);
   assert.doesNotMatch(r.stdout, /archive|old/);
   assert.match(r.stdout, /## B-001 Export - Status: open/);
 });
@@ -79,6 +79,22 @@ test('dev shows branch, uncommitted files, unchecked tasks and fix groups', () =
   assert.match(r.stdout, /Uncommitted files: none/);
   assert.match(r.stdout, /Unchecked tasks: 2/);
   assert.match(r.stdout, /Fix groups: ## 2\. Acceptance fixes, pass 01/);
+});
+
+test('the track of a change comes from the line "- Track:" of its clarification.md', () => {
+  const dir = project();
+  const clarify = (text) => writeFileSync(join(dir, 'openspec/changes/add-import/clarification.md'), `# c\n\n## Calibration\n\n${text}`);
+  const st = (cmd) => inDir(dir, () => stateOf(cmd, cmd === 'propose' ? '' : 'add-import')).stdout;
+  clarify('- Track: light (provisional)\n');
+  assert.match(st('propose'), /add-import: .*; track: light \(provisional\)/);
+  clarify('- Track: light\n- Criteria: C1 no\n');
+  for (const cmd of ['design', 'dev', 'acceptance']) assert.match(st(cmd), /^- Track: light$/m, cmd);
+  clarify('- Track: full\n- Escalated to full on 2026-11-10, in design: C2\n');
+  assert.match(st('design'), /^- Track: full$/m);
+  for (const text of ['- Track: heavy\n', '<!-- - Track: light | full -->\n', 'Track: light\n']) {
+    clarify(text);
+    assert.match(st('dev'), /^- Track: not calibrated$/m, text);
+  }
 });
 
 test('dev on a change without tasks', () => {

@@ -41,6 +41,8 @@ The agentic-toolkit is a set of files that you install once on your machine. It 
 - a developer agent writes the code;
 - you check the result, a tester agent proves it against the specification, and the change is archived.
 
+A small change, with no interface, structural decision or security stake, can take a **light track** that skips the reviews and the screens: specification, design, code, acceptance, archive (section 7).
+
 At every step, an agent analyzes and proposes; **you decide**. Nothing is written in a project file without your validation.
 
 The workflow is called **f3**. Each step is launched from a terminal with `f3 <step>`, which runs the command `/f3-<step>` of the toolkit.
@@ -100,6 +102,8 @@ Why: comparing a test's title with a scenario's name proves that a test exists, 
 A change delivers one coherent behavior the user can try. Everything left out goes to a **backlog**, so that staying focused never means losing an idea.
 
 Why: an agent loses quality on a change with thirty requirements and a hundred tasks. A small change is designed, built and checked properly.
+
+A small change also deserves a short path. `f3 propose` **calibrates** each change: when it touches no interface, takes no structural decision, opens no attack surface and stays within one capability and a few requirements, you can send it down the **light track**, which skips the three review steps (Tres Amigos, interface design, design review) and keeps everything that proves the result: the specs, the design and tasks, development, acceptance and archiving (section 7).
 
 ### 2.8 Files are the memory
 
@@ -185,7 +189,8 @@ agentic-toolkit/
     │   ├── schemas/f3/             the OpenSpec schema and its templates
     │   ├── scripts/f3-features.mjs converts specs into Gherkin feature files
     │   └── skills/
-    │       ├── f3-agent/           working rules shared by every agent, and the review session mechanism
+    │       ├── f3-agent/           working rules shared by every agent, the tracks of a change,
+    │       │                       and the review session mechanism
     │       ├── f3-standards/       templates of the framing files and of the views register
     │       ├── spec-practice/      how to write requirements and scenarios
     │       └── e2e-practice/       how to write end-to-end tests, and the manual scenarios register
@@ -356,18 +361,18 @@ Everything a change produces lives in `openspec/changes/<change-id>/`, in the or
 | File | Written by (step) | Role | Read next by | Why it is needed |
 |---|---|---|---|---|
 | `.openspec.yaml` | OpenSpec, when `f3 propose` creates the change | the metadata of the change, including its schema | OpenSpec | OpenSpec knows which steps the change follows |
-| `clarification.md` | the analyst (`f3 propose`) | the clarified need, section by section: Need, Scope (in, out, decisions against advice), Vocabulary, Behavior, Rules and edge cases, Examples, Security, Open points | the analyst (proposal, specs), Tres Amigos, the architect | the specs are derived from validated answers, not from the analyst's guesses; an interrupted interview resumes at the first empty section |
+| `clarification.md` | the analyst (`f3 propose`) | the clarified need, section by section: Need, Scope (in, out, decisions against advice), Calibration (the track of the change: light or full, and its criteria), Vocabulary, Behavior, Rules and edge cases, Examples, Security, Open points | the analyst (proposal, specs), Tres Amigos, the architect | the specs are derived from validated answers, not from the analyst's guesses; an interrupted interview resumes at the first empty section |
 | `proposal.md` | the analyst (`f3 propose`) | why and what: the capabilities added or modified, what is out of scope | every following step | the scope is written once; later steps can detect what exceeds it |
 | `specs/<capability>/spec.md` | the analyst (`f3 propose`), corrected in Tres Amigos | the **delta specs**: requirements and scenarios added, modified, removed or renamed | everyone; `f3-features` turns them into feature files | the contract of the change: what will be built, designed and proven |
-| `tres-amigos.md` | the analyst, chairing `f3 tres-amigos` | the record of each session: the reports of the four members (translated into the language of the artifacts when a member answered in another), the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13) | you, later sessions | each decision has its reason; a later session does not argue it again |
-| `validations/amigos.md` | `f3 tres-amigos`, when you declare the specs ready | the validation of the step | OpenSpec (unblocks the next step) | without it, the schema refuses the interface design |
+| `tres-amigos.md` | the analyst, chairing `f3 tres-amigos` | the record of each session: the reports of the four members (translated into the language of the artifacts when a member answered in another), the grid of decisions, the dismissed points; then the amendments of the specs made by the following steps (section 13). On the light track, it exists only if an amendment was made, and holds only the amendments | you, later sessions | each decision has its reason; a later session does not argue it again |
+| `validations/amigos.md` | `f3 tres-amigos`, when you declare the specs ready; on the light track, `f3 propose`, as not-applicable | the validation of the step | OpenSpec (unblocks the next step) | without it, the schema refuses the interface design |
 | `ux.md` | the ux agent (`f3 ux-design`); the analyst may write appearance wishes in it | the design delta: intentions, views, components, icons, tokens, conflicts, proposed cross-cutting decisions. It names and decides; it holds no appearance value | the architect (Interface section of the design), the developer, `f3 archive` | the names the code, the screens and the tests will share are decided once |
 | `ux-design.md` | the ux agent (`f3 ux-design`) | the progress tracking of the design: each step of the impact analysis, each icon, component and screen with its status, and the conformity results | the ux agent, at each run | the design is done one unit per run; each run resumes where the previous one stopped |
-| `validations/ux.md` | `f3 ux-design`, when you declare the design finished, or close it as not-applicable | the validation of the step | OpenSpec | without it, the schema refuses the technical design |
+| `validations/ux.md` | `f3 ux-design`, when you declare the design finished, or close it as not-applicable; on the light track, `f3 propose`, as not-applicable | the validation of the step | OpenSpec | without it, the schema refuses the technical design |
 | `design.md` | the architect (`f3 design`) | how the change is built: decisions, Interface (views, components and tokens of `ux.md`), Volumetry, **Test strategy** (unit and integration tests, test entry points, replacement coverage of manual scenarios) | the design review, the developer, the tester | technical choices are written and reviewable before any code |
 | `tasks.md` | the architect (`f3 design`); fix groups added by the tester and the ux agent | the work, split into functional slices, each citing the scenarios it delivers; the checkboxes the developer ticks | the developer, the design review | the developer works from an explicit, reviewed list; OpenSpec tracks progress |
 | `review.md` | the architect, chairing `f3 design-review` | the record of the design review: reports, grid, decisions | you, later sessions | same as `tres-amigos.md`, for the design |
-| `validations/review.md` | `f3 design-review`, when you declare the design ready | the validation of the step | OpenSpec | without it, implementation (apply) is refused |
+| `validations/review.md` | `f3 design-review`, when you declare the design ready; on the light track, `f3 design`, as not-applicable, after its traceability check | the validation of the step | OpenSpec | without it, implementation (apply) is refused |
 | `conformity/<view>--<state>.png` | the built-in general subagent, for `f3 ux-design <change-id> conformity` | captures of the running application, one per approved screen | the ux agent, you | the comparison with the design screens is made on images, not on descriptions |
 | `acceptance/pass-NN.md` | the tester (`f3 acceptance`), one per pass | the report of an acceptance pass: delta, tests written, fidelity review, failures and decisions, tickets, backlog entries, tested commit, conclusion | you, `f3 archive` | the proof that the change does what its specs say, at a given commit; `f3 archive` refuses a change whose last pass is not green |
 
@@ -428,7 +433,7 @@ The toolkit, its templates and every **stable keyword** are in English: headings
 | **developer** | the application code and its unit and integration tests | code, tests next to the code, `ux/views.md`, checkboxes of tasks.md | end-to-end tests, specs, design, framing files |
 | **tester** | proving each scenario on the launched application | `tests/e2e/`, acceptance reports, fix tickets, backlog entries, amendments of the specs you validate | application code; it does not even read it, nor the mockups |
 
-Every agent loads the f3-agent skill at startup: the rules they all share (the user decides, one question at a time, a validated decision written at once, the frame check, the language). An agent's file only holds its role and its **writing scope table**; a command says what its step produces, never what may be written. An agent asked to write outside its table stops and says so.
+Every agent loads the f3-agent skill at startup: the rules they all share (the user decides, one question at a time, a validated decision written at once, the frame check, the tracks of a change and their criteria, the language). An agent's file only holds its role and its **writing scope table**; a command says what its step produces, never what may be written. An agent asked to write outside its table stops and says so.
 
 Why separate agents: a role shapes behavior. An agent called "architect" that leads a functional interview drifts towards technical solutions; an agent that writes both the code and its acceptance tests declares its own work finished. Each command declares its agent, and `f3 <step>` starts the session as that agent, so you never choose an agent by hand.
 
@@ -464,9 +469,41 @@ per change            f3 propose          clarification, proposal, specs      an
                       f3 archive          merge specs, check, merge branch    architect
 ```
 
+That is the **full track**. A change calibrated as light by `f3 propose` takes the **light track**:
+
+```
+per change (light)    f3 propose          clarification, calibration, specs,  analyst
+                           │               amigos and ux validations not-applicable
+                      f3 design           design.md, tasks.md, traceability,  architect
+                           │               review validation not-applicable
+                      f3 dev              code, unit and integration tests    developer
+                           │
+                      your check of the journeys, if a scenario goes through a view
+                           │
+                      f3 acceptance       as on the full track                tester + itself
+                           │
+                      f3 archive          as on the full track                architect
+```
+
+**The calibration.** At the end of the interview, the analyst presents seven criteria, each with yes or no and the passage of `clarification.md` that decides it. One true criterion is enough for the full track:
+
+| # | Criterion | The step it calls for |
+|---|---|---|
+| C1 | A view, component, icon or token created or changed in appearance, or an appearance wish | interface design, conformity |
+| C2 | A likely decision that commits the following changes (technology, storage, external dependency, kind of entry point) | design review |
+| C3 | An attack surface created or modified: untrusted input, files, network, sensitive data | Tres Amigos, design review |
+| C4 | A new capability, or more than one capability touched | Tres Amigos |
+| C5 | More than 3 requirements added or modified, or a BREAKING change | Tres Amigos |
+| C6 | A contradiction with the existing specs, or a term of `CONTEXT.md` created or redefined | Tres Amigos |
+| C7 | A scenario that cannot be automated as written | Tres Amigos |
+
+You decide; the track is written in the Calibration section of `clarification.md` (`- Track: light` or `- Track: full`), its only source, which `f3 state` shows at the launch of `f3 propose`, `f3 design`, `f3 dev` and `f3 acceptance`. The criteria live in the Tracks section of the f3-agent skill.
+
+**Escalation.** A light-track change can move to the full track while no task is checked: when an agent finds a criterion true later (a second capability while writing the specs, a structural decision or an attack surface while writing the design), it stops and proposes it. If you agree, the not-applicable validations are deleted, and the next step is `f3 tres-amigos`; design.md and tasks.md, if they exist, stay as drafts. You may also keep the light track: the agent records it as a choice against its advice. Once development has started, the point becomes a ticket, an amendment or a backlog entry.
+
 "exploration" and "general" are the built-in subagents of the tool: `Explore` and `general-purpose` under Claude Code, `explore` and `general` under OpenCode. The tester calls itself as a subagent for the fidelity review of its tests.
 
-The OpenSpec schema enforces the order of the planning steps: an artifact cannot be written before the artifacts it requires exist, and implementation cannot start before the design review is validated.
+The OpenSpec schema enforces the order of the planning steps: an artifact cannot be written before the artifacts it requires exist, and implementation cannot start before the design review is validated, or closed as not-applicable on the light track.
 
 | Artifact of the schema | File | Written by | Requires |
 |---|---|---|---|
@@ -480,7 +517,7 @@ The OpenSpec schema enforces the order of the planning steps: an artifact cannot
 | review | `validations/review.md` | `f3 design-review` | tasks |
 | (apply) | code | `f3 dev` | review |
 
-A step conducted by a command is done when its **validation file** exists. The command writes it only when you declare the step finished, so that you can run the step in several sessions.
+A step conducted by a command is done when its **validation file** exists. The command writes it only when you declare the step finished, so that you can run the step in several sessions. On the light track, the steps the track skips are closed by a validation whose Decision is `not-applicable: light track, see Calibration in clarification.md`: `f3 propose` writes `validations/amigos.md` and `validations/ux.md`, and `f3 design` writes `validations/review.md`. The order of the schema still holds on both tracks.
 
 ---
 
@@ -553,15 +590,19 @@ The design tool is the only source of appearance. The code takes it over by open
 5. **examples**: the agent writes concrete examples with data and expected results; you validate them. You never write a scenario;
 6. **security**: untrusted inputs, sensitive data.
 
-Each validated answer is written at once in `clarification.md`. Then the agent writes `proposal.md` (why and what, with an "Out of scope" list) and the specs, following the spec-practice skill. Before writing the first scenario, it builds the **step catalog**: the steps already in the specs and the output of the *export the step catalog* command, so that new scenarios reuse existing sentences. It runs two checks: `f3-features --check` (form of the steps) and `openspec validate`.
+**The calibration.** Right after need and scope, the agent says which track the scope suggests and writes it as provisional; the interview still covers every angle. After security, it presents the seven criteria (section 7) and recommends a track; you decide.
 
-**Produces.** `clarification.md`, `proposal.md`, `specs/`, backlog entries, terms in `CONTEXT.md`.
+Each validated answer is written at once in `clarification.md`. Then the agent writes `proposal.md` (why and what, with an "Out of scope" list) and the specs, following the spec-practice skill. Before writing the first scenario, it builds the **step catalog**: the steps already in the specs and the output of the *export the step catalog* command, so that new scenarios reuse existing sentences. It runs two checks: `f3-features --check` (form of the steps) and `openspec validate`. On the light track, it then writes `validations/amigos.md` and `validations/ux.md` as not-applicable, and names `f3 design` as the next step.
+
+**Produces.** `clarification.md` with its Calibration, `proposal.md`, `specs/`, backlog entries, terms in `CONTEXT.md`; on the light track, the two not-applicable validations.
 
 **What to watch.** At the end, the agent lists the **new steps**: step sentences that did not exist before. Each one will need code in the tests; prefer reusing existing sentences.
 
 ### Step 2: the Tres Amigos session (`f3 tres-amigos <change-id>`)
 
 **Purpose.** Make the specs complete and unambiguous before anyone designs or codes.
+
+**Light track.** Skipped: `f3 propose` closes it as not-applicable.
 
 **Agent.** analyst, as chair, with four members convened one after the other as built-in exploration subagents (`Explore` under Claude Code, `explore` under OpenCode):
 
@@ -591,6 +632,8 @@ The chair merges and orders them into a **grid**; for each point that needs a pr
 ### Step 3: the interface design (`f3 ux-design <change-id>`)
 
 **Purpose.** Design the views and components the change needs, in the design tool.
+
+**Light track.** Skipped: a light-track change touches no view, component, icon or token in its appearance (criterion C1), and `f3 propose` closes the step as not-applicable.
 
 **Agent.** ux.
 
@@ -646,9 +689,13 @@ A decision that commits the following changes (new technology, new storage) is p
 
 Why functional slices: a component built and unit-tested in one group and never wired into a page in another is a classic agent failure. A slice is only done when the scenario works from end to end.
 
+**On the light track.** Before recording a decision in `arch/decisions.md`, or when the design opens an attack surface, the architect proposes the escalation to the full track (section 7). Once you have accepted design.md and tasks.md, it checks the traceability itself: each scenario of the change delivered by exactly one group, no task that serves no scenario, the test entry points present, no task in `tests/e2e/`. It then writes `validations/review.md` as not-applicable, and the next step is `f3 dev`.
+
 ### Step 5: the design review (`f3 design-review <change-id>`)
 
 **Purpose.** Challenge the design and the tasks before a line of code is written.
+
+**Light track.** Skipped: `f3 design` checks the traceability itself (the Product viewpoint below, without subagent) and closes the step as not-applicable.
 
 **Agent.** architect, as chair, with three members, built-in exploration subagents (`Explore` under Claude Code, `explore` under OpenCode):
 
@@ -680,9 +727,9 @@ It stops and reports when the design contradicts the specs, when a state of the 
 
 ### Step 7: your check, then conformity (`f3 ux-design <change-id> conformity`)
 
-**Your check.** Launch the application and try the journeys of the change yourself, including the checks by hand that the developer listed for the manual scenarios. Nothing replaces it, and it is cheap at this point.
+**Your check.** Launch the application and try the journeys of the change yourself, including the checks by hand that the developer listed for the manual scenarios. Nothing replaces it, and it is cheap at this point. On the light track, the developer recommends it only when a scenario of the change goes through a view.
 
-**Conformity.** Only when the interface design step was approved (not when it was closed as not-applicable). The ux agent delegates to the built-in general subagent (`general-purpose` under Claude Code, `general` under OpenCode) the capture of each approved screen in the running application, through the display under which `ux/views.md` lists it, then compares each capture with the design screen and lists the deviations. Each display of `ux/views.md` without screen is also a deviation. For each one, you decide:
+**Conformity.** Only when the interface design step was approved (not when it was closed as not-applicable, hence never on the light track). The ux agent delegates to the built-in general subagent (`general-purpose` under Claude Code, `general` under OpenCode) the capture of each approved screen in the running application, through the display under which `ux/views.md` lists it, then compares each capture with the design screen and lists the deviations. Each display of `ux/views.md` without screen is also a deviation. For each one, you decide:
 - **ticket**: a task in a "Conformity fixes" group of tasks.md, for `f3 dev`;
 - **design update**: the implementation is better, the screen is updated in the tool; for a display coded without design, its screens are drawn;
 - **backlog**.
@@ -719,7 +766,7 @@ Green means every scenario passes (except, during a migration, the scenarios out
 
 ## 9. A complete example: issuing an invoice
 
-This section follows one small change through the whole workflow, with excerpts of what each step writes. The product is a fictional invoicing application.
+This section follows one small change through the whole workflow, with excerpts of what each step writes. The change has an interface (criterion C1), so it takes the full track; a light-track change would skip 9.4, 9.5 and 9.7. The product is a fictional invoicing application.
 
 ### 9.1 The idea
 
@@ -1030,6 +1077,7 @@ The workflow is the same under Claude Code and OpenCode; some of its controls ar
 | A step launched with `f3 <step>` receives only identifiers as arguments, and its prompt never goes through a shell line | **mechanism**: the launcher refuses any other argument, and passes the prompt through a file (4.2) |
 | An agent does not see the MCP tools it does not need | **mechanism**: denied tools are removed from its list |
 | A note from the user does not lift a precondition nor skip a step | **instruction** of each command |
+| The calibration of a change, the not-applicable validations of the light track, and the escalation | **instruction** of f3 propose, f3 design and the f3-agent skill; once written, the not-applicable validations satisfy the schema like any other |
 | Archiving only after a green acceptance | **instruction**: OpenSpec cannot block archiving |
 | An amendment of the specs only after your validation, recorded in `tres-amigos.md` | **instruction**; the regeneration at archiving still proves that the archived specs are the tested ones |
 | One fact per step, reuse of existing steps | **instruction**, checked by the Test member of Tres Amigos |
@@ -1061,6 +1109,7 @@ The `operations` guidance of `openspec/config.yaml` is advisory in OpenSpec: the
 
 - **Every command can be run again.** It reads the state of the repository at launch (the `f3 state` line of its prompt) and resumes: a clarification at its first empty section, a review at its pending grid rows, a design at its first `todo` element, an implementation at its unchecked tasks, an acceptance at a new pass.
 - **A spec is amended, not reopened.** Once the Tres Amigos step is validated, a later step that finds a spec missing, ambiguous or impossible to test (the ux design, the technical design, the design review, the acceptance) proposes an **amendment**: the current text, the proposed text, the reason, and the files of the following steps it affects. You validate the exact text; nothing is written before. The agent then applies it, runs the checks, records it at the end of `tres-amigos.md` (step, reason, before, after) and updates or reports the following files. No step is reopened, and the validations stay valid. Two safeguards: an amendment stays within the proposal of the change (anything else goes to the backlog or to a new change), and an amendment that changes an expected result, removes a scenario or reduces what it proves says so explicitly. When an amendment is only a pragmatic way around a problem, the agent also proposes a backlog entry to rework the requirement in a Tres Amigos session. The developer never amends: it reports. An amendment can also touch what surrounds the specs: bring `proposal.md` in line with the specs (never add a need to it), change the entry of a manual scenario in `tests/e2e/manual-scenarios.md`, or refine a term of `CONTEXT.md`. A point of a design review left "to bring to Tres Amigos" is presented again as an amendment the next time `f3 design-review` runs.
+- **A light track becomes full on request.** Before any task is checked, an escalation deletes the not-applicable validations and sends the change to `f3 tres-amigos` (section 7). On a light-track change, the first amendment creates `tres-amigos.md`, which then holds only the amendments.
 - **A closed step is reopened only on request.** If you run `f3 tres-amigos` on a change whose specs are validated, the command says the step is closed, lists the files produced since by the following steps, and asks whether you want to reopen it, knowing that those files will have to be reviewed; for a change of a few requirements, it proposes an amendment instead.
 - **One step per session.** `f3 <step>` starts a new session of the tool for each command. The files carry the state; a fresh context keeps the agent sharp.
 - **Commit between steps.** Several commands stop when files are uncommitted (development resuming on unknown files, acceptance, archiving). Review `git diff` after each step and commit; the commands never commit planning files for you.
@@ -1191,6 +1240,7 @@ Launched with `f3 <step>`, a command only ever receives identifiers as arguments
 - **One machine per toolkit.** The render relies on the process numbers of the machine: every `f3` that writes in the `build/` of a toolkit must run on the same machine, in the same process namespace (section 4.3).
 - **Positional arguments.** `f3 ux-design <change-id> conformity` reads its two arguments one by one (`$0` and `$1` under Claude Code, `$1` and `$2` under OpenCode). With a single argument, it falls back to the design mode.
 - **Feature files check form, not quality.** The conversion guarantees that the scenarios are executed word for word, not that they are well written. Quality comes from spec-practice and the Test member of Tres Amigos; fidelity of the step definitions comes from the independent review during acceptance.
+- **The calibration is a judgment.** The light or full track rests on the analyst's reading of the seven criteria and on your decision; nothing checks it mechanically. A criterion missed at calibration is caught by the escalation of a later step while no task is checked, and by the acceptance after.
 - **Conformity needs an approved design step.** When the interface design of a change is closed as not-applicable, conformity does not run: a display coded without design in that change is only reported by the developer.
 - **Tokens are not synchronized automatically.** The design tool is the source; the code takes tokens over through a task of the change that creates or modifies them. A divergence between the two is caught by conformity, not by a mechanism.
 - **A scenario cannot be removed alone from a modified requirement.** OpenSpec requires a `MODIFIED` requirement to keep all its existing scenarios. Renaming or dropping a scenario means removing and re-adding the requirement, or keeping its name.
@@ -1200,10 +1250,10 @@ Launched with `f3 <step>`, a command only ever receives identifiers as arguments
 ## 17. Questions and answers
 
 **Why so many steps for a small change?**
-Each step exists because its absence caused a real failure (see `retro/drift-log.md`). For a small change, most steps are short: a Tres Amigos session with no objection takes minutes, a change without interface closes its design step as not-applicable.
+Each step exists because its absence caused a real failure (see `retro/drift-log.md`). A small change takes the light track instead: `f3 propose` calibrates it, and if no criterion calls for a review or for screens, you go straight from the specs to the design, then to the code, the acceptance and the archive (section 7).
 
 **Can I skip a step?**
-The schema will not let you write an artifact before the ones it requires, and implementation needs the design review. The design step can be closed as not-applicable when there is no interface. Other steps can be quick, not skipped.
+The schema will not let you write an artifact before the ones it requires, and implementation needs the design review. The light track closes the Tres Amigos, interface design and design review steps as not-applicable, when the calibration allows it and you choose it; on the full track, the design step can still be closed as not-applicable when there is no interface. The other steps are never skipped: the specs, the design and tasks, the acceptance and the archive hold on both tracks.
 
 **Why do I never write scenarios myself?**
 Because you are the best judge of the behavior, not of the step format. The analyst asks functional questions, writes the examples and the scenarios, and shows them to you.

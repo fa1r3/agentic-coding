@@ -66,6 +66,16 @@ function tasksLines(id) {
   return existsSync(file) ? readFileSync(file, 'utf8').split('\n') : null;
 }
 
+// The track of a change, from the line "- Track:" of the Calibration section of its clarification.md
+// (f3-agent skill, Tracks): light or full, possibly "(provisional)"; "not calibrated" otherwise.
+export function trackOf(id) {
+  const file = `openspec/changes/${id}/clarification.md`;
+  if (!existsSync(file)) return 'not calibrated';
+  const match = readFileSync(file, 'utf8').match(/^- Track: (light|full)( \(provisional\))?\s*$/m);
+  return match ? match[1] + (match[2] || '') : 'not calibrated';
+}
+const trackLine = (id) => `- Track: ${trackOf(id)}`;
+
 const git = (...args) => run('git', args);
 // .f3/local is never committed: the launcher writes it before f3 init adds it to .gitignore (D41).
 const uncommitted = (n) => head(git('status', '--porcelain', '--', '.', `:(exclude)${LOCAL}`), n);
@@ -197,7 +207,7 @@ const ENTRIES = {
       const changes = changesInProgress().map((n) => {
         const d = `openspec/changes/${n}/`;
         const present = ['clarification.md', 'proposal.md', 'specs/', 'validations/amigos.md'].filter((f) => existsSync(d + f));
-        return `${n}: ${present.length ? present.join(' ') : '(empty)'}`;
+        return `${n}: ${present.length ? present.join(' ') : '(empty)'}; track: ${trackOf(n)}`;
       });
       return [
         `- Project schema: ${firstLine(readFileSync('openspec/config.yaml', 'utf8'))}`,
@@ -227,7 +237,7 @@ const ENTRIES = {
   },
   design: {
     args: ['change'],
-    lines: ([id]) => [openspecProgress(id), block('Architecture decisions', pairs('arch/decisions.md', /^## A-|^- Status:/, 'arch/decisions.md absent'))],
+    lines: ([id]) => [trackLine(id), openspecProgress(id), block('Architecture decisions', pairs('arch/decisions.md', /^## A-|^- Status:/, 'arch/decisions.md absent'))],
   },
   'design-review': {
     args: ['change'],
@@ -238,6 +248,7 @@ const ENTRIES = {
     lines: ([id]) => {
       const lines = tasksLines(id) || [];
       return [
+        trackLine(id),
         `- Current branch: ${firstLine(git('branch', '--show-current'))}`,
         block('Uncommitted files', uncommitted(30)),
         unchecked(id),
@@ -248,6 +259,7 @@ const ENTRIES = {
   acceptance: {
     args: ['change'],
     lines: ([id]) => [
+      trackLine(id),
       `- Current commit: ${firstLine(git('rev-parse', '--short', 'HEAD'))}`,
       block('Uncommitted files', uncommitted(30)),
       changeFiles(id, 'validations', 'acceptance'),

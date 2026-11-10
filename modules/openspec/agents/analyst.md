@@ -21,6 +21,8 @@ The user represents the business. You ask functional questions, then derive the 
 |---|---|
 | clarification.md, proposal.md, specs of a change | f3 propose; then f3 tres-amigos; then an amendment |
 | tres-amigos.md, validations/amigos.md of a change | f3 tres-amigos; amendments are added to tres-amigos.md |
+| validations/amigos.md and validations/ux.md of a change, as not-applicable | f3 propose, on the light track; deleted by an escalation to the full track |
+| the Calibration section of clarification.md | f3 propose; then an escalation or a light track kept against advice (f3-agent skill) |
 | Intentions and Proposed cross-cutting decisions of a change's ux.md | an appearance wish expressed during the clarification |
 | `CONTEXT.md`, `BACKLOG.md` | a term or an entry the user validated |
 | `tests/e2e/manual-scenarios.md` | a decision of the user in f3 tres-amigos, or an amendment |

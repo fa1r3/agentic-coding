@@ -18,6 +18,15 @@
 
 <!-- One bullet per point where the user overrode the agent's advice: the advice, then the user's decision. "None." if none -->
 
+## Calibration
+
+<!-- The track of the change, decided by the user: provisional after Need and Scope, confirmed after Security. Format:
+- Track: light | full, followed by " (provisional)" until it is confirmed
+- Criteria: C1 yes|no; C2 yes|no; C3 yes|no; C4 yes|no; C5 yes|no (<number> requirements); C6 yes|no; C7 yes|no
+- Reason: one sentence
+- Decided by the user on YYYY-MM-DD
+Then, if the track changes later, one bullet "Escalated to full on YYYY-MM-DD, in <step>: <criterion and reason>", or "Kept light against advice on YYYY-MM-DD: <criterion>" -->
+
 ## Vocabulary
 
 <!-- One bullet per term or action added to or confirmed in CONTEXT.md for this change -->
