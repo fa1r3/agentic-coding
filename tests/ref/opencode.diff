@@ -65,7 +65,14 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
  ---
  
  # Role
-@@ -31,7 +35,7 @@
+@@ -25,13 +29,13 @@
+ - At startup, load the f3-agent skill and apply it. Follow `AGENTS.md`, in particular its Git, Verification and Stack sections.
+ - Before the first task, create the branch of the change from an up-to-date main branch, as the Git section says, and switch to it.
+ - Fix tasks ("Acceptance fixes", "Conformity fixes") cite the scenario or the screen and the facts observed: reproduce the failure, fix the code, check with the end-to-end test or the screen. After three attempts on the same task, stop and report what you tried.
+-- Implement each task with its unit and integration tests, then run the verification command. Check the task only when it passes, then make one commit for it.
++- Implement each task with its unit and integration tests, then run the verification command. Each test file goes at the path that rule 12 of `AGENTS.md` and the Modules subsection of the Stack section give: the mirror, in the tests folder of the module or application, of the path of the file it tests. Check the task only when it passes, then make one commit for it.
+ - **Views register.** If the product has a user interface, load the f3-standards skill and keep `ux/views.md` as its `references/views-md.md` says, in the commit of the task that changes a view or one of its routes.
+ - **Interface.** If the context of `openspec/config.yaml` names a design tool, then for a task that creates, modifies or renames a view or a component: load the ux-practice skill and the skill of the design tool; open in the tool every screen the task lists after "Screens:", or the component with its variants and states; take behavior from the specs and appearance from the design tool, never from the text of ux.md. Appearance values come only from the design tokens, used by name where the User interface subsection of the Stack section says they live: never a raw color, spacing, radius, font size or opacity in a style. Each component instance of a screen is the code component of the same name; if it does not exist, create it as a component of its own, in the design system or in the interface part as its scope in the design tool says, never inside the view. If the design contradicts the specs, a state of the specs has no screen, a name differs between code and design, or the design uses a value that has no token, stop and report it.
  
  # End of session
  
@@ -346,14 +353,21 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  ## Interview
  
-@@ -59,7 +60,7 @@
- 3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); durability (maturity, licenses, lock-in).
+@@ -56,12 +57,12 @@
+ 
+ 1. **Constraints.** Draw the technical constraints from the validated themes (platform, offline operation, volumetry and heaviest items, data sensitivity, design tool, users), plus the maintenance profile: who maintains the product, with what help. The user corrects the summary.
+ 2. **Research.** For each choice, check on the web the latest version, maintenance activity, announced end of life and license of the candidates.
+-3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); durability (maturity, licenses, lock-in).
++3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); whether the language or its tooling imposes where unit and integration tests live, instead of the mirror tests folder of rule 12; durability (maturity, licenses, lock-in).
  4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-001: decision, constraints, options set aside and why, consequences.
  5. **Stack section.** Write the Stack section of AGENTS.md, each subsection as the template defines it, after validation.
 -6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command and the end-to-end test project. It goes through the whole workflow.
 +6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command. It goes through the whole workflow. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
  
- In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request.
+-In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request.
++In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request. If the unit and integration tests sit elsewhere than the mirror tests folder of rule 12 and the language imposes nothing, the Modules subsection states the mirror folder, and `BACKLOG.md` receives "Move the unit and integration tests into the mirror tests folder of each module". The same applies when the theme Stack is reviewed in update mode.
+ 
+ ### Existing code rules, in adoption mode
  
 @@ -72,10 +73,12 @@
  1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
@@ -795,16 +809,104 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  
  Rules for all the code of this repository. They take precedence over your general habits. If a request conflicts with them, report the conflict instead of deciding alone.
  
-@@ -147,7 +147,7 @@
+@@ -35,7 +35,7 @@
+ - **Entity**: a business object with an identity and a lifecycle, which protects its own invariants.
+ - **Value object**: an immutable business object defined by its values, which guarantees its own validity.
+ - **Use case**: a class that performs one action of the system. The use cases of a bounded context are its only public surface.
+-- **Orchestration use case**: a use case that chains use cases of several bounded contexts and passes each one the results of the previous ones.
++- **Orchestration use case**: a use case that performs a business workflow by chaining existing use cases of several bounded contexts.
+ - **Port**: an interface that declares what a use case needs from the outside: store, read a file, call a model.
+ - **Adapter**: a class that implements a port with a technology.
+ - **Entry point**: code of an application that receives a request from the outside (HTTP endpoint, IPC handler, CLI command, message consumer) and calls a use case.
+@@ -52,7 +52,7 @@
+ |---|---|
+ | Core module | nothing: no other module, no external dependency, no platform API |
+ | Adapter module | the core module of its bounded context, and the external dependencies and platform APIs of its technology |
+-| Orchestration module | core modules |
++| Orchestration module | the use cases of core modules, and the types of their inputs and outputs |
+ | Application | every module |
+ 
+ Inside a core module, the domain imports only the domain; the application layer imports the domain and the application layer.
+@@ -68,11 +68,17 @@
+ 3. **Entities have behavior.** State changes only through named business methods, never through setters. An entity reduced to data that use cases manipulate is forbidden.
+ 4. **A concept with a rule is a value object.** A business concept that carries a rule (validation, format, calculation, comparison) is a value object, not a primitive type. Example: `Amount`, not `number`.
+ 5. **Use cases receive their ports.** A use case receives its ports through its constructor and never instantiates an adapter.
+-6. **Bounded contexts are independent.** A bounded context never depends on another one. An action that concerns several bounded contexts is performed by an orchestration use case.
++6. **Bounded contexts are independent.** A module of a bounded context never depends on a module of another bounded context, and its domain never uses a type of another bounded context. A bounded context never knows which workflows use it. Reason: each bounded context must be able to change its model without breaking another one. An action that concerns several bounded contexts is performed by an orchestration use case (rule 7).
+ 
+ ### Orchestration
+ 
+-7. **An orchestration use case exists only for an action that concerns at least two bounded contexts.** It receives through its constructor the use cases it chains, and contains no business condition: decisions are taken by the use cases it calls, and it only passes their results along. Example: `PlaceOrder` calls `ReserveStock`, which returns the items actually reserved, then calls `IssueInvoice` with those items.
++7. **An orchestration use case composes existing use cases into a business workflow.** It exists only for an action that concerns at least two bounded contexts, and receives through its constructor the use cases it chains, nothing else. It does only the following:
++   - call the use cases in the order of the workflow;
++   - build the input of each use case from the outputs of the previous ones, only by copying values into the types of the next bounded context, without calculating anything;
++   - choose the next step from the outcome a use case returns (for example `StockReserved` or `OutOfStock`), never from business data;
++   - when a step fails, call the use cases that undo the steps already performed, then return the failure.
++
++   It never compares, calculates or validates business data. When a workflow needs a decision or an action that no existing use case provides, that use case is first added to the bounded context it belongs to, with its rule in the domain; the orchestration then calls it. Reason: a workflow must read as a sequence of business steps, and every business rule must stay in a domain, where it is tested. Example: `PlaceOrder` calls `ReserveStock`. If the outcome is `OutOfStock`, it calls `NotifyBackorder` and stops. If the outcome is `StockReserved`, it copies the reserved items into invoice lines and calls `IssueInvoice`. If `IssueInvoice` fails, it calls `ReleaseStock` with the reservation and returns the failure. `PlaceOrder` never checks whether the reserved items are enough to invoice: `invoice.issue()` refuses an invoice without lines.
+ 
+ ### Entry points and applications
+ 
+@@ -83,7 +89,7 @@
+ 
+ ### Tests
+ 
+-12. **The domain is tested without any adapter; a use case is tested with doubles of its ports; an orchestration use case is tested with doubles of the use cases it chains.** These unit and integration tests sit next to the code they test and are written by the developer.
++12. **The domain is tested without any adapter; a use case is tested with doubles of its ports; an orchestration use case is tested with doubles of the use cases it chains, including the outcome and the failure of each step.** These unit and integration tests are written by the developer. Each module and each application keeps them in a single tests folder, which mirrors the tree of its source folder: a test file has the relative path of the file it tests, with the test suffix of the ecosystem written in the Stack section. When the language or its tooling imposes where tests live, its convention applies instead, and the Stack section says so. Reason: production code stays free of tests, and the place of a test is known without searching.
+ 13. **End-to-end tests drive the launched application and import no code of the application.** They live in the end-to-end test project, `tests/e2e/`, and are written only by the tester, following the e2e-practice skill. The developer may run them, never modify them.
+ 
+ ## Naming
+@@ -147,9 +153,9 @@
  
  ## Stack section
  
 -The Stack section is written by the architect during /f3-init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
 +The Stack section is written by the architect during f3 init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
  
- 1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree.
+-1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree.
++1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree; where the unit and integration tests of a module and of an application live and their test suffix, or, when the language or its tooling imposes their place, that place and the reason.
  2. `### Dependency enforcement`: the tool that enforces the Dependencies table and the independence of bounded contexts, and how (tags, constraints, configuration file).
-@@ -216,5 +216,5 @@
+ 3. `### Entry points`: the kinds of entry points the applications expose, the transport of each one, and where they live.
+ 4. `### User interface`: if the product has an interface: how it is split (pages, view state, components shared or not), how it calls the entry points, and where each part lives. The name of a view in the design tool and in `ux.md` is the name of its unit of code. It also says where the design tokens live in the code and how a token of the design tool is named there, where the components of the design system live, and how the rule "appearance values come only from tokens" is enforced (for example a lint rule on the styles that forbids raw colors).
+@@ -172,19 +178,34 @@
+ ```
+ apps/
+ ├── api/                          application: HTTP server, entry points, composition root
+-│   └── src/
+-│       ├── endpoints/<bounded-context>/
+-│       └── composition-root/<bounded-context>.ts
++│   ├── src/
++│   │   ├── endpoints/<bounded-context>/
++│   │   └── composition-root/<bounded-context>.ts
++│   └── tests/                    mirror of src/
+ └── web/                          application: Angular interface served by api
++    ├── src/
++    └── tests/
+ libs/
+ ├── orchestration/                orchestration module
++│   ├── src/
++│   └── tests/
+ └── <bounded-context>/
+     ├── core/                     core module <bounded-context>-core
++    │   ├── src/
++    │   │   ├── domain/
++    │   │   └── application/
++    │   └── tests/
++    │       ├── domain/
++    │       └── application/
+     └── adapters-<technology>/    adapter module <bounded-context>-adapters-<technology>
++        ├── src/
++        └── tests/
+ tests/
+ └── e2e/                          end-to-end test project e2e
+ ```
+ 
++Unit and integration tests: the `tests/` folder of each project, which mirrors its `src/`, with the suffix `.spec.ts`. The test of `libs/billing/core/src/domain/invoice.ts` is `libs/billing/core/tests/domain/invoice.spec.ts`.
++
+ ### Dependency enforcement
+ 
+ Each project carries tags in its `project.json`: `type:core`, `type:adapters`, `type:orchestration`, `type:app`, `type:e2e`, and `bc:<bounded-context>` for libraries. The `@nx/enforce-module-boundaries` lint rule reproduces the Dependencies table between `type:*` tags and forbids a `bc:*` tag from depending on another `bc:*` tag.
+@@ -216,5 +237,5 @@
  
  ### Observing the running application
  
