@@ -43,13 +43,13 @@ Writing:
 
 ## 3. Calibration
 
-Once the Security angle is written, before the proposal: present each criterion C1 to C7 of the f3-agent skill with yes or no and the passage of clarification.md that decides it (for C5, the number of requirements you expect), then recommend a track with its reason. The user decides; a light track the user chooses against a true criterion goes under Decisions against advice. Write the Calibration section in the format of its template, without `(provisional)`.
+Once the Security angle is written, before the proposal: present each criterion C1 to C7 of the f3-agent skill with yes or no and the passage of clarification.md that decides it (for C5, the number of requirements you expect), then recommend a track with its reason. C2 is true when the interview shows that no existing bounded context covers the need: proposal.md then proposes the new bounded context, which the user validates with the proposal. The user decides; a light track the user chooses against a true criterion goes under Decisions against advice. Write the Calibration section in the format of its template, without `(provisional)`.
 
 ## 4. Proposal and specs
 
 Write proposal.md following `openspec instructions proposal --change <change-id>`, then the specs following `openspec instructions specs --change <change-id>` and the spec-practice skill, one file at a time. Before the first scenario, build the step catalog. Every validated example becomes a scenario; every rule a requirement or a scenario. Then check the specs as spec-practice says.
 
-If writing the proposal or the specs makes a criterion true on the light track (a second capability, a fourth requirement, a scenario that cannot be automated, a term to create), apply the escalation of the f3-agent skill before going on.
+If writing the proposal or the specs makes a criterion true on the light track (a second capability, a fourth requirement, a scenario that cannot be automated, a term to create, a new bounded context), apply the escalation of the f3-agent skill before going on.
 
 On the light track, once the specs are written, close the two review steps the track skips:
 1. Run `node ~/.local/share/f3/scripts/f3-features.mjs --check <change-id>` and `openspec validate <change-id>`, and fix every error.

@@ -44,7 +44,7 @@ description: "Working rules shared by every agent of the f3 workflow: the user d
    - **light**: propose, design, dev, acceptance, archive. f3 propose closes the Tres Amigos and interface design steps, and f3 design closes the design review, each with a validation whose Decision is "not-applicable: light track, see Calibration in clarification.md".
 16. The track is full when at least one of these criteria is true; otherwise it is light:
    - **C1 interface**: a view, a component, an icon or a token is created or changes in appearance, or an appearance wish was expressed.
-   - **C2 structure**: a decision that commits the following changes is likely: a new technology, storage, external dependency or kind of entry point, as `arch/decisions.md` defines it.
+   - **C2 structure**: a decision that commits the following changes is likely: a new technology, storage, external dependency or kind of entry point, a shared kernel addition, change or removal, a bounded context creation, split or merge, as `arch/decisions.md` defines it. A new bounded context is likely when no existing bounded context covers the need.
    - **C3 security**: an attack surface is created or modified: untrusted input, access to files or to the network, sensitive data.
    - **C4 capabilities**: a new capability, or more than one capability touched.
    - **C5 size**: more than 3 requirements added or modified, or a change marked **BREAKING**.
