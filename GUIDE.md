@@ -446,7 +446,7 @@ Why separate agents: a role shapes behavior. An agent called "architect" that le
 
 The tester's isolation is deliberate: it reads the specs, the feature files, the Stack section, the Test strategy of the design, the impact of `ux.md`, the views register, and the running application. What it does not know, it cannot use to make a test pass.
 
-Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent (the `deny-tools` list of its file) is removed from its tool list, which also saves context. Each agent also has a **permission table** (`<agent>.permission`, next to its file): the paths it may edit, and for the tester the paths it may read. What each tool enforces of it is in section 12.
+Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent (the `deny-tools` list of its file) is removed from its tool list, which also saves context. Each agent also has a **permission table** (`<agent>.permission`, next to its file): the paths it may edit, and for the tester the paths it may read. What each tool enforces of it is in section 12. The ux agent edits its own files (`ux/`, the ux files of a change, the conformity captures, `BACKLOG.md`) without the toolkit asking you each time; the files of an amendment (specs, proposal.md, tres-amigos.md, `tests/e2e/manual-scenarios.md`, `CONTEXT.md`) and tasks.md need your confirmation at each edit.
 
 ---
 

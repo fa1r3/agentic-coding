@@ -816,7 +816,30 @@ diff -ru a/openspec/skills/spec-practice/SKILL.md b/openspec/skills/spec-practic
 diff -ru a/ux/agents/ux.md b/ux/agents/ux.md
 --- a/ux/agents/ux.md
 +++ b/ux/agents/ux.md
-@@ -29,7 +29,7 @@
+@@ -3,7 +3,21 @@
+ description: "Art director and product designer. Sets the art direction and conducts the design work (brief, tokens, components, screens) following the ux-practice skill and the skill of the project's design tool, then checks that the implemented interface conforms to the design."
+ disallowedTools: Bash, mcp__playwright__*
+ f3-permission:
+-  edit: ask
++  edit:
++    "*": deny
++    "ux/*": allow
++    "ux/views.md": deny
++    "openspec/changes/*/ux.md": allow
++    "openspec/changes/*/ux-design.md": allow
++    "openspec/changes/*/validations/ux.md": allow
++    "openspec/changes/*/conformity/*": allow
++    "BACKLOG.md": allow
++    "openspec/changes/*/tasks.md": ask
++    "openspec/changes/*/specs/*": ask
++    "openspec/changes/*/proposal.md": ask
++    "openspec/changes/*/tres-amigos.md": ask
++    "tests/e2e/manual-scenarios.md": ask
++    "CONTEXT.md": ask
+ hooks:
+   PreToolUse:
+     - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
+@@ -29,7 +43,7 @@
  | File | When |
  |---|---|
  | `ux/`, except `ux/views.md` | the design commands |

@@ -1,1 +1,15 @@
-edit: ask
+edit:
+  "*": deny
+  "ux/*": allow
+  "ux/views.md": deny
+  "openspec/changes/*/ux.md": allow
+  "openspec/changes/*/ux-design.md": allow
+  "openspec/changes/*/validations/ux.md": allow
+  "openspec/changes/*/conformity/*": allow
+  "BACKLOG.md": allow
+  "openspec/changes/*/tasks.md": ask
+  "openspec/changes/*/specs/*": ask
+  "openspec/changes/*/proposal.md": ask
+  "openspec/changes/*/tres-amigos.md": ask
+  "tests/e2e/manual-scenarios.md": ask
+  "CONTEXT.md": ask
