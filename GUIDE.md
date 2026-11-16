@@ -4,7 +4,7 @@ This guide explains what the agentic-toolkit does, why it is built the way it is
 
 The toolkit runs under **Claude Code** or **OpenCode**, as you choose for each project. The workflow is the same under both; where a tool behaves differently, a note marked **Claude Code.** or **OpenCode.** says how.
 
-All the examples use a fictional invoicing product: accountants who issue invoices to customers. It is unrelated to any real project, and its names only illustrate a form.
+All the examples use a fictional invoicing product: accountants who issue invoices to customers. The examples of `AGENTS.md` add ordering and inventory to it, since its rules between bounded contexts need several of them. It is unrelated to any real project, and its names only illustrate a form.
 
 ## Contents
 
@@ -335,9 +335,16 @@ Each warning tells you to run `f3 init`, theme Tools (step 0).
 
 ### 5.2 The two parts of AGENTS.md
 
-The **invariant part** is identical in every project. It states the architecture style (bounded contexts, a core module per bounded context that knows no technology, adapters behind ports, entry points that call exactly one use case, a composition root) and the standards (naming, single verification command, test responsibilities, Git). For example, its rule 11:
+The **invariant part** is identical in every project. It states the architecture style (bounded contexts, a core module per bounded context that knows no technology, adapters behind ports, entry points that call exactly one use case, a composition root) and the standards (naming, single verification command, test responsibilities, Git). For example, its rule 12:
 
 > **Domain identity at the boundaries.** Outside the adapters that store or read it, a business object is always designated by its domain identity. A technical identifier never crosses a port, an entry point or an output contract. [...] Example: an invoice attachment is read through `GET /invoices/{invoiceId}/attachment`, never through `?path=...`.
+
+It also says what may be shared between bounded contexts, and only that (rule 8):
+
+- a **technical library** serves the code that uses one technology (database transactions, event bus, HTTP client, file storage), one per technology, plus its test library if its users need one. It carries no domain type and names no bounded context. It is created when a change needs it, never in advance: the design of that change plans the extraction as a decision and a task, which the design review checks;
+- the **shared kernel** holds the value objects and enumerations that at least two bounded contexts use with the same meaning and that no bounded context owns (`Currency`, defined by ISO 4217), and the language utilities without business meaning that several core modules need. The question that decides is "who would decide a change of this type?": nobody in the product, the shared kernel; one bounded context, it stays there and an orchestration use case copies its value; several together, a bounded context is missing or a boundary is misplaced. Each addition, change or removal is proposed to you and recorded in `arch/decisions.md`, as are the creation, split or merge of a bounded context.
+
+Where these modules live, and how the dependency tool tells them apart, is said by the Stack section.
 
 The **Stack section** is written for the project during `f3 init`, from the stack decision. It answers fixed questions in fixed subsections, and the commands of the workflow refer to them by name:
 
@@ -387,7 +394,7 @@ These files outlive every change. They are read at the start of a step and enric
 | `openspec/specs/` | the current behavior of the product | OpenSpec, when `f3 archive` merges the delta specs | everyone | the reference every new change is compared with |
 | `CONTEXT.md` | the vocabulary (see 5.1) | the analyst, during `f3 propose` and Tres Amigos | every agent | one concept, one name |
 | `BACKLOG.md` | the ideas not planned yet, in priority order (section 11) | the agent that finds an idea, with your agreement; `f3 propose` sorts it | `f3 propose` | staying focused never loses an idea |
-| `arch/decisions.md` | the structural decisions, with their reasons and the options set aside | the architect, during `f3 init` and `f3 design` | the architect, the design review | a choice is not reopened by accident, and its reason survives |
+| `arch/decisions.md` | the structural decisions, with their reasons and the options set aside | the architect, during `f3 init` and `f3 design` | the architect, the design review | a choice is not reopened by accident, and its reason survives; each type of the shared kernel and each bounded context has its decision |
 | `ux/brief.md` | the art direction | the ux agent, during `f3 ux-direction` | the ux agent | every screen follows one direction |
 | `ux/decisions.md` | the design decisions that hold for the whole product | the architect, when `f3 archive` takes them from `ux.md` | the ux agent | a choice made in one change applies to the next ones |
 | `ux/cookbook.md` | the verified recipes for the design tool | the ux agent, during `f3 ux-calibrate` and any work in the tool | the ux agent | the agent does not rediscover the tool's API in every session |
@@ -430,7 +437,7 @@ The toolkit, its templates and every **stable keyword** are in English: headings
 | **analyst** | what the product does: needs, scope, vocabulary, behavior, examples | the clarification, the proposal, the specs and the Tres Amigos record of a change, `CONTEXT.md`, `BACKLOG.md`, and, for your decisions in Tres Amigos, `tests/e2e/manual-scenarios.md` | code, design, tasks, other test files |
 | **architect** | how the product is built: framing, stack, technical design, tasks, archiving | `AGENTS.md`, `openspec/config.yaml`, `arch/`, design.md, tasks.md, the design review, `ux/decisions.md` when archiving, amendments of the specs you validate | code, tests |
 | **ux** | how the product looks: art direction, tokens, components, screens, conformity | `ux/` (except `ux/views.md`), the ux files of a change, the design tool, amendments of the specs you validate | code, configuration |
-| **developer** | the application code and its unit and integration tests | code, tests next to the code, `ux/views.md`, checkboxes of tasks.md | end-to-end tests, specs, design, framing files |
+| **developer** | the application code and its unit and integration tests | code, tests in the mirror tests folder of each module, `ux/views.md`, checkboxes of tasks.md | end-to-end tests, specs, design, framing files |
 | **tester** | proving each scenario on the launched application | `tests/e2e/`, acceptance reports, fix tickets, backlog entries, amendments of the specs you validate | application code; it does not even read it, nor the mockups |
 
 Every agent loads the f3-agent skill at startup: the rules they all share (the user decides, one question at a time, a validated decision written at once, the frame check, the tracks of a change and their criteria, the language). An agent's file only holds its role and its **writing scope table**; a command says what its step produces, never what may be written. An agent asked to write outside its table stops and says so.
@@ -439,7 +446,7 @@ Why separate agents: a role shapes behavior. An agent called "architect" that le
 
 The tester's isolation is deliberate: it reads the specs, the feature files, the Stack section, the Test strategy of the design, the impact of `ux.md`, the views register, and the running application. What it does not know, it cannot use to make a test pass.
 
-Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent (the `deny-tools` list of its file) is removed from its tool list, which also saves context. Each agent also has a **permission table** (`<agent>.permission`, next to its file): the paths it may edit, and for the tester the paths it may read. What each tool enforces of it is in section 12.
+Each agent also only sees the MCP tools it needs: the analyst has no browser and no design tool; the tester has the browser but not the design tool. A tool denied to an agent (the `deny-tools` list of its file) is removed from its tool list, which also saves context. Each agent also has a **permission table** (`<agent>.permission`, next to its file): the paths it may edit, and for the tester the paths it may read. What each tool enforces of it is in section 12. The ux agent edits its own files (`ux/`, the ux files of a change, the conformity captures, `BACKLOG.md`) without the toolkit asking you each time; the files of an amendment (specs, proposal.md, tres-amigos.md, `tests/e2e/manual-scenarios.md`, `CONTEXT.md`) and tasks.md need your confirmation at each edit.
 
 ---
 
@@ -490,7 +497,7 @@ per change (light)    f3 propose          clarification, calibration, specs,  an
 | # | Criterion | The step it calls for |
 |---|---|---|
 | C1 | A view, component, icon or token created or changed in appearance, or an appearance wish | interface design, conformity |
-| C2 | A likely decision that commits the following changes (technology, storage, external dependency, kind of entry point) | design review |
+| C2 | A likely decision that commits the following changes (technology, storage, external dependency, kind of entry point, shared kernel addition, change or removal, bounded context creation, split or merge) | design review |
 | C3 | An attack surface created or modified: untrusted input, files, network, sensitive data | Tres Amigos, design review |
 | C4 | A new capability, or more than one capability touched | Tres Amigos |
 | C5 | More than 3 requirements added or modified, or a BREAKING change | Tres Amigos |
@@ -676,7 +683,7 @@ The developer writes it, in the commit that creates, renames or removes a view o
 - **Volumetry**: the volumes of the context that concern the change, and their consequences (pagination, background processing, indexes);
 - **Test strategy**: the unit and integration tests per part of the code; the capabilities whose scenarios change; the **test entry points** the application must provide to be driven end to end (test mode, test data, replacement of native dialogs, simulated clock or external services), knowing that a test entry point never changes how a processing of the application runs; and, for each manual scenario of the change, the unit or integration tests of its replacement coverage.
 
-A decision that commits the following changes (new technology, new storage) is proposed to you and recorded in `arch/decisions.md`. If writing the design shows that a spec is missing, ambiguous or contradictory, the architect proposes an amendment (section 13).
+A decision that commits the following changes (new technology, new storage, shared kernel type, new bounded context) is proposed to you and recorded in `arch/decisions.md`. If writing the design shows that a spec is missing, ambiguous or contradictory, the architect proposes an amendment (section 13).
 
 **tasks.md** follows strict rules:
 - tasks are split by **functional slice**, never by technical layer: each group delivers scenarios end to end, from storage to screen, with its own unit and integration tests;
@@ -684,12 +691,13 @@ A decision that commits the following changes (new technology, new storage) is p
 - the first group builds what the tests need before any scenario: the views register if it is missing or incomplete, then the test entry points;
 - if the Interface section lists tokens, one task carries them over into the code before the views that use them;
 - a task on a view or a component ends with `Screens:` and the screens to open;
+- each creation of a technical library or of the shared kernel, and each move of code into one, is a task of its own; a new bounded context is a task that creates its modules and updates the configuration of the dependency tool;
 - no task writes in `tests/e2e/`, the end-to-end test project and its configuration included: the tester writes them; a task may add what the application needs to be tested, such as the script that starts it in test mode;
 - the last group, **Verification**, runs the verification command.
 
 Why functional slices: a component built and unit-tested in one group and never wired into a page in another is a classic agent failure. A slice is only done when the scenario works from end to end.
 
-**On the light track.** Before recording a decision in `arch/decisions.md`, or when the design opens an attack surface, the architect proposes the escalation to the full track (section 7). Once you have accepted design.md and tasks.md, it checks the traceability itself: each scenario of the change delivered by exactly one group, no task that serves no scenario, the test entry points present, no task in `tests/e2e/`. It then writes `validations/review.md` as not-applicable, and the next step is `f3 dev`.
+**On the light track.** Before recording a decision in `arch/decisions.md`, or when the design opens an attack surface, the architect proposes the escalation to the full track (section 7). Once you have accepted design.md and tasks.md, it checks the traceability itself: each scenario of the change delivered by exactly one group, no task that serves no scenario, the test entry points present, no task in `tests/e2e/`; a library created only for a need of the change, without domain type or bounded context name; and whether the change rewrites something that already exists elsewhere. It then writes `validations/review.md` as not-applicable, and the next step is `f3 dev`.
 
 ### Step 5: the design review (`f3 design-review <change-id>`)
 
@@ -701,7 +709,7 @@ Why functional slices: a component built and unit-tested in one group and never 
 
 | Member | Viewpoint |
 |---|---|
-| Architect | compliance with AGENTS.md and `arch/decisions.md`, consistency with existing code, volumetry, unjustified choices |
+| Architect | compliance with AGENTS.md and `arch/decisions.md`, consistency with existing code, whether the change rewrites something that already exists elsewhere (technical library, shared kernel, another bounded context), volumetry, unjustified choices |
 | Technical security | attack surfaces, input validation, isolation, secrets, test entry points active outside test mode |
 | Product | traceability: each scenario delivered by exactly one group, tasks that serve no scenario, view names, `Screens:` lines, test entry points present |
 
@@ -1274,7 +1282,7 @@ Commands find their way in files through stable keywords; those never change. Th
 No. The agent of the current step proposes an amendment, you validate its exact text, and the work goes on (section 13). A new Tres Amigos session is only for what you want reviewed again by the four viewpoints.
 
 **Where do I put a technical decision?**
-In the design.md of the change. If it commits the following changes (a new technology, a new storage), it also goes into `arch/decisions.md`, with its reasons and the options set aside.
+In the design.md of the change. If it commits the following changes (a new technology, a new storage, a shared kernel type, a new bounded context), it also goes into `arch/decisions.md`, with its reasons and the options set aside.
 
 **What if the agent and I disagree?**
 It says it once, with its reason. You decide. It records your decision and does not come back to it.

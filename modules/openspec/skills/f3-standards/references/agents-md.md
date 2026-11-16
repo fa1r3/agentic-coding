@@ -4,7 +4,7 @@
 
 1. **The invariant part**: the exact copy of the block below. It is identical in every project and is never adapted to the stack or to the product.
 2. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
-3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (14, 15, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
+3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (15, 16, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
 
 A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written.
 
@@ -17,7 +17,7 @@ A rule belongs to the invariant part when it follows from the architecture style
 
 Rules for all the code of this repository. They take precedence over your general habits. If a request conflicts with them, report the conflict instead of deciding alone.
 
-Examples in this file use a fictional invoicing domain, unrelated to the product. Their names illustrate a form and are never to be reused.
+Examples in this file use a fictional sales and invoicing domain (ordering, inventory, billing), unrelated to the product. Their names illustrate a form and are never to be reused.
 
 ## Vocabulary
 
@@ -29,13 +29,17 @@ This section defines the architecture vocabulary. The business vocabulary is def
 - **Adapter module**: a module that implements the ports of one bounded context with one technology.
 - **Orchestration module**: the module that holds the orchestration use cases.
 - **Application**: a deployable unit. It hosts the entry points and the composition root.
-- **Technology**: what an adapter depends on: database, framework, SDK, file system, runtime.
+- **Shared kernel**: the only module shared by several bounded contexts for their domain: value objects and enumerations that at least two bounded contexts use with the same meaning and that no bounded context owns, and language utilities without business meaning that several core modules need (for example a result type). Each addition, change or removal is recorded in `arch/decisions.md`. It depends on nothing.
+- **Technical library**: a module that serves the code using one technology (adapters, other technical libraries, applications), for example database transactions, event bus, HTTP client or file storage, and carries no domain type. It never names a bounded context.
+- **Test library**: a technical library used only by tests. It accompanies a technical library or a technology, and is named as the Modules subsection says.
+- **Technology**: what an adapter or a technical library depends on: database, framework, SDK, file system, runtime.
 - **External dependency**: a package installed from a package registry.
 - **Platform API**: an API provided by a runtime rather than by the language (for example the built-in modules of a runtime, or the APIs of a browser or a desktop shell).
 - **Entity**: a business object with an identity and a lifecycle, which protects its own invariants.
 - **Value object**: an immutable business object defined by its values, which guarantees its own validity.
+- **Domain type**: a type defined by a core module, in its domain or its application layer, or by the shared kernel.
 - **Use case**: a class that performs one action of the system. The use cases of a bounded context are its only public surface.
-- **Orchestration use case**: a use case that chains use cases of several bounded contexts and passes each one the results of the previous ones.
+- **Orchestration use case**: a use case that performs a business workflow by chaining existing use cases of several bounded contexts.
 - **Port**: an interface that declares what a use case needs from the outside: store, read a file, call a model.
 - **Adapter**: a class that implements a port with a technology.
 - **Entry point**: code of an application that receives a request from the outside (HTTP endpoint, IPC handler, CLI command, message consumer) and calls a use case.
@@ -50,41 +54,54 @@ The word "domain" alone means the domain layer, never a bounded context.
 
 | Module | May depend on |
 |---|---|
-| Core module | nothing: no other module, no external dependency, no platform API |
-| Adapter module | the core module of its bounded context, and the external dependencies and platform APIs of its technology |
-| Orchestration module | core modules |
-| Application | every module |
+| Core module | the shared kernel; nothing else: no other module, no external dependency, no platform API |
+| Adapter module | the core module of its bounded context, the shared kernel, technical libraries other than test libraries, and the external dependencies and platform APIs of its technology |
+| Orchestration module | the use cases of core modules, the types of their inputs and outputs, and the shared kernel |
+| Shared kernel | nothing |
+| Technical library | other technical libraries other than test libraries, and the external dependencies and platform APIs of its technology |
+| Application | every module except test libraries |
 
-Inside a core module, the domain imports only the domain; the application layer imports the domain and the application layer.
-A module never depends on a module of another bounded context.
+Inside a core module, the domain imports only the domain and the shared kernel; the application layer imports the domain, the shared kernel and the application layer.
+The tests of adapter modules, technical libraries and applications may also depend on test libraries, except the tests of the library a test library accompanies; production code and the tests of core modules, of the shared kernel and of the orchestration module never do, nor do end-to-end tests.
+A module never depends on a module of another bounded context; the orchestration module, the shared kernel and technical libraries belong to none.
 These rules are enforced by the tool named in the Stack section: a violation makes the verification command fail.
 
 ## Rules
 
 ### Domain and use cases
 
-1. **The core knows no technology.** A core module uses only the language itself: no framework, no annotation or decorator from a framework, no external dependency, no platform API. Reason: the domain must be readable, testable and movable without any technology.
+1. **The core knows no technology.** A core module uses only the language itself and the shared kernel: no framework, no annotation or decorator from a framework, no external dependency, no platform API. Reason: the domain must be readable, testable and movable without any technology.
 2. **Business decisions live in the domain.** Every condition that depends on business state is a method of an entity or a value object. A use case loads objects through its ports, calls their methods, then stores them through its ports; it contains no condition on business data. Example: `invoice.issue()` refuses to issue a draft with an empty line; `IssueInvoice` never checks the lines itself.
 3. **Entities have behavior.** State changes only through named business methods, never through setters. An entity reduced to data that use cases manipulate is forbidden.
 4. **A concept with a rule is a value object.** A business concept that carries a rule (validation, format, calculation, comparison) is a value object, not a primitive type. Example: `Amount`, not `number`.
 5. **Use cases receive their ports.** A use case receives its ports through its constructor and never instantiates an adapter.
-6. **Bounded contexts are independent.** A bounded context never depends on another one. An action that concerns several bounded contexts is performed by an orchestration use case.
+6. **Bounded contexts are independent.** A module of a bounded context never depends on a module of another bounded context, and its domain never uses a type of another bounded context; the types of the shared kernel belong to no bounded context. A bounded context never knows which workflows use it. Reason: each bounded context must be able to change its model without breaking another one. An action that concerns several bounded contexts is performed by an orchestration use case (rule 7).
 
 ### Orchestration
 
-7. **An orchestration use case exists only for an action that concerns at least two bounded contexts.** It receives through its constructor the use cases it chains, and contains no business condition: decisions are taken by the use cases it calls, and it only passes their results along. Example: `PlaceOrder` calls `ReserveStock`, which returns the items actually reserved, then calls `IssueInvoice` with those items.
+7. **An orchestration use case composes existing use cases into a business workflow.** It exists only for an action that concerns at least two bounded contexts, and receives through its constructor the use cases it chains, nothing else. It does only the following:
+   - call the use cases in the order of the workflow;
+   - build the input of each use case from the outputs of the previous ones, only by copying values into the types of the next bounded context, or by passing a value of the shared kernel as is, without calculating anything;
+   - choose the next step from the outcome a use case returns (for example `StockReserved` or `OutOfStock`), never from business data;
+   - when a step fails, call the use cases that undo the steps already performed, then return the failure.
+
+   It never compares, calculates or validates business data. When a workflow needs a decision or an action that no existing use case provides, that use case is first added to the bounded context it belongs to, with its rule in the domain; the orchestration then calls it. Reason: a workflow must read as a sequence of business steps, and every business rule must stay in a domain, where it is tested. Example: `PlaceOrder` calls `ReserveStock`. If the outcome is `OutOfStock`, it calls `NotifyBackorder` and stops. If the outcome is `StockReserved`, it copies the reserved items into invoice lines and calls `IssueInvoice`. If `IssueInvoice` fails, it calls `ReleaseStock` with the reservation and returns the failure. `PlaceOrder` never checks whether the reserved items are enough to invoice: `invoice.issue()` refuses an invoice without lines.
+
+### Shared modules
+
+8. **Only the shared kernel and technical libraries are shared.** A technical library serves the code that uses one technology: one library per technology, plus its test library if its users need one. It is created when a change needs it, never in advance: when a module needs technical code already written in another module, the design of the change moves that code to the technical library of its technology, as a task. Never create a library, move code into one or add to the shared kernel outside a task: stop and report the need. A technical library carries no domain type and never names a bounded context. A technical platform (search index, mail sending, file storage) is a technical library that adapters use; it never defines an interface for bounded contexts to implement. A type enters the shared kernel only when at least two bounded contexts use it with the same meaning and no bounded context owns it, or when it is a language utility without business meaning that several core modules need; the shared kernel module is created by the change that makes its first addition. Adding, changing or removing a type of the shared kernel is proposed to the user, who decides, and recorded in `arch/decisions.md`; so is creating, splitting or merging a bounded context. A type that one bounded context owns stays in it, and an orchestration use case copies its value into the types of the others; a type that several bounded contexts would change together reveals a missing bounded context or a misplaced boundary. Before writing technical code or a domain type, look for what already exists at the locations the Modules subsection of the Stack section names, and in the other bounded contexts. Example: `Currency` is in the shared kernel because ordering and billing use it with the same meaning, and ISO 4217, not the product, defines it; `Sku` stays in inventory, which defines its format; the transaction handling of a database is in the technical library of that database.
 
 ### Entry points and applications
 
-8. **An application contains no business rule.**
-9. **An entry point does three things, in this order:** it translates its input contract into domain types, calls exactly one use case (a core use case if the action concerns one bounded context, otherwise an orchestration use case) received from the composition root, and translates the result or the error into its output contract. A domain object is never returned as is.
-10. **Only the composition root instantiates adapters and use cases.** Anywhere else, an adapter or a use case is received, never created.
-11. **Domain identity at the boundaries.** Outside the adapters that store or read it, a business object is always designated by its domain identity. A technical identifier never crosses a port, an entry point or an output contract. It enters the system only when the outside introduces a new resource, through a dedicated entry point that converts it at once into a domain identity; the adapter that needs it then finds it from that identity. Reason: a technical identifier in a contract couples the callers to an adapter, and lets a caller designate a resource the system does not manage. Example: an invoice attachment is read through `GET /invoices/{invoiceId}/attachment`, never through `?path=...`; only the upload entry point receives the file, and it returns the identity of the attachment.
+9. **An application contains no business rule.**
+10. **An entry point does three things, in this order:** it translates its input contract into domain types, calls exactly one use case (a core use case if the action concerns one bounded context, otherwise an orchestration use case) received from the composition root, and translates the result or the error into its output contract. A domain object is never returned as is.
+11. **Only the composition root instantiates adapters and use cases.** Anywhere else, an adapter or a use case is received, never created.
+12. **Domain identity at the boundaries.** Outside the adapters that store or read it, a business object is always designated by its domain identity. A technical identifier never crosses a port, an entry point or an output contract. It enters the system only when the outside introduces a new resource, through a dedicated entry point that converts it at once into a domain identity; the adapter that needs it then finds it from that identity. Reason: a technical identifier in a contract couples the callers to an adapter, and lets a caller designate a resource the system does not manage. Example: an invoice attachment is read through `GET /invoices/{invoiceId}/attachment`, never through `?path=...`; only the upload entry point receives the file, and it returns the identity of the attachment.
 
 ### Tests
 
-12. **The domain is tested without any adapter; a use case is tested with doubles of its ports; an orchestration use case is tested with doubles of the use cases it chains.** These unit and integration tests sit next to the code they test and are written by the developer.
-13. **End-to-end tests drive the launched application and import no code of the application.** They live in the end-to-end test project, `tests/e2e/`, and are written only by the tester, following the e2e-practice skill. The developer may run them, never modify them.
+13. **The domain is tested without any adapter; a use case is tested with doubles of its ports; an orchestration use case is tested with doubles of the use cases it chains, including the outcome and the failure of each step.** These unit and integration tests are written by the developer. Each module and each application keeps them in a single tests folder, which mirrors the tree of its source folder: a test file has the relative path of the file it tests, with the test suffix of the ecosystem written in the Stack section. When the language or its tooling imposes where tests live, its convention applies instead, and the Stack section says so. Reason: production code stays free of tests, and the place of a test is known without searching. The shared kernel is tested like a domain, without any adapter; a technical library is tested against its technology.
+14. **End-to-end tests drive the launched application and import no code of the application.** Every module of the repository, shared modules included, is code of the application. They live in the end-to-end test project, `tests/e2e/`, and are written only by the tester, following the e2e-practice skill. The developer may run them, never modify them.
 
 ## Naming
 
@@ -149,8 +166,8 @@ Angle brackets in the Git section (`<type>`, `<scope>`, `<summary>`, `<body>`, `
 
 The Stack section is written by the architect during f3 init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
 
-1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree.
-2. `### Dependency enforcement`: the tool that enforces the Dependencies table and the independence of bounded contexts, and how (tags, constraints, configuration file).
+1. `### Modules`: the concrete form of a module; how each kind of module (core, adapter, orchestration, application, end-to-end test project) is named and where it lives, as a directory tree; where the shared kernel, technical libraries and test libraries live, and how a test library is named; where the unit and integration tests of a module and of an application live and their test suffix, or, when the language or its tooling imposes their place, that place and the reason.
+2. `### Dependency enforcement`: the tool that enforces the Dependencies table and the independence of bounded contexts, and how (tags, constraints, configuration file); how the tool tells apart the shared kernel, technical libraries and test libraries; how it lets the modules of a bounded context depend on the shared kernel; how it keeps test libraries out of production code and out of the tests that may not use them, or which check the verification command adds where the tool cannot; what changes in its configuration when a bounded context is created.
 3. `### Entry points`: the kinds of entry points the applications expose, the transport of each one, and where they live.
 4. `### User interface`: if the product has an interface: how it is split (pages, view state, components shared or not), how it calls the entry points, and where each part lives. The name of a view in the design tool and in `ux.md` is the name of its unit of code. It also says where the design tokens live in the code and how a token of the design tool is named there, where the components of the design system live, and how the rule "appearance values come only from tokens" is enforced (for example a lint rule on the styles that forbids raw colors).
 5. `### Transport security`: the security rules that follow from the chosen transports (listening address, authentication between the interface and the entry points, isolation of processes).
@@ -160,7 +177,7 @@ The Stack section is written by the architect during f3 init, from the stack dec
 
 ## Example of a Stack section
 
-Fictional invoicing product: not to be reused.
+Fictional sales and invoicing product: not to be reused.
 
 ~~~~markdown
 ## Stack
@@ -172,22 +189,46 @@ TypeScript monorepo in an Nx workspace. A module is an Nx project.
 ```
 apps/
 ├── api/                          application: HTTP server, entry points, composition root
-│   └── src/
-│       ├── endpoints/<bounded-context>/
-│       └── composition-root/<bounded-context>.ts
+│   ├── src/
+│   │   ├── endpoints/<bounded-context>/
+│   │   └── composition-root/<bounded-context>.ts
+│   └── tests/                    mirror of src/
 └── web/                          application: Angular interface served by api
+    ├── src/
+    └── tests/
 libs/
+├── shared-kernel/                shared kernel, created by its first addition
+│   ├── src/
+│   └── tests/
+├── technical/
+│   ├── <technology>/             technical library <technology>, created when a change needs it
+│   │   ├── src/
+│   │   └── tests/
+│   └── <technology>-testing/     test library of <technology>
+│       └── src/
 ├── orchestration/                orchestration module
+│   ├── src/
+│   └── tests/
 └── <bounded-context>/
     ├── core/                     core module <bounded-context>-core
+    │   ├── src/
+    │   │   ├── domain/
+    │   │   └── application/
+    │   └── tests/
+    │       ├── domain/
+    │       └── application/
     └── adapters-<technology>/    adapter module <bounded-context>-adapters-<technology>
+        ├── src/
+        └── tests/
 tests/
 └── e2e/                          end-to-end test project e2e
 ```
 
+Unit and integration tests: the `tests/` folder of each project, which mirrors its `src/`, with the suffix `.spec.ts`. The test of `libs/billing/core/src/domain/invoice.ts` is `libs/billing/core/tests/domain/invoice.spec.ts`.
+
 ### Dependency enforcement
 
-Each project carries tags in its `project.json`: `type:core`, `type:adapters`, `type:orchestration`, `type:app`, `type:e2e`, and `bc:<bounded-context>` for libraries. The `@nx/enforce-module-boundaries` lint rule reproduces the Dependencies table between `type:*` tags and forbids a `bc:*` tag from depending on another `bc:*` tag.
+Each project carries tags in its `project.json`: `type:core`, `type:adapters`, `type:orchestration`, `type:shared-kernel`, `type:technical`, `type:app`, `type:e2e`, `scope:test` for a test library besides `type:technical`, and `bc:<bounded-context>` for the modules of a bounded context. The `@nx/enforce-module-boundaries` lint rule reproduces the Dependencies table between `type:*` tags, with one constraint per `bc:*` tag that allows only the same `bc:*` tag and `type:shared-kernel`, and `notDependOnLibsWithTags: ["scope:test"]` for every project. An ESLint override on the `tests/` folders of `type:adapters`, `type:technical` and `type:app` projects repeats every constraint and lifts only the `scope:test` ban; `tests/e2e/` is outside its pattern. Creating a bounded context adds its `bc:*` constraint to the lint configuration.
 
 ### Entry points
 
