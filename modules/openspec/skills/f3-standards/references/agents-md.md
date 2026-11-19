@@ -1,12 +1,13 @@
 # AGENTS.md template
 
-`AGENTS.md` of an f3 project has three parts, in this order:
+`AGENTS.md` of an f3 project has four parts, in this order:
 
 1. **The invariant part**: the exact copy of the block below. It is identical in every project and is never adapted to the stack or to the product.
-2. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
-3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (15, 16, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
+2. **The Adopted practices section**: `## Adopted practices`, written only by `f3 practices apply` during f3 init, from the practices catalog of the toolkit (section below). Projects framed before the catalog have none.
+3. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
+4. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (15, 16, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
 
-A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written.
+A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Adopted practices section when a practice of the catalog states it. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written; if a practice of the catalog states it, that practice is adopted rather than the rule rewritten.
 
 ## Invariant part
 
@@ -161,6 +162,26 @@ customer receives it as soon as the order is confirmed.
 ~~~~
 
 Angle brackets in the Git section (`<type>`, `<scope>`, `<summary>`, `<body>`, `<footer>`, `<change-id>`) are part of the format description and stay as they are.
+
+## Adopted practices section
+
+Written by `f3 practices apply`, never by hand, just before the Stack section:
+
+~~~markdown
+## Adopted practices
+
+<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, practice-angular@1.0.0 -->
+
+### Frontend architecture (FA)
+
+FA-1. **A view owns the state of its screen.** …
+~~~
+
+- The marker lists the archetype and the recipe of the framing, then each adopted entry with its version; the rules entries carry the fingerprint of the text written, which tells whether it was modified by hand. f3 init reads it to propose the updates of the catalog.
+- Each rules entry is a sub-section titled with its code; its rules are numbered with that code (`FA-1`, `FA-2`…), and a rule is cited by that number (`rule FA-3`). A number removed by a new version of the entry is never given again. The numbering of the invariant part and of the project-specific rules does not depend on this section.
+- The text of a practice is never adapted: an adaptation to the product is a project-specific rule.
+- When no practice is adopted, the section holds the marker and the line "No practice of the f3 catalog is adopted."
+- A practice skill (`.claude/skills/practice-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
 
 ## Stack section
 

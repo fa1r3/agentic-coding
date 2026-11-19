@@ -19,7 +19,7 @@ import { tmpdir } from 'node:os';
 import { LAUNCH_FILE, LAUNCH_PREFIX, LOCAL, LaunchError, readLocal } from './launch.mjs';
 import { render } from './render.mjs';
 import { PROJECT_FILES, localIgnored, missingFiles, projectTools, toolWarnings } from './project.mjs';
-import { PRACTICES_DIR, PRACTICES_LINK, SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
+import { PRACTICES_DIR, SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
 import { loadCatalog, validateCatalog } from './practices.mjs';
 
 class StateError extends Error {}
@@ -159,16 +159,15 @@ function renderTools(tools, renderTool) {
 }
 
 // The archetypes of the practices catalog, for the Project type phase of f3 init (D20): the agent reads
-// the body of an entry under the link of install.sh, or in the toolkit without it.
+// an entry with f3 practices show, the catalog being outside the project (D28).
 function practicesCatalog() {
   if (!existsSync(PRACTICES_DIR)) return [block('Practices catalog', [], 'absent from the toolkit')];
   const catalog = loadCatalog(PRACTICES_DIR);
   const errors = validateCatalog(catalog);
   if (errors.length) return [block('Practices catalog: invalid, f3 practices refuses it', errors.slice(0, 10))];
-  const where = existsSync(PRACTICES_LINK) ? PRACTICES_LINK : PRACTICES_DIR;
   const archetypes = [...catalog.entries.values()].filter((e) => e.kind === 'archetype').sort((a, b) => a.id.localeCompare(b.id));
   return [
-    `- Practices catalog: ${where}; entry of an archetype: archetypes/<id>/ENTRY.md`,
+    '- Practices catalog: read an entry with f3 practices show <id>',
     block('Archetypes', archetypes.map((e) => `${e.id}@${e.version}${e.status === 'draft' ? ' (draft: not available)' : ''}: ${e.summary}`)),
   ];
 }

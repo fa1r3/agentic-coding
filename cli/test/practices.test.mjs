@@ -237,6 +237,11 @@ test('apply writes the section before the Stack section, the marker, the skills,
   const none = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
   assert.match(none, /<!-- f3 practices: archetype:web-app@1\.0\.0 -->\n\nNo practice of the f3 catalog is adopted\.\n\n## Stack/);
   assert.ok(!existsSync(join(dir, '.claude/skills/practice-ng')));
+  // Without an archetype either, the marker says none.
+  assert.equal(cmd(['apply', '--archetype', 'none'], { root, projectDir: dir }).code, 0);
+  const empty = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
+  assert.match(empty, /<!-- f3 practices: none -->/);
+  assert.deepEqual(readMarker(empty), []);
 });
 
 test('apply keeps the text modified by hand unless --force names it', () => {
@@ -271,7 +276,29 @@ test('apply refuses without AGENTS.md or its Stack section, and with an invalid 
   assert.match(r.err, /the practices catalog is invalid/);
 });
 
+test('show prints entries with their header and body, and the other files of a skill (D28)', () => {
+  const { root } = mini();
+  const r = cmd(['show', 'frontend', 'practice-ng'], { root });
+  assert.equal(r.code, 0, r.err);
+  assert.match(r.out, /^=== rules\/frontend\/ENTRY\.md\n---\nid: frontend\n[\s\S]*FE-2\. \*\*Components display\.\*\* Reason: reuse\.\n\n=== skills\/practice-ng\/SKILL\.md\n/);
+  assert.match(r.out, /Use signals\.\n\(other files of the skill: references\/more\.md\)\n$/);
+  assert.match(cmd(['show', 'nope'], { root }).err, /unknown entry: nope/);
+  assert.equal(cmd(['show', 'frontend@1.2.0'], { root }).out, cmd(['show', 'frontend'], { root }).out);
+  assert.match(cmd(['select', '--archetype', 'web-app'], { root }).out, /Read an entry with: f3 practices show <id>\n$/);
+});
+
 test('practices is a reserved subcommand of f3', async () => {
   const { RESERVED } = await import('../lib/toolkit.mjs');
   assert.ok(RESERVED.includes('practices'));
+});
+
+test('the guard of the tester lets it read the practice skills of the project, and nothing else of .claude/ (V-P4)', async () => {
+  const { decide, loadPolicy } = await import('../lib/policy.mjs');
+  const root = tempDir('f3-practices-guard-');
+  mkdirSync(join(root, '.claude/skills/practice-angular'), { recursive: true });
+  writeFileSync(join(root, '.claude/skills/practice-angular/SKILL.md'), 'x');
+  const effect = (file) => decide('tester', loadPolicy('tester'), { tool: 'Read', input: { file_path: file } }, root)?.effect ?? 'none';
+  assert.equal(effect('.claude/skills/practice-angular/SKILL.md'), 'none');
+  assert.equal(effect('.claude/settings.json'), 'deny');
+  assert.equal(effect('.claude/skills/openspec-apply-change/SKILL.md'), 'deny');
 });

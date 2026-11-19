@@ -9,6 +9,7 @@ read:
   "BACKLOG.md": allow
   "package.json": allow
   "{{SKILLS}}/*": allow
+  ".claude/skills/practice-*": allow
 edit:
   "*": deny
   "tests/e2e/*": allow

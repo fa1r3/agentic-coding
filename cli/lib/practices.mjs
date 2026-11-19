@@ -5,6 +5,7 @@
 //   f3 practices apply --archetype <id|none> [--recipe <id>] [--force <id>]... [<ids>]
 //                                                           writes the Adopted practices section of
 //                                                           AGENTS.md and the practice skills
+//   f3 practices show <id>...                               prints entries, header and body (D28)
 //   f3 practices catalog                                    prints practices/catalog.md
 // An entry is a folder practices/<kind folder>/<id>/ with ENTRY.md, or SKILL.md for a skill: a header in
 // the YAML subset below, then its body. Entries are written in English (D23).
@@ -13,7 +14,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { PRACTICES_DIR, PRACTICES_LINK } from './toolkit.mjs';
+import { PRACTICES_DIR } from './toolkit.mjs';
 
 export const KINDS = { archetype: 'archetypes', recipe: 'recipes', rules: 'rules', skill: 'skills' };
 export const STATUSES = ['stable', 'draft'];
@@ -322,7 +323,7 @@ export function sectionText(catalog, { archetype, recipe, ids }) {
     const e = catalog.entries.get(id);
     items.push(e.kind === 'rules' ? `${id}@${e.version}#${fingerprint(rulesBlock(e)).slice(0, 12)}` : `${id}@${e.version}`);
   }
-  const parts = [SECTION, '', `<!-- f3 practices: ${items.join(', ')} -->`, ''];
+  const parts = [SECTION, '', `<!-- f3 practices: ${items.length ? items.join(', ') : 'none'} -->`, ''];
   if (!rules.length) parts.push('No practice of the f3 catalog is adopted.', '');
   for (const e of rules) parts.push(rulesBlock(e));
   return parts.join('\n');
@@ -408,7 +409,7 @@ export function skillCopy(entry) {
 export function readMarker(agentsText) {
   const m = MARKER.exec(agentsText || '');
   if (!m) return null;
-  const items = m[1].split(',').map((s) => s.trim()).filter(Boolean).map((s) => {
+  const items = m[1].split(',').map((s) => s.trim()).filter((s) => s && s !== 'none').map((s) => {
     const x = /^(?:(archetype|recipe):)?([a-z0-9-]+)@([0-9.]+)(?:#([0-9a-f]+))?$/.exec(s);
     return x ? { role: x[1] || 'entry', id: x[2], version: x[3], print: x[4] || null } : { role: 'unreadable', raw: s };
   });
@@ -599,9 +600,17 @@ function parseArgs(args) {
   return { facts, opts };
 }
 
+// An entry as the agents read it (D28): its file, header and body, then the other files of a skill.
+export function showEntry(entry) {
+  const text = readFileSync(entry.file, 'utf8');
+  const others = entry.kind === 'skill' ? readFolder(entry.dir).filter(([p]) => p !== 'SKILL.md').map(([p]) => p) : [];
+  return [`=== ${KINDS[entry.kind]}/${entry.id}/${entry.kind === 'skill' ? 'SKILL.md' : 'ENTRY.md'}`, text.replace(/\s+$/, ''), ...(others.length ? [`(other files of the skill: ${others.join(', ')})`] : []), ''].join('\n');
+}
+
 const USAGE = [
   'Usage: f3 practices select --archetype <id|none> [--ui yes|no] [--language <l>]... [--framework <f>]... [--exposure none|private|public]... [--check <id,id,...>]',
   '       f3 practices apply --archetype <id|none> [--recipe <id>] [--force <id>]... <id> [<id>...]',
+  '       f3 practices show <id> [<id>...]',
   '       f3 practices catalog',
 ].join('\n');
 
@@ -611,8 +620,6 @@ function describe(e) {
 }
 
 function selectOutput(catalog, facts, result) {
-  // The agents read an entry under the link of install.sh (D18), or in the toolkit without it.
-  const shown = catalog.root === PRACTICES_DIR && existsSync(PRACTICES_LINK) ? PRACTICES_LINK : catalog.root;
   const given = Object.entries(facts).filter(([k, v]) => k !== 'archetype' && v !== undefined && !(Array.isArray(v) && !v.length));
   const out = [`Practices candidates for archetype ${facts.archetype}${given.length ? `, with ${given.map(([k, v]) => `${k}=${list(v).join('|')}`).join(', ')}` : ', no fact given'}:`];
   if (!result.candidates.length) out.push('- none');
@@ -624,13 +631,13 @@ function selectOutput(catalog, facts, result) {
     if (list(e['pairs-with']).length) notes.push(`detailed by ${list(e['pairs-with']).join(', ')}`);
     if (c.unchecked.length) notes.push(`not checked, no fact given: ${c.unchecked.join(', ')}`);
     out.push(`- ${describe(e)} [${notes.join('; ')}]`);
-    out.push(`  ${join(shown, KINDS[e.kind], e.id, e.kind === 'skill' ? 'SKILL.md' : 'ENTRY.md')}`);
   }
   out.push('Set aside by the criteria:');
   if (!result.setAside.length) out.push('- none');
   for (const s of result.setAside) out.push(`- ${s.entry.id}: applies when ${s.reasons.join('; ')}`);
   if (result.drafts.length) out.push(`Not available (draft, D25): ${result.drafts.map((e) => e.id).join(', ')}`);
   out.push(`Global budget of the Adopted practices section: ${GLOBAL_BUDGET} lines (D11).`);
+  out.push('Read an entry with: f3 practices show <id>');
   return out.join('\n');
 }
 
@@ -646,6 +653,15 @@ export function practicesCommand(args, { root = PRACTICES_DIR, projectDir = '.',
     if (errors.length) throw new PracticesError(`the practices catalog is invalid:\n${errors.map((e) => `  - ${e}`).join('\n')}`);
     if (sub === 'catalog') {
       stdout.write(catalogMarkdown(catalog));
+      return 0;
+    }
+    if (sub === 'show') {
+      if (!rest.length) throw new PracticesError(`show needs at least one entry\n${USAGE}`);
+      // An entry may be named as the marker writes it (id@version): the catalog holds its current version.
+      const ids = rest.map((x) => x.replace(/@[0-9.]+(#[0-9a-f]+)?$/, ''));
+      const unknown = ids.filter((id) => !catalog.entries.has(id));
+      if (unknown.length) throw new PracticesError(`unknown entry: ${unknown.join(', ')}`);
+      stdout.write(ids.map((id) => showEntry(catalog.entries.get(id))).join('\n'));
       return 0;
     }
     if (sub !== 'select' && sub !== 'apply') throw new PracticesError(`unknown subcommand "${sub}"\n${USAGE}`);

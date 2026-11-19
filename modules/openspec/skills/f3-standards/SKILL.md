@@ -8,8 +8,10 @@ description: "f3 standards for a project: the framing files (AGENTS.md, openspec
 ## Three layers, each piece of information in one place
 
 - **The product**: the `context` of `openspec/config.yaml`. What the product does, for whom, its volumes, its constraints. OpenSpec injects it into every artifact. Template: `references/config-yaml.md`.
-- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Stack section is written for the project during f3 init. Template: `references/agents-md.md`.
+- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Adopted practices section is copied from the practices catalog of the toolkit, and its Stack section is written for the project, during f3 init. Template: `references/agents-md.md`.
 - **The business vocabulary**: `CONTEXT.md`, loaded with AGENTS.md. Template: `references/context-md.md`.
+
+One f3 project is one repository, with its own `openspec/`, its verification command and its pull requests. It is linked to another project only through a versioned package, installed by the package manager: for this project, the other one is an external system, reached through a port and an adapter, and no type is shared with it.
 
 The workflow is in none of these files: it is carried by the OpenSpec schema `f3` (order of the steps and rules of the artifacts), the f3 commands (`f3 <step>`), the agents `analyst`, `architect`, `developer`, `tester` and `ux`, and their skills.
 
@@ -19,6 +21,7 @@ The workflow is in none of these files: it is carried by the OpenSpec schema `f3
 - `BACKLOG.md`: the only place for ideas that are not planned yet. Template: `references/backlog-md.md`.
 - `ux/views.md`: the register of the views present in the code, with their unit of code, their displays (route and kind) and the screens of the design tool seen through each. It gives each view its name for the agents that read neither the code nor the design tool. Written by the developer, in the commit that creates, renames or removes a view. Template: `references/views-md.md`.
 - The files of each tool of the project: `CLAUDE.md`, `.mcp.json` and `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode. Only what the workflow needs: models, permission modes, providers and other user preferences belong to the user's settings. Rules below.
+- The practice skills, `.claude/skills/practice-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
 
 ## Files of each tool of the project
 
@@ -56,3 +59,4 @@ f3 init adds or updates these keys without touching any other key. Providers, mo
 
 - `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`. Its former form, `<!-- f3 standards: written by /f3-init. To change it, run /f3-init again. -->`, is also an f3 marker; f3 init rewrites it in the current form.
 - `openspec/config.yaml` written by these standards starts with `schema: f3`.
+- The Adopted practices section of `AGENTS.md` contains the comment `<!-- f3 practices: … -->`, and each practice skill the line `source: f3 practices <id>@<version> sha256:<fingerprint>` in its header: both are written by `f3 practices apply` (template: `references/agents-md.md`).

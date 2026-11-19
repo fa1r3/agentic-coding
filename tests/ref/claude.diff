@@ -25,11 +25,12 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
  hooks:
    PreToolUse:
      - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-@@ -34,15 +37,19 @@
+@@ -34,15 +37,21 @@
  - At startup, load the f3-agent skill and apply it.
  - Load the f3-standards skill before writing a file it describes, and the spec-practice skill before proposing an amendment.
  - Read `arch/decisions.md` before writing a design.md, and the Stack section of `AGENTS.md` before writing tasks.
 +- **Shared modules** (rule 8 of `AGENTS.md`). Before designing, look for what the technical libraries, the shared kernel and the other bounded contexts already define for the change, at the locations of the Modules subsection of the Stack section. Each creation of a technical library or of the shared kernel, and each move of code into one, is a decision of design.md and a task; a technical library is created only when the change needs it, carries no domain type and names no bounded context. An addition, change or removal in the shared kernel, and a split or merge of bounded contexts, is proposed to the user with the answer to "who would decide a change of this type?": nobody in the product (a standard, a universal meaning) for the shared kernel; one bounded context, which keeps it, the others receiving its value through an orchestration use case; several bounded contexts together, which reveals a missing bounded context or a misplaced boundary. The user decides, and you write the entry of `arch/decisions.md`; a change or a removal replaces the entry of the addition. A bounded context that proposal.md creates was validated with the proposal: write its entry without asking again.
++- **Practices catalog.** At f3 init, the archetypes and the entries of the practices catalog are your starting point for the project type and the practices; read an entry with `f3 practices show <id>` before proposing it. The Adopted practices section of `AGENTS.md` and the practice skills are written only by `f3 practices apply`; an adaptation to the product is a project-specific rule.
  - Read the existing code only by targeted passages, to check a precise point.
  
  # Writing scope
@@ -39,6 +40,7 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 -| `AGENTS.md`, `openspec/config.yaml`, `CLAUDE.md`, `.mcp.json`, `.claude/settings.json` | f3 init |
 +| `AGENTS.md`, `openspec/config.yaml`, the files of each tool of the project (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `opencode.json`), `.gitignore` for `.f3/local` | f3 init |
 +| the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
++| the Adopted practices section of `AGENTS.md`, `.claude/skills/practice-*` | f3 init, only by running `f3 practices apply` |
  | design.md, tasks.md of a change | f3 design, f3 design-review |
  | review.md, validations/review.md of a change | f3 design-review |
 +| validations/review.md of a change, as not-applicable | f3 design, on the light track |
@@ -75,6 +77,17 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
  
  # Writing scope
  
+diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
+--- a/openspec/agents/tester.md
++++ b/openspec/agents/tester.md
+@@ -14,6 +14,7 @@
+     "BACKLOG.md": allow
+     "package.json": allow
+     "~/.claude/skills/*": allow
++    ".claude/skills/practice-*": allow
+   edit:
+     "*": deny
+     "tests/e2e/*": allow
 diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.md
 --- a/openspec/commands/f3-acceptance.md
 +++ b/openspec/commands/f3-acceptance.md
@@ -205,7 +218,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 +
 +A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
 +
-+Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`; the files of each tool of the project, as the launch state lists them: for Claude Code `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, for OpenCode the workflow keys of the project `opencode.json`; the line `.f3/local` of `.gitignore`.
++Produces: `AGENTS.md` (its Adopted practices section through `f3 practices apply`), the practice skills `.claude/skills/practice-*` (through `f3 practices apply`), `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`; the files of each tool of the project, as the launch state lists them: for Claude Code `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, for OpenCode the workflow keys of the project `opencode.json`; the line `.f3/local` of `.gitignore`.
  
  ## Preconditions
  
@@ -229,29 +242,71 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  
  ## Interview
  
-@@ -55,12 +59,14 @@
+@@ -44,23 +48,47 @@
+ 7. Design, 1: the design tool and its skill, or none.
+ 8. Language, 1: the language of the prose of the artifacts.
+ 9. Vocabulary, 1: five to ten business terms and actions, which you propose from the previous answers.
+-10. Stack: the phase below.
+-11. Adoption only: the existing code rules, below.
++10. Project type: the phase below, in creation mode.
++11. Stack: the phase below.
++12. Practices: the phase below, in creation mode.
++13. Adoption only: the existing code rules, below.
++
++### Project type phase
++
++In creation mode, once the themes Product to Security are validated. It decides what kind of system the product is; the Stack phase then decides with which technologies.
++
++1. **Catalog.** The launch state lists the archetypes of the practices catalog. Read the entry of each one that could fit with `f3 practices show <id> <id>…`: when to choose it, when not to, its pitfalls. The catalog is outside the project: read it only through `f3 practices`. An archetype marked draft is not available: never propose it.
++2. **Recommendation.** Recommend one archetype, with its reason drawn from the validated answers, and say which ones you set aside and why. One f3 project is one repository, linked to other projects only through versioned packages: if the product described is several systems released on their own (for example three services), say so, and propose to frame this one only. A product that fits no archetype is framed without one ("no archetype"): the following phases then run without the catalog, within the invariant part.
++3. **Questions of the archetype.** Ask its `interview` questions, one at a time.
++4. **Decision.** The user chooses. Write it at once in `arch/decisions.md` as A-001: the archetype with its version (`web-app@1.0.0`), or "no archetype"; the constraints; the archetypes set aside and why; as consequences, how the archetype applies the invariant part (its `invariant`) and what it changes for the workflow (its `workflow-impact`).
+ 
+ ### Stack phase
+ 
+-It decides the structural choices only: the form of the applications (desktop, web, API, command line), the language and its runtime, the module tool that can enforce the dependency direction, the interface framework if any, the end-to-end test runner, and how an agent observes the running application. Storage, libraries and the rest are decided change by change, in design.md.
++It decides the structural choices only, within the project type of A-001 (in adoption mode, the form of the applications: desktop, web, API, command line): the language and its runtime, the module tool that can enforce the dependency direction, the interface framework if any, the end-to-end test runner, and how an agent observes the running application. Storage, libraries and the rest are decided change by change, in design.md.
+ 
+ In creation mode:
  
  1. **Constraints.** Draw the technical constraints from the validated themes (platform, offline operation, volumetry and heaviest items, data sensitivity, design tool, users), plus the maintenance profile: who maintains the product, with what help. The user corrects the summary.
  2. **Research.** For each choice, check on the web the latest version, maintenance activity, announced end of life and license of the candidates.
 -3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); durability (maturity, licenses, lock-in).
+-4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-001: decision, constraints, options set aside and why, consequences.
 +3. **Options.** Two or three really different combinations. For each: how it answers each constraint; the architecture of AGENTS.md (a tool that enforces the dependency direction); the workflow (how directly a design screen translates into the interface, end-to-end driving including native dialogs, an agent observing the running application); whether the language or its tooling imposes where unit and integration tests live, instead of the mirror tests folder of rule 13; durability (maturity, licenses, lock-in).
- 4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-001: decision, constraints, options set aside and why, consequences.
++4. **Decision.** The user chooses or combines. Write it at once in `arch/decisions.md` as A-002 (A-001 in adoption mode): decision, constraints, options set aside and why, consequences.
  5. **Stack section.** Write the Stack section of AGENTS.md, each subsection as the template defines it, after validation.
 -6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command and the end-to-end test project. It goes through the whole workflow.
 +6. **First change.** No code exists yet: add to `BACKLOG.md` "Set up the repository according to the Stack section", with the verification command. It goes through the whole workflow. It creates neither the shared kernel nor a technical library: each is created by the change that first needs it (rule 8). The end-to-end test project is not part of it: the tester creates it at the first acceptance.
 +
 +In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request. If the unit and integration tests sit elsewhere than the mirror tests folder of rule 13 and the language imposes nothing, the Modules subsection states the mirror folder, and `BACKLOG.md` receives "Move the unit and integration tests into the mirror tests folder of each module". The same applies when the theme Stack is reviewed in update mode.
++
++In adoption mode, and when the theme Stack is reviewed in update mode, classify with the user each existing module shared by several bounded contexts, or common to them without rule (rule 8 of the invariant part): shared kernel, technical library, or the bounded context that owns its content, which may split the module. The user decides module by module, with the answer to "who would decide a change of this type?" for a business type. Write the Stack section from this classification, the entries of `arch/decisions.md` for the types kept in the shared kernel, as for an addition, and add to `BACKLOG.md` "Move the shared code according to the classification of the framing", a change that only moves code.
++
++### Practices phase
++
++In creation mode, once the Stack section is validated: the practices depend on the stack.
++
++1. **Facts.** Take from the validated answers the facts of the criteria: the archetype of A-001 (`none` without one), whether the product has a user interface, the languages and frameworks of the stack decision, the network exposure of the Security theme (`none`, `private`: a private network or the local machine, `public`: the internet). Run `f3 practices select --archetype <id|none> --ui yes|no --language <language> --framework <framework> --exposure <exposure>`, an option repeated for several values, lower case. Leave out a fact you do not know: the output says which criteria it could not check.
++2. **Proposal.** Read the entry of each candidate with `f3 practices show <id> <id>…`. Propose a selection, with for each entry one line "why for this project", then the candidates you set aside and why. The entries proposed by the archetype come first; a criterion not checked is a point to weigh with the user, not a reason to keep.
++3. **Validation.** The user keeps, removes, adds. Run `f3 practices select` again with the same facts and `--check <id>,<id>`: it refuses a conflict, a missing requirement, a draft or a section over the global budget. Show a refusal and settle it with the user.
++4. **Decision.** Write at once in `arch/decisions.md` as A-003 "Adopted practices": each entry adopted with its version, each entry set aside with its reason. No practice adopted is also a decision.
  
 -In adoption mode, the choice is not made again. Describe the stack in place from the code and the existing AGENTS.md, and write one entry of `arch/decisions.md` per structural choice, asking its reason in one question ("reason not documented" if none). Write the Stack section from what exists, for validation. The choice is reopened only on the user's request.
-+In adoption mode, and when the theme Stack is reviewed in update mode, classify with the user each existing module shared by several bounded contexts, or common to them without rule (rule 8 of the invariant part): shared kernel, technical library, or the bounded context that owns its content, which may split the module. The user decides module by module, with the answer to "who would decide a change of this type?" for a business type. Write the Stack section from this classification, the entries of `arch/decisions.md` for the types kept in the shared kernel, as for an addition, and add to `BACKLOG.md` "Move the shared code according to the classification of the framing", a change that only moves code.
++The rules of a practice are copied as they are and never rewritten: an adaptation to the product is a project-specific rule.
  
  ### Existing code rules, in adoption mode
  
-@@ -71,9 +77,12 @@
- 1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
+@@ -68,12 +96,15 @@
+ 
+ ## Summary and writing
+ 
+-1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the Stack section, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
++1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the project type, the Stack section, the adopted practices, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
  2. Write each file following its reference:
-    - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
+-   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
 -   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools claude`, then replace the config.yaml it created;
++   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any; then, in creation mode, run `f3 practices apply --archetype <id|none> <id> <id>…` with the selection of A-003 (with no entry when none is adopted). It writes the Adopted practices section just before the Stack section, with its marker, and copies the practice skills into `.claude/skills/practice-*`. Never write that section or those skills yourself; if `apply` refuses, show its message and stop;
 +   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created. Then check that each skills folder it wrote has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`; if one is missing, say so in the summary, with what to do before `f3 design`: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit;
     - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
     - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
@@ -545,21 +600,35 @@ diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/
  ---
  
  # f3 standards
-@@ -18,21 +18,33 @@
+@@ -8,9 +8,11 @@
+ ## Three layers, each piece of information in one place
+ 
+ - **The product**: the `context` of `openspec/config.yaml`. What the product does, for whom, its volumes, its constraints. OpenSpec injects it into every artifact. Template: `references/config-yaml.md`.
+-- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Stack section is written for the project during f3 init. Template: `references/agents-md.md`.
++- **The code rules**: `AGENTS.md`, loaded by every agent in every session. Its invariant part (architecture style and standards) is identical in every project; its Adopted practices section is copied from the practices catalog of the toolkit, and its Stack section is written for the project, during f3 init. Template: `references/agents-md.md`.
+ - **The business vocabulary**: `CONTEXT.md`, loaded with AGENTS.md. Template: `references/context-md.md`.
+ 
++One f3 project is one repository, with its own `openspec/`, its verification command and its pull requests. It is linked to another project only through a versioned package, installed by the package manager: for this project, the other one is an external system, reached through a port and an adapter, and no type is shared with it.
++
+ The workflow is in none of these files: it is carried by the OpenSpec schema `f3` (order of the steps and rules of the artifacts), the f3 commands (`f3 <step>`), the agents `analyst`, `architect`, `developer`, `tester` and `ux`, and their skills.
+ 
+ ## Auxiliary files
+@@ -18,21 +20,34 @@
  - `arch/decisions.md`: the register of structural decisions and their reasons (stack, storage, decisions that commit the following changes). AGENTS.md says what the code must do; this register says why, and which options were set aside. It is read when writing a design.md and during the design review. Template: `references/arch-decisions.md`.
  - `BACKLOG.md`: the only place for ideas that are not planned yet. Template: `references/backlog-md.md`.
  - `ux/views.md`: the register of the views present in the code, with their unit of code, their displays (route and kind) and the screens of the design tool seen through each. It gives each view its name for the agents that read neither the code nor the design tool. Written by the developer, in the commit that creates, renames or removes a view. Template: `references/views-md.md`.
 -- The Claude Code files of the project, `CLAUDE.md`, `.mcp.json` and `.claude/settings.json`: only what the workflow needs. Models, permission modes and other user preferences belong to the user's settings (`~/.claude/settings.json`) or to `.claude/settings.local.json`. Rules below.
 +- The files of each tool of the project: `CLAUDE.md`, `.mcp.json` and `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode. Only what the workflow needs: models, permission modes, providers and other user preferences belong to the user's settings. Rules below.
++- The practice skills, `.claude/skills/practice-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
++
++## Files of each tool of the project
++
++f3 init writes the files of each tool of the project: each tool f3 is installed for, and each tool the project already has files of; the launch state of f3 init lists them. They are versioned with the project, so that each member of a team works with the tool of their choice. The tool of each user is in `.f3/local`, which is not versioned: f3 init adds `.f3/local` to `.gitignore`. When a file exists, f3 init adds or updates its own content and touches nothing else.
  
 -## Claude Code files of the project
-+## Files of each tool of the project
++The MCP servers are decided once, in the Stack section of AGENTS.md: the server that lets an agent observe the running application (subsection Observing the running application), and the server of the design tool, if the context names one. `.mcp.json` and `opencode.json` are two translations of this decision and name the same servers: `playwright` when it is Playwright, `penpot` for Penpot. The agents refuse the tools of a server by these names. An access token is never written in clear.
  
 -They are versioned with the project and written by f3 init, each with only what the workflow needs. When one exists, f3 init adds or updates its own content and touches nothing else.
-+f3 init writes the files of each tool of the project: each tool f3 is installed for, and each tool the project already has files of; the launch state of f3 init lists them. They are versioned with the project, so that each member of a team works with the tool of their choice. The tool of each user is in `.f3/local`, which is not versioned: f3 init adds `.f3/local` to `.gitignore`. When a file exists, f3 init adds or updates its own content and touches nothing else.
-+
-+The MCP servers are decided once, in the Stack section of AGENTS.md: the server that lets an agent observe the running application (subsection Observing the running application), and the server of the design tool, if the context names one. `.mcp.json` and `opencode.json` are two translations of this decision and name the same servers: `playwright` when it is Playwright, `penpot` for Penpot. The agents refuse the tools of a server by these names. An access token is never written in clear.
-+
 +### Claude Code
  
  - `CLAUDE.md`: the lines `@AGENTS.md` and `@CONTEXT.md`, so that every session loads the code rules and the vocabulary.
@@ -584,26 +653,36 @@ diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/
  
  ## Languages
  
-@@ -42,5 +54,5 @@
+@@ -42,5 +57,6 @@
  
  ## Markers
  
 -- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`.
 +- `AGENTS.md` written by these standards contains, on its third line, the comment `<!-- f3 standards: written by f3 init. To change it, run f3 init again. -->`. Its former form, `<!-- f3 standards: written by /f3-init. To change it, run /f3-init again. -->`, is also an f3 marker; f3 init rewrites it in the current form.
  - `openspec/config.yaml` written by these standards starts with `schema: f3`.
++- The Adopted practices section of `AGENTS.md` contains the comment `<!-- f3 practices: … -->`, and each practice skill the line `source: f3 practices <id>@<version> sha256:<fingerprint>` in its header: both are written by `f3 practices apply` (template: `references/agents-md.md`).
 diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skills/f3-standards/references/agents-md.md
 --- a/openspec/skills/f3-standards/references/agents-md.md
 +++ b/openspec/skills/f3-standards/references/agents-md.md
-@@ -4,7 +4,7 @@
+@@ -1,12 +1,13 @@
+ # AGENTS.md template
+ 
+-`AGENTS.md` of an f3 project has three parts, in this order:
++`AGENTS.md` of an f3 project has four parts, in this order:
  
  1. **The invariant part**: the exact copy of the block below. It is identical in every project and is never adapted to the stack or to the product.
- 2. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
+-2. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
 -3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (14, 15, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
-+3. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (15, 16, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
++2. **The Adopted practices section**: `## Adopted practices`, written only by `f3 practices apply` during f3 init, from the practices catalog of the toolkit (section below). Projects framed before the catalog have none.
++3. **The Stack section**: `## Stack`, written for the project during f3 init from the stack decision recorded in `arch/decisions.md`. Its subsections and what each one answers are defined below.
++4. **The project-specific rules**, only if the user validated some during f3 init: a section `## Project-specific rules`, numbered after the invariant rules (15, 16, and so on), in the same style: a rule, its reason, and an example when two readings are possible. Without such a rule, this section does not exist.
  
- A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written.
+-A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written.
++A rule belongs to the invariant part when it follows from the architecture style or the standards, whatever the product and the stack. It belongs to the Adopted practices section when a practice of the catalog states it. It belongs to the Stack section when it follows from a technology choice. It is project-specific when it only makes sense for this product. To classify a rule, ask which principle it expresses: if the principle belongs to the style, the invariant part already states it, and the particular case is not written; if a practice of the catalog states it, that practice is adopted rather than the rule rewritten.
  
-@@ -17,7 +17,7 @@
+ ## Invariant part
+ 
+@@ -17,7 +18,7 @@
  
  Rules for all the code of this repository. They take precedence over your general habits. If a request conflicts with them, report the conflict instead of deciding alone.
  
@@ -612,7 +691,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  
  ## Vocabulary
  
-@@ -29,13 +29,17 @@
+@@ -29,13 +30,17 @@
  - **Adapter module**: a module that implements the ports of one bounded context with one technology.
  - **Orchestration module**: the module that holds the orchestration use cases.
  - **Application**: a deployable unit. It hosts the entry points and the composition root.
@@ -632,7 +711,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  - **Port**: an interface that declares what a use case needs from the outside: store, read a file, call a model.
  - **Adapter**: a class that implements a port with a technology.
  - **Entry point**: code of an application that receives a request from the outside (HTTP endpoint, IPC handler, CLI command, message consumer) and calls a use case.
-@@ -50,41 +54,54 @@
+@@ -50,41 +55,54 @@
  
  | Module | May depend on |
  |---|---|
@@ -703,7 +782,31 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  
  ## Naming
  
-@@ -149,8 +166,8 @@
+@@ -145,12 +163,32 @@
+ 
+ Angle brackets in the Git section (`<type>`, `<scope>`, `<summary>`, `<body>`, `<footer>`, `<change-id>`) are part of the format description and stay as they are.
+ 
++## Adopted practices section
++
++Written by `f3 practices apply`, never by hand, just before the Stack section:
++
++~~~markdown
++## Adopted practices
++
++<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, practice-angular@1.0.0 -->
++
++### Frontend architecture (FA)
++
++FA-1. **A view owns the state of its screen.** …
++~~~
++
++- The marker lists the archetype and the recipe of the framing, then each adopted entry with its version; the rules entries carry the fingerprint of the text written, which tells whether it was modified by hand. f3 init reads it to propose the updates of the catalog.
++- Each rules entry is a sub-section titled with its code; its rules are numbered with that code (`FA-1`, `FA-2`…), and a rule is cited by that number (`rule FA-3`). A number removed by a new version of the entry is never given again. The numbering of the invariant part and of the project-specific rules does not depend on this section.
++- The text of a practice is never adapted: an adaptation to the product is a project-specific rule.
++- When no practice is adopted, the section holds the marker and the line "No practice of the f3 catalog is adopted."
++- A practice skill (`.claude/skills/practice-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
++
+ ## Stack section
  
  The Stack section is written by the architect during f3 init, from the stack decision of `arch/decisions.md`. It contains exactly the subsections below, in this order, each answering its question for this project. A subsection that does not apply contains the single line "None." and the reason. It contains no placeholder: commands are complete and runnable as written. A pattern such as `<bounded-context>` in a directory tree or a module name is allowed: it names a variable part, defined in the Vocabulary.
  
@@ -714,7 +817,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  3. `### Entry points`: the kinds of entry points the applications expose, the transport of each one, and where they live.
  4. `### User interface`: if the product has an interface: how it is split (pages, view state, components shared or not), how it calls the entry points, and where each part lives. The name of a view in the design tool and in `ux.md` is the name of its unit of code. It also says where the design tokens live in the code and how a token of the design tool is named there, where the components of the design system live, and how the rule "appearance values come only from tokens" is enforced (for example a lint rule on the styles that forbids raw colors).
  5. `### Transport security`: the security rules that follow from the chosen transports (listening address, authentication between the interface and the entry points, isolation of processes).
-@@ -160,7 +177,7 @@
+@@ -160,7 +198,7 @@
  
  ## Example of a Stack section
  
@@ -723,7 +826,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  
  ~~~~markdown
  ## Stack
-@@ -172,22 +189,46 @@
+@@ -172,22 +210,46 @@
  ```
  apps/
  ├── api/                          application: HTTP server, entry points, composition root
@@ -774,7 +877,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
  
  ### Entry points
  
-@@ -216,5 +257,5 @@
+@@ -216,5 +278,5 @@
  
  ### Observing the running application
  
@@ -784,14 +887,57 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
 diff -ru a/openspec/skills/f3-standards/references/arch-decisions.md b/openspec/skills/f3-standards/references/arch-decisions.md
 --- a/openspec/skills/f3-standards/references/arch-decisions.md
 +++ b/openspec/skills/f3-standards/references/arch-decisions.md
-@@ -1,6 +1,6 @@
+@@ -1,8 +1,8 @@
  # arch/decisions.md template
  
 -`arch/decisions.md` records the structural decisions of the project and their reasons: the stack chosen at framing, and every decision of a change that commits the following changes (a new technology, a new storage, a new external dependency, a new kind of entry point). AGENTS.md says what the code must do; this register says why, and which options were set aside.
-+`arch/decisions.md` records the structural decisions of the project and their reasons: the stack chosen at framing, and every decision of a change that commits the following changes (a new technology, a new storage, a new external dependency, a new kind of entry point, a shared kernel addition, change or removal, a bounded context creation, split or merge). AGENTS.md says what the code must do; this register says why, and which options were set aside.
++`arch/decisions.md` records the structural decisions of the project and their reasons: the project type, the stack and the adopted practices chosen at framing, and every decision of a change that commits the following changes (a new technology, a new storage, a new external dependency, a new kind of entry point, a shared kernel addition, change or removal, a bounded context creation, split or merge). AGENTS.md says what the code must do; this register says why, and which options were set aside.
  
- It is written by f3 init for the stack, and by f3 design or f3 design-review when a change takes such a decision, always after the user's validation. It is read when writing a design.md and during the design review. Decisions that concern a single change stay in its design.md.
+-It is written by f3 init for the stack, and by f3 design or f3 design-review when a change takes such a decision, always after the user's validation. It is read when writing a design.md and during the design review. Decisions that concern a single change stay in its design.md.
++It is written by f3 init for the project type, the stack and the adopted practices, and by f3 design or f3 design-review when a change takes such a decision, always after the user's validation. It is read when writing a design.md and during the design review. Decisions that concern a single change stay in its design.md.
  
+ ## File at creation
+ 
+@@ -48,16 +48,34 @@
+ ~~~markdown
+ # Architecture decisions
+ 
+-## A-001: Web application in TypeScript, Nx monorepo
++## A-001: Project type web-app
+ 
+ - Status: active
+ - Origin: initial framing, 2026-02-20
+-- Context: accountants work in a browser on office computers; one developer maintains the product with a local agent; the design tool works with web layouts.
++- Context: accountants work in a browser on office computers; one team releases the interface and the server together.
++- Decision: archetype web-app@1.0.0 of the practices catalog.
++- Options set aside: desktop-app, because users do not install software on their office computers; service, because no other product consumes the server.
++- Consequences: the server is an Application whose HTTP endpoints are its entry points; the interface calls only these entry points and takes no business decision; the end-to-end tests drive a browser on the server started in test mode.
++
++## A-002: Web application in TypeScript, Nx monorepo
++
++- Status: active
++- Origin: initial framing, 2026-02-20
++- Context: one developer maintains the product with a local agent; the design tool works with web layouts; the interface needs rich tables with keyboard navigation.
+ - Decision: an Angular interface served by a Node HTTP API, in an Nx monorepo whose lint rules enforce the dependency direction.
+-- Options set aside: a desktop application, because users do not install software on their office computers; a server-rendered interface, because the interface needs rich tables with keyboard navigation.
+-- Consequences: every entry point is an HTTP endpoint; every module is an Nx project.
++- Options set aside: a server-rendered interface, because of the rich tables.
++- Consequences: every module is an Nx project.
++
++## A-003: Adopted practices
++
++- Status: active
++- Origin: initial framing, 2026-02-20
++- Context: an Angular interface over HTTP endpoints, reachable from the office network only.
++- Decision: frontend-architecture@1.0.0 and practice-angular@1.0.0 of the practices catalog.
++- Options set aside: none proposed by the catalog for this project.
++- Consequences: the rules FA-1 to FA-6 of the Adopted practices section of AGENTS.md apply to the interface.
+ 
+-## A-002: PostgreSQL for invoices
++## A-004: PostgreSQL for invoices
+ 
+ - Status: active
+ - Origin: change add-invoice-issuing, 2026-03-02
 diff -ru a/openspec/skills/spec-practice/SKILL.md b/openspec/skills/spec-practice/SKILL.md
 --- a/openspec/skills/spec-practice/SKILL.md
 +++ b/openspec/skills/spec-practice/SKILL.md
