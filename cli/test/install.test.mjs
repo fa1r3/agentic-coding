@@ -17,7 +17,7 @@ const NODE = process.execPath;
 function setup({ programs = ['claude', 'opencode', 'openspec'] } = {}) {
   const base = tempDir('f3-install-test-');
   const root = join(base, 'toolkit');
-  for (const part of ['install.sh', 'cli', 'modules', 'tools']) {
+  for (const part of ['install.sh', 'cli', 'modules', 'tools', 'practices']) {
     cpSync(join(TOOLKIT, part), join(root, part), { recursive: true, filter: (src) => !src.includes(`${join(TOOLKIT, 'cli', 'test')}`) });
   }
   const home = join(base, 'home');
@@ -50,6 +50,7 @@ test('install.sh claude links the agents and commands through build/claude, the 
   assert.equal(readlinkSync(t.at('.local', 'share', 'f3', 'scripts', 'f3-features.mjs')), join(t.root, 'modules', 'openspec', 'scripts', 'f3-features.mjs'));
   assert.equal(readlinkSync(t.at('.local', 'share', 'openspec', 'schemas', 'f3')), join(t.root, 'modules', 'openspec', 'schemas', 'f3'));
   assert.equal(readlinkSync(t.at('.local', 'bin', 'f3')), join(t.root, 'cli', 'f3.mjs'));
+  assert.equal(readlinkSync(t.at('.local', 'share', 'f3', 'practices')), join(t.root, 'practices'));
   assert.ok(existsSync(t.at(...CLAUDE, 'agents', 'analyst.md')));
   assert.match(lstatSync(join(t.root, 'build', 'claude')).isSymbolicLink() ? 'link' : '', /link/);
   assert.equal(links(t.at(...CLAUDE, 'agents')).length, 5);
@@ -182,9 +183,18 @@ test('install.sh --remove removes every link of the toolkit for both tools, and 
   writeFileSync(t.at(...OPENCODE, 'agents', 'own.md'), 'x');
   const r = t.install(['--remove']);
   assert.equal(r.status, 0, r.stderr);
-  for (const dir of [[...CLAUDE, 'agents'], [...CLAUDE, 'commands'], [...CLAUDE, 'skills'], [...OPENCODE, 'agents'], [...OPENCODE, 'skills'], ['.local', 'bin'], ['.local', 'share', 'f3', 'scripts']]) {
+  for (const dir of [[...CLAUDE, 'agents'], [...CLAUDE, 'commands'], [...CLAUDE, 'skills'], [...OPENCODE, 'agents'], [...OPENCODE, 'skills'], ['.local', 'bin'], ['.local', 'share', 'f3', 'scripts'], ['.local', 'share', 'f3']]) {
     assert.deepEqual(links(t.at(...dir)).filter((n) => n !== 'mine.md'), [], dir.join('/'));
   }
   assert.ok(isLink(t.at(...CLAUDE, 'agents', 'mine.md')));
   assert.ok(existsSync(t.at(...OPENCODE, 'agents', 'own.md')));
+});
+
+test('install.sh refuses a skill of the toolkit named practice-*, kept for the skills of practices/ (D13)', () => {
+  const t = setup();
+  mkdirSync(join(t.root, 'modules', 'openspec', 'skills', 'practice-mine'), { recursive: true });
+  const r = t.install(['claude']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /The skill practice-mine of .*modules\/openspec starts with practice-/);
+  assert.ok(!existsSync(t.at(...CLAUDE)));
 });

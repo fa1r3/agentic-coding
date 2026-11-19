@@ -7,6 +7,7 @@
 //   f3 guard <agent>                   PreToolUse hook of an agent under Claude Code: applies its permission table
 //   f3 guard-prompt                    UserPromptSubmit hook of the project under Claude Code: an f3 command runs as its agent
 //   f3 render [tool] [--to dir]        renders the agents and commands for one tool, or both, into build/
+//   f3 practices <select|apply|catalog> the practices catalog, for the Practices phase of f3 init (D20)
 import { RESERVED, commands } from './lib/toolkit.mjs';
 
 const [sub, ...rest] = process.argv.slice(2);
@@ -19,7 +20,7 @@ function usage() {
     'Each step starts a new session of the tool of the project (.f3/local) as its agent and runs the command /f3-<step>.',
     'The arguments are identifiers; everything after the first "--" is a prompt for the agent, taken as is.',
     'f3 tool [claude|opencode] shows or sets the tool of the project.',
-    'Other subcommands, used by the commands and hooks of the toolkit: state, guard, guard-prompt.',
+    'Other subcommands, used by the commands and hooks of the toolkit: state, guard, guard-prompt, practices.',
     'f3 render [claude|opencode] [--to <dir>] renders the toolkit for one tool, or both, into build/ (or as a full view into <dir>).',
   ].join('\n');
 }
@@ -32,6 +33,10 @@ async function main() {
   if (sub === 'state') {
     const { state } = await import('./lib/state.mjs');
     return state(rest[0], rest.slice(1).join(' '));
+  }
+  if (sub === 'practices') {
+    const { practicesCommand } = await import('./lib/practices.mjs');
+    return practicesCommand(rest);
   }
   if (sub === 'tool') {
     const { toolSubcommand } = await import('./lib/launch.mjs');

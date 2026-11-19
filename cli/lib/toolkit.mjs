@@ -12,6 +12,10 @@ export const HOME = homedir();
 export const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(HOME, '.claude');
 export const DATA_DIR = process.env.XDG_DATA_HOME || join(HOME, '.local', 'share');
 export const SCRIPTS_DIR = join(DATA_DIR, 'f3', 'scripts');
+// The practices catalog: read by f3 from the toolkit, and linked by install.sh into DATA_DIR/f3/practices
+// for the agents, which read the body of an entry there (D18).
+export const PRACTICES_DIR = join(ROOT, 'practices');
+export const PRACTICES_LINK = join(DATA_DIR, 'f3', 'practices');
 export const OPENCODE_DIR = join(process.env.XDG_CONFIG_HOME || join(HOME, '.config'), 'opencode');
 
 // The tools that run the agents: their name for the user and the folder install.sh links into.
@@ -30,7 +34,7 @@ export function fillPermission(text, tool) {
 }
 
 // Subcommands of f3 that are not workflow steps: no command may be named /f3-<one of them>.
-export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'tool', 'render'];
+export const RESERVED = ['state', 'guard', 'guard-prompt', 'help', 'tool', 'render', 'practices'];
 
 // Whether a link points into the toolkit, by its own path or once resolved: install.sh writes the
 // path it was run from, which may go through a link.

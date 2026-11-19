@@ -14,6 +14,7 @@
 # For both:
 #   modules/*/scripts/*            -> ~/.local/share/f3/scripts/
 #   modules/*/schemas/*/           -> ~/.local/share/openspec/schemas/
+#   practices/                     -> ~/.local/share/f3/practices (the practices catalog, read by the agents)
 #   cli/f3.mjs                     -> ~/.local/bin/f3 (the launcher, and f3 state, called by every command)
 set -euo pipefail
 
@@ -22,6 +23,7 @@ CLAUDE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 OPENCODE="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 SCRIPTS="$DATA/f3/scripts"
+F3_DATA="$DATA/f3"
 SCHEMAS="$DATA/openspec/schemas"
 # Former location of the scripts under OpenCode: the links left there are removed.
 OLD_SCRIPTS="$OPENCODE/scripts"
@@ -92,7 +94,7 @@ case "$MODE" in
     ;;
   --remove)
     [[ $# -eq 1 ]] || usage
-    for dir in "$CLAUDE"/{agents,commands,skills} "$OPENCODE"/{agents,commands,skills} "$SCRIPTS" "$SCHEMAS" "$BIN" "$OLD_SCRIPTS"; do
+    for dir in "$CLAUDE"/{agents,commands,skills} "$OPENCODE"/{agents,commands,skills} "$SCRIPTS" "$SCHEMAS" "$BIN" "$OLD_SCRIPTS" "$F3_DATA"; do
       remove_links "$dir" all Removed
     done
     exit 0
@@ -137,6 +139,14 @@ if ! command -v openspec >/dev/null 2>&1; then
   echo "Warning: openspec is not in the PATH: install OpenSpec, which every f3 project uses." >&2
 fi
 
+# The prefix practice- is kept for the skills that f3 init copies from practices/ into a project: a skill
+# of the toolkit with this prefix, installed in the personal folder, would hide the copy of the project
+# under Claude Code (D13).
+for d in "$TOOLKIT"/modules/*/skills/practice-*/; do
+  echo "The skill $(basename "$d") of $(dirname "$(dirname "$d")") starts with practice-, a prefix kept for the skills of practices/: rename it." >&2
+  exit 1
+done
+
 # (1) Render. The agents and commands are rendered into build/<tool>, a link to the last complete
 # render: the links below go through it and never change. A failed render stops here.
 for tool in "${TOOLS[@]}"; do
@@ -144,7 +154,7 @@ for tool in "${TOOLS[@]}"; do
 done
 
 # (2) Links.
-DIRS=("$SCRIPTS" "$SCHEMAS" "$BIN")
+DIRS=("$SCRIPTS" "$SCHEMAS" "$BIN" "$F3_DATA")
 for tool in "${TOOLS[@]}"; do
   config="$(config_of "$tool")"
   DIRS+=("$config/agents" "$config/commands" "$config/skills")
@@ -165,6 +175,7 @@ for module in "$TOOLKIT"/modules/*/; do
   for d in "$module"schemas/*/; do link "${d%/}" "$SCHEMAS/$(basename "$d")"; done
 done
 link "$TOOLKIT/cli/f3.mjs" "$BIN/f3"
+link "$TOOLKIT/practices" "$F3_DATA/practices"
 
 # (3) Cleanup of the dead links, then of the former location of the scripts.
 for dir in "${DIRS[@]}"; do

@@ -322,3 +322,20 @@ test('a tool f3 is not installed for is a tool of the project when the project h
 test('unknown command', () => {
   assert.equal(stateOf('nope').code, 1);
 });
+
+test('init lists the archetypes of the practices catalog, drafts marked, or says the catalog is absent or invalid (D20, D25)', () => {
+  const bare = project({ framed: false });
+  assert.match(inDir(bare, () => stateOf('init', '')).stdout, /- Practices catalog: absent from the toolkit\n/);
+  const practices = join(ROOT, 'practices');
+  cpSync(join(import.meta.dirname, '..', '..', 'practices'), practices, { recursive: true });
+  try {
+    const out = inDir(bare, () => stateOf('init', '')).stdout;
+    assert.match(out, new RegExp(`- Practices catalog: ${practices.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}; entry of an archetype: archetypes/<id>/ENTRY\\.md\\n`));
+    assert.match(out, /- Archetypes:\n  cli-tool@1\.0\.0: A command line tool/);
+    assert.match(out, /\n  service@1\.0\.0 \(draft: not available\): /);
+    writeFileSync(join(practices, 'rules', 'frontend-architecture', 'ENTRY.md'), '---\nid: frontend-architecture\n');
+    assert.match(inDir(bare, () => stateOf('init', '')).stdout, /- Practices catalog: invalid, f3 practices refuses it:/);
+  } finally {
+    rmSync(practices, { recursive: true, force: true });
+  }
+});

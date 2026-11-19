@@ -19,7 +19,8 @@ import { tmpdir } from 'node:os';
 import { LAUNCH_FILE, LAUNCH_PREFIX, LOCAL, LaunchError, readLocal } from './launch.mjs';
 import { render } from './render.mjs';
 import { PROJECT_FILES, localIgnored, missingFiles, projectTools, toolWarnings } from './project.mjs';
-import { SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
+import { PRACTICES_DIR, PRACTICES_LINK, SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
+import { loadCatalog, validateCatalog } from './practices.mjs';
 
 class StateError extends Error {}
 
@@ -157,6 +158,21 @@ function renderTools(tools, renderTool) {
   return warnings;
 }
 
+// The archetypes of the practices catalog, for the Project type phase of f3 init (D20): the agent reads
+// the body of an entry under the link of install.sh, or in the toolkit without it.
+function practicesCatalog() {
+  if (!existsSync(PRACTICES_DIR)) return [block('Practices catalog', [], 'absent from the toolkit')];
+  const catalog = loadCatalog(PRACTICES_DIR);
+  const errors = validateCatalog(catalog);
+  if (errors.length) return [block('Practices catalog: invalid, f3 practices refuses it', errors.slice(0, 10))];
+  const where = existsSync(PRACTICES_LINK) ? PRACTICES_LINK : PRACTICES_DIR;
+  const archetypes = [...catalog.entries.values()].filter((e) => e.kind === 'archetype').sort((a, b) => a.id.localeCompare(b.id));
+  return [
+    `- Practices catalog: ${where}; entry of an archetype: archetypes/<id>/ENTRY.md`,
+    block('Archetypes', archetypes.map((e) => `${e.id}@${e.version}${e.status === 'draft' ? ' (draft: not available)' : ''}: ${e.summary}`)),
+  ];
+}
+
 const changeFiles = (id, ...subs) => block('Files of the change', [`openspec/changes/${id}`, ...subs.map((s) => `openspec/changes/${id}/${s}`)].map(listFolder));
 const openspecProgress = (id) => block('Progress of OpenSpec', tail(run('openspec', ['status', '--change', id]), 12));
 const unchecked = (id) => {
@@ -198,6 +214,7 @@ const ENTRIES = {
         `- OpenSpec: ${firstLine(run('openspec', ['--version']))}`,
         block('Schema f3', head(run('openspec', ['schema', 'which', 'f3']), 3)),
         block('Skills installed in the project by OpenSpec', skills),
+        ...practicesCatalog(),
       ];
     },
   },
