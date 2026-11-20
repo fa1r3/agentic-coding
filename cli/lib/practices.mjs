@@ -6,13 +6,17 @@
 //                                                           writes the Adopted practices section of
 //                                                           AGENTS.md and the practice skills
 //   f3 practices show <id>...                               prints entries, header and body (D28)
+//   f3 practices diff <id>...                               differences between the text of the project and
+//                                                           the catalog, for an update (step 7 of the plan)
 //   f3 practices catalog                                    prints practices/catalog.md
 // An entry is a folder practices/<kind folder>/<id>/ with ENTRY.md, or SKILL.md for a skill: a header in
 // the YAML subset below, then its body. Entries are written in English (D23).
 // Exit codes: 0 done, 1 error (usage, unreadable catalog, project), 3 refused (invalid selection, text
 // modified by hand).
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { PRACTICES_DIR } from './toolkit.mjs';
 
@@ -543,6 +547,77 @@ export function apply(catalog, { archetype, recipe, ids, force = [], projectDir 
 }
 
 // ---------------------------------------------------------------------------------------------------
+// Update (section 4.3): what the marker of a project lists, and what the catalog has changed since.
+
+function newer(a, b) {
+  const x = a.split('.').map(Number);
+  const y = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+}
+
+// For f3 state init: null without a marker; otherwise the adopted items and the updates to propose.
+export function projectUpdates(catalog, projectDir = '.') {
+  const state = projectPractices(catalog, projectDir);
+  if (!state.marker) return null;
+  const adopted = state.marker.map((i) => (i.role === 'unreadable' ? `unreadable: ${i.raw}` : `${i.role === 'entry' ? catalog.entries.get(i.id)?.kind || 'entry' : i.role} ${i.id}@${i.version}`));
+  const updates = [];
+  for (const item of state.marker) {
+    if (item.role === 'unreadable') continue;
+    const e = catalog.entries.get(item.id);
+    const info = item.role === 'entry' ? '' : ' (information only: archetype and recipe are not updated)';
+    if (!e) updates.push(`${item.id}: removed from the catalog${info}`);
+    else if (newer(e.version, item.version)) updates.push(`${item.id}: ${item.version} -> ${e.version} in the catalog${info}`);
+  }
+  for (const m of state.modified) updates.push(m);
+  const archetype = state.marker.find((i) => i.role === 'archetype');
+  const a = archetype && catalog.entries.get(archetype.id);
+  if (a) {
+    const taken = new Set(state.marker.map((i) => i.id));
+    for (const id of [...list(a.practices), ...list(a.skills)]) {
+      const e = catalog.entries.get(id);
+      if (e && e.status === 'stable' && !taken.has(id)) updates.push(`${id}@${e.version}: proposed by the archetype, not adopted (arch/decisions.md says why before you propose it)`);
+    }
+  }
+  const s = findSection(state.text);
+  if (s) {
+    const lines = s.lines.slice(s.start, s.end).join('\n').replace(/\s+$/, '').split('\n').length;
+    if (lines > GLOBAL_BUDGET) updates.push(`the Adopted practices section has ${lines} lines, over the global budget of ${GLOBAL_BUDGET}`);
+  }
+  return { adopted, updates };
+}
+
+function unifiedDiff(label, before, after) {
+  const dir = mkdtempSync(join(tmpdir(), 'f3-practices-diff-'));
+  try {
+    writeFileSync(join(dir, 'a'), before);
+    writeFileSync(join(dir, 'b'), after);
+    const r = spawnSync('diff', ['-u', '--label', `project ${label}`, '--label', `catalog ${label}`, 'a', 'b'], { cwd: dir, encoding: 'utf8' });
+    return r.status === 0 ? `${label}: identical\n` : r.stdout;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+// The differences between the text a project holds for an entry and the current catalog.
+export function entryDiff(catalog, id, projectDir = '.') {
+  const e = catalog.entries.get(id);
+  if (!e) throw new PracticesError(`unknown entry: ${id}`);
+  if (e.kind === 'rules') {
+    const text = existsSync(join(projectDir, 'AGENTS.md')) ? readFileSync(join(projectDir, 'AGENTS.md'), 'utf8') : '';
+    return unifiedDiff(`AGENTS.md (${e.code})`, writtenBlocks(text).get(e.code) || '', rulesBlock(e));
+  }
+  if (e.kind === 'skill') {
+    const dir = join(projectDir, '.claude', 'skills', e.id);
+    const local = new Map(existsSync(dir) ? readFolder(dir) : []);
+    const copy = new Map(skillCopy(e).files);
+    const strip = (t) => (t || '').replace(/^source: f3 practices .*\n/m, '');
+    return [...new Set([...local.keys(), ...copy.keys()])].sort().map((p) => unifiedDiff(`.claude/skills/${e.id}/${p}`, strip(local.get(p)), strip(copy.get(p)))).join('');
+  }
+  throw new PracticesError(`"${id}" is a ${e.kind} entry: only rules and skills are copied into a project`);
+}
+
+// ---------------------------------------------------------------------------------------------------
 // practices/catalog.md: the readable index, one line per entry (kept equal to this output by a test).
 
 export function catalogMarkdown(catalog) {
@@ -611,6 +686,7 @@ const USAGE = [
   'Usage: f3 practices select --archetype <id|none> [--ui yes|no] [--language <l>]... [--framework <f>]... [--exposure none|private|public]... [--check <id,id,...>]',
   '       f3 practices apply --archetype <id|none> [--recipe <id>] [--force <id>]... <id> [<id>...]',
   '       f3 practices show <id> [<id>...]',
+  '       f3 practices diff <id> [<id>...]',
   '       f3 practices catalog',
 ].join('\n');
 
@@ -662,6 +738,11 @@ export function practicesCommand(args, { root = PRACTICES_DIR, projectDir = '.',
       const unknown = ids.filter((id) => !catalog.entries.has(id));
       if (unknown.length) throw new PracticesError(`unknown entry: ${unknown.join(', ')}`);
       stdout.write(ids.map((id) => showEntry(catalog.entries.get(id))).join('\n'));
+      return 0;
+    }
+    if (sub === 'diff') {
+      if (!rest.length) throw new PracticesError(`diff needs at least one entry\n${USAGE}`);
+      stdout.write(rest.map((id) => entryDiff(catalog, id.replace(/@[0-9.]+(#[0-9a-f]+)?$/, ''), projectDir)).join(''));
       return 0;
     }
     if (sub !== 'select' && sub !== 'apply') throw new PracticesError(`unknown subcommand "${sub}"\n${USAGE}`);

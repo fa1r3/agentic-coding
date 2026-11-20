@@ -20,7 +20,7 @@ import { LAUNCH_FILE, LAUNCH_PREFIX, LOCAL, LaunchError, readLocal } from './lau
 import { render } from './render.mjs';
 import { PROJECT_FILES, localIgnored, missingFiles, projectTools, toolWarnings } from './project.mjs';
 import { PRACTICES_DIR, SCRIPTS_DIR, TOOLS, TOOL_NAMES, installedTools, skillsDir } from './toolkit.mjs';
-import { loadCatalog, validateCatalog } from './practices.mjs';
+import { loadCatalog, projectUpdates, validateCatalog } from './practices.mjs';
 
 class StateError extends Error {}
 
@@ -166,9 +166,15 @@ function practicesCatalog() {
   const errors = validateCatalog(catalog);
   if (errors.length) return [block('Practices catalog: invalid, f3 practices refuses it', errors.slice(0, 10))];
   const archetypes = [...catalog.entries.values()].filter((e) => e.kind === 'archetype').sort((a, b) => a.id.localeCompare(b.id));
+  // The practices of a framed project, for the theme Practices of the update mode (section 4.3).
+  const project = projectUpdates(catalog, '.');
+  const adopted = project
+    ? [block('Practices adopted in the project (marker of AGENTS.md)', project.adopted, 'none'), block('Practices updates available', project.updates, 'none')]
+    : [`- Practices adopted in the project: ${existsSync('AGENTS.md') ? 'no marker in AGENTS.md (framed before the catalog, or not framed)' : 'no AGENTS.md'}`];
   return [
     '- Practices catalog: read an entry with f3 practices show <id>',
     block('Archetypes', archetypes.map((e) => `${e.id}@${e.version}${e.status === 'draft' ? ' (draft: not available)' : ''}: ${e.summary}`)),
+    ...adopted,
   ];
 }
 

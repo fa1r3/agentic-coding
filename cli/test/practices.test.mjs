@@ -302,3 +302,41 @@ test('the guard of the tester lets it read the practice skills of the project, a
   assert.equal(effect('.claude/settings.json'), 'deny');
   assert.equal(effect('.claude/skills/openspec-apply-change/SKILL.md'), 'deny');
 });
+
+test('projectUpdates: adopted items, newer versions, removed entries, text modified by hand, entries of the archetype not adopted', async () => {
+  const { projectUpdates } = await import('../lib/practices.mjs');
+  const m = mini();
+  const dir = project();
+  assert.equal(projectUpdates(loadCatalog(m.root), dir), null);
+  cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend'], { root: m.root, projectDir: dir });
+  assert.deepEqual(projectUpdates(loadCatalog(m.root), dir), {
+    adopted: ['archetype web-app@1.0.0', 'recipe ts-web@2.1.0', 'rules frontend@1.2.0'],
+    updates: ['practice-ng@1.0.0: proposed by the archetype, not adopted (arch/decisions.md says why before you propose it)'],
+  });
+  const bump = (path, from, to) => m.w(path, readFileSync(join(m.root, path), 'utf8').replace(from, to));
+  bump('rules/frontend/ENTRY.md', 'version: 1.2.0', 'version: 1.3.0');
+  bump('recipes/ts-web/ENTRY.md', 'version: 2.1.0', 'version: 2.2.0');
+  const agents = join(dir, 'AGENTS.md');
+  writeFileSync(agents, readFileSync(agents, 'utf8').replace('Reason: reuse.', 'Reason: reuse, always.'));
+  const u = projectUpdates(loadCatalog(m.root), dir).updates;
+  assert.ok(u.includes('frontend: 1.2.0 -> 1.3.0 in the catalog'), u.join('\n'));
+  assert.ok(u.includes('ts-web: 2.1.0 -> 2.2.0 in the catalog (information only: archetype and recipe are not updated)'), u.join('\n'));
+  assert.ok(u.includes('frontend: modified by hand'), u.join('\n'));
+  rmSync(join(m.root, 'rules/frontend'), { recursive: true });
+  m.w('rules/security/ENTRY.md', readFileSync(join(m.root, 'rules/security/ENTRY.md'), 'utf8').replace('requires: [frontend]', 'requires: []'));
+  m.w('archetypes/web-app/ENTRY.md', readFileSync(join(m.root, 'archetypes/web-app/ENTRY.md'), 'utf8').replace('practices: [frontend]', 'practices: []'));
+  assert.ok(projectUpdates(loadCatalog(m.root), dir).updates.includes('frontend: removed from the catalog'));
+});
+
+test('diff shows the text of the project against the catalog, for rules and skills', () => {
+  const m = mini();
+  const dir = project();
+  cmd(['apply', '--archetype', 'none', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir });
+  assert.equal(cmd(['diff', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir }).out, 'AGENTS.md (FE): identical\n.claude/skills/practice-ng/SKILL.md: identical\n.claude/skills/practice-ng/references/more.md: identical\n');
+  m.w('rules/frontend/ENTRY.md', readFileSync(join(m.root, 'rules/frontend/ENTRY.md'), 'utf8').replace('Reason: reuse.', 'Reason: reuse everywhere.').replace('version: 1.2.0', 'version: 1.3.0'));
+  m.w('skills/practice-ng/references/new.md', 'New.\n');
+  const out = cmd(['diff', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir }).out;
+  assert.match(out, /--- project AGENTS\.md \(FE\)\n\+\+\+ catalog AGENTS\.md \(FE\)\n[\s\S]*-FE-2\. \*\*Components display\.\*\* Reason: reuse\.\n\+FE-2\. \*\*Components display\.\*\* Reason: reuse everywhere\./);
+  assert.match(out, /\+\+\+ catalog \.claude\/skills\/practice-ng\/references\/new\.md\n@@ -0,0 \+1 @@\n\+New\./);
+  assert.match(cmd(['diff', 'ts-web'], { root: m.root, projectDir: dir }).err, /only rules and skills are copied/);
+});

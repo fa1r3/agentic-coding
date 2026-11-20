@@ -31,7 +31,7 @@ State it in one sentence.
 
 - **Creation**: none of AGENTS.md, CONTEXT.md and openspec/config.yaml exists, or only empty files.
 - **Adoption**: at least one exists, without the f3 marker. Read what exists first (AGENTS.md, config.yaml, CONTEXT.md, CLAUDE.md, .mcp.json, opencode.json, the README files of the modules, `openspec/specs/` by passages) and draw from it a first answer to each question: the interview covers only what is missing or contradictory.
-- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary. If the launch state reports a tool of the project that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or an AGENTS.md marker in its former form, propose the theme Tools first. The theme Tools writes the missing files of the tools of the project, runs `openspec init --tools <tool>` for a tool of the project that has no OpenSpec skills (on an initialized project, it only adds the files of that tool), aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the AGENTS.md marker in its current form; it touches nothing else.
+- **Update**: AGENTS.md and config.yaml carry the f3 marker. Ask which themes to review; without an explicit answer, stop. Handle only those themes, then go to the summary. If the launch state lists practices updates available, propose the theme Practices (below). If the launch state reports a tool of the project that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or an AGENTS.md marker in its former form, propose the theme Tools first. The theme Tools writes the missing files of the tools of the project, runs `openspec init --tools <tool>` for a tool of the project that has no OpenSpec skills (on an initialized project, it only adds the files of that tool), aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore` and rewrites the AGENTS.md marker in its current form; it touches nothing else.
 
 ## Interview
 
@@ -46,14 +46,18 @@ State it in one sentence.
 7. Design, 1: the design tool and its skill, or none.
 8. Language, 1: the language of the prose of the artifacts.
 9. Vocabulary, 1: five to ten business terms and actions, which you propose from the previous answers.
-10. Project type: the phase below, in creation mode.
+10. Project type: the phase below.
 11. Stack: the phase below.
-12. Practices: the phase below, in creation mode.
-13. Adoption only: the existing code rules, below.
+12. Adoption only: the existing code rules, below.
+13. Practices: the phase below.
 
 ### Project type phase
 
-In creation mode, once the themes Product to Security are validated. It decides what kind of system the product is; the Stack phase then decides with which technologies.
+Once the themes Product to Security are validated. It decides what kind of system the product is; the Stack phase then decides with which technologies.
+
+In adoption mode, the archetype is recognized, not chosen: read the code by targeted passages (its applications, what it delivers, its dependencies on other projects), name the archetype it matches with `f3 practices show`, or "no archetype", and let the user confirm it; write the entry of `arch/decisions.md` as for a creation. A repository that holds several products linked otherwise than through versioned packages departs from "one project, one repository": say so, and propose a `BACKLOG.md` entry. Then go to the Stack phase.
+
+In creation mode:
 
 1. **Catalog.** The launch state lists the archetypes of the practices catalog. Read the entry of each one that could fit with `f3 practices show <id> <id>…`: when to choose it, when not to, its pitfalls. The catalog is outside the project: read it only through `f3 practices`. An archetype marked draft is not available: never propose it.
 2. **Recommendation.** Recommend one archetype, with its reason drawn from the validated answers, and say which ones you set aside and why. One f3 project is one repository, linked to other projects only through versioned packages: if the product described is several systems released on their own (for example three services), say so, and propose to frame this one only. A product that fits no archetype is framed without one ("no archetype"): the following phases then run without the catalog, within the invariant part.
@@ -80,7 +84,7 @@ In adoption mode, and when the theme Stack is reviewed in update mode, classify 
 
 ### Practices phase
 
-In creation mode, once the Stack section is validated: the practices depend on the stack.
+Once the Stack section is validated: the practices depend on the stack. In adoption mode, it runs as in creation, after the classification of the existing code rules (below): an existing rule that an adopted practice states is dropped in favour of the practice, and a gap between the code and an adopted practice becomes a `BACKLOG.md` entry, as for the invariant part; the decision is an entry of `arch/decisions.md` like A-003.
 
 1. **Facts.** Take from the validated answers the facts of the criteria: the archetype of A-001 (`none` without one), whether the product has a user interface, the languages and frameworks of the stack decision, the network exposure of the Security theme (`none`, `private`: a private network or the local machine, `public`: the internet). Run `f3 practices select --archetype <id|none> --ui yes|no --language <language> --framework <framework> --exposure <exposure>`, an option repeated for several values, lower case. Leave out a fact you do not know: the output says which criteria it could not check.
 2. **Proposal.** Read the entry of each candidate with `f3 practices show <id> <id>…`. Propose a selection, with for each entry one line "why for this project", then the candidates you set aside and why. The entries proposed by the archetype come first; a criterion not checked is a point to weigh with the user, not a reason to keep.
@@ -89,15 +93,24 @@ In creation mode, once the Stack section is validated: the practices depend on t
 
 The rules of a practice are copied as they are and never rewritten: an adaptation to the product is a project-specific rule.
 
+In update mode, the theme Practices starts from the launch state, which lists the practices adopted (the marker of `AGENTS.md`) and the updates available:
+- **An entry with a newer version in the catalog**: show `f3 practices diff <id>` and propose to update it.
+- **An entry removed from the catalog**: propose to remove it, or to keep its rules as project-specific rules.
+- **A text modified by hand**: show `f3 practices diff <id>`; the change made by hand becomes a project-specific rule, or is dropped by the update, as the user decides. It is overwritten only with the user's agreement, through `--force <id>`.
+- **An entry proposed by the archetype, not adopted**: read the reason in `arch/decisions.md`; propose it again only if that reason no longer holds.
+- **A newer archetype or recipe**: information only, nothing to apply; mention it.
+- **A section over the global budget**: propose what to remove.
+The user may also add or remove an entry: run `f3 practices select` with the facts of the project, as in creation. Then `f3 practices select … --check` with the new selection, and write an entry "Adopted practices" in `arch/decisions.md` that replaces the former one. Apply with `f3 practices apply --archetype <id|none> [--recipe <id>] <id>…`, the archetype and the recipe as the marker lists them, and the whole selection: an entry left out is removed. Nothing is applied without the user's validation.
+
 ### Existing code rules, in adoption mode
 
-Take each rule of the existing AGENTS.md and find the principle it expresses: already stated by the invariant part (dropped, citing the invariant rule); following from a technology (Stack section); only meaningful for this product (project-specific rule, with its reason); no longer holding (dropped, with your reason). The user decides rule by rule.
+Take each rule of the existing AGENTS.md and find the principle it expresses: already stated by the invariant part (dropped, citing the invariant rule); stated by an entry of the practices catalog (dropped, the entry proposed in the Practices phase; `f3 practices select` lists the candidates); following from a technology (Stack section); only meaningful for this product (project-specific rule, with its reason); no longer holding (dropped, with your reason). The user decides rule by rule.
 
 ## Summary and writing
 
 1. Present the full summary: the `context` as written, the terms of CONTEXT.md, the project type, the Stack section, the adopted practices, the entries of arch/decisions.md and, in adoption, the project-specific rules. Wait for the validation.
 2. Write each file following its reference:
-   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any; then, in creation mode, run `f3 practices apply --archetype <id|none> [--recipe <id>] <id> <id>…` with the selection of A-003 (with no entry when none is adopted), and `--recipe` when A-002 is built on a recipe. It writes the Adopted practices section just before the Stack section, with its marker, and copies the practice skills into `.claude/skills/practice-*`. Never write that section or those skills yourself; if `apply` refuses, show its message and stop;
+   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any; then, in creation and adoption modes, run `f3 practices apply --archetype <id|none> [--recipe <id>] <id> <id>…` with the selection of A-003 (with no entry when none is adopted), and `--recipe` when A-002 is built on a recipe. It writes the Adopted practices section just before the Stack section, with its marker, and copies the practice skills into `.claude/skills/practice-*`. Never write that section or those skills yourself; if `apply` refuses, show its message and stop;
    - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created. Then check that each skills folder it wrote has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`; if one is missing, say so in the summary, with what to do before `f3 design`: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit;
    - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
    - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
