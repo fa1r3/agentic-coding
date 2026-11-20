@@ -91,6 +91,6 @@ Each command inserts into its prompt, when you launch it, the output of a single
 
 Under Claude Code, it is the only shell command a command may run without asking. Under OpenCode, a command typed in a session runs its injection without any permission check, and an apostrophe in the argument can run another command: launch the steps with `f3 <step>`, which only passes identifiers (see the guide, section 15.4).
 
-During `f3 init`, the architect also runs `f3 practices` (`show`, `select`, `apply`, `diff`, `catalog`): it reads the catalog of the toolkit; `apply` writes the Adopted practices section of `AGENTS.md` and copies the practice skills into `.claude/skills/practice-*`; `diff` runs `diff -u` on temporary copies.
+During `f3 init`, the architect also runs `f3 practices` (`show`, `select`, `apply`, `diff`, `catalog`): it reads the catalog of the toolkit; `apply` writes the Adopted practices section of `AGENTS.md` and copies the practice skills into `.claude/skills/f3-stack-*`; `diff` runs `diff -u` on temporary copies.
 
 The script `f3-features.mjs` uses only the built-in modules of Node.js. It reads `openspec/specs/` and the delta specs of one change, and writes the feature files of `tests/e2e/features/`. It runs no other command.

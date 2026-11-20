@@ -21,7 +21,7 @@ The workflow is in none of these files: it is carried by the OpenSpec schema `f3
 - `BACKLOG.md`: the only place for ideas that are not planned yet. Template: `references/backlog-md.md`.
 - `ux/views.md`: the register of the views present in the code, with their unit of code, their displays (route and kind) and the screens of the design tool seen through each. It gives each view its name for the agents that read neither the code nor the design tool. Written by the developer, in the commit that creates, renames or removes a view. Template: `references/views-md.md`.
 - The files of each tool of the project: `CLAUDE.md`, `.mcp.json` and `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode. Only what the workflow needs: models, permission modes, providers and other user preferences belong to the user's settings. Rules below.
-- The practice skills, `.claude/skills/practice-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
+- The practice skills, `.claude/skills/f3-stack-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
 
 ## Files of each tool of the project
 

@@ -13,7 +13,7 @@ interview:
   - Which native features does it use (files and folders, dialogs, notifications, tray)?
 recipes: [ts-electron-angular]
 practices: [frontend-architecture]
-skills: [practice-angular]
+skills: [f3-stack-angular-new-app, f3-stack-angular-developer]
 workflow-impact:
   e2e: the runner launches the built application and drives its window, native dialogs included
   entry-points: each IPC handler is an entry point, one file per handler with its input and output contracts

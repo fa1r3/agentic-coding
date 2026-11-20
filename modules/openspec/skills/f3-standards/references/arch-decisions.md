@@ -71,7 +71,7 @@ Fictional invoicing project: not to be reused.
 - Status: active
 - Origin: initial framing, 2026-02-20
 - Context: an Angular interface over HTTP endpoints, reachable from the office network only.
-- Decision: frontend-architecture@1.0.0 and practice-angular@1.0.0 of the practices catalog.
+- Decision: frontend-architecture@1.0.0 and f3-stack-angular-developer@1.0.0 of the practices catalog.
 - Options set aside: none proposed by the catalog for this project.
 - Consequences: the rules FA-1 to FA-6 of the Adopted practices section of AGENTS.md apply to the interface.
 

@@ -45,7 +45,7 @@ export const WORKFLOW_IMPACT = {
 // Global budget of the Adopted practices section of AGENTS.md, in lines (D11).
 export const GLOBAL_BUDGET = 150;
 export const SECTION = '## Adopted practices';
-export const SKILL_PREFIX = 'practice-';
+export const SKILL_PREFIX = 'f3-stack-';
 const MARKER = /<!-- f3 practices: (.*?) -->/;
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;

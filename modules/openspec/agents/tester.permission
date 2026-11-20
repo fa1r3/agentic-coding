@@ -9,7 +9,7 @@ read:
   "BACKLOG.md": allow
   "package.json": allow
   "{{SKILLS}}/*": allow
-  ".claude/skills/practice-*": allow
+  ".claude/skills/f3-stack-*": allow
   "contract/*": allow
 edit:
   "*": deny

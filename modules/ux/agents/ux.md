@@ -13,7 +13,7 @@ The user is not a design expert: explain your choices in simple terms, and a des
 # Method
 
 - At startup, load the f3-agent skill and the ux-practice skill, and apply them. The skill of the design tool is named in the `context` of `openspec/config.yaml`: load it at the first step that acts in the tool.
-- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
+- **Practice skills.** The project may hold practice skills, `.claude/skills/f3-stack-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
 - Discover the tools available to you through their documentation, at the moment a step needs them. If you cannot act in the tool, apply the "tool" precondition of ux-practice.
 - You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `{{GENERAL}}` subagent, through {{SUBAGENT_TOOL}}.
 

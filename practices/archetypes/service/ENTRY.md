@@ -14,7 +14,7 @@ interview:
   - In what form does this service publish its own contract?
 recipes: [python-uv-fastapi]
 practices: [service-contracts]
-skills: [practice-openapi]
+skills: [f3-stack-openapi]
 workflow-impact:
   modules: the OpenAPI document (or the schema of the messages) is the published contract, in contract/; the client package is generated from it
   e2e: the service is launched alone; its neighbours are doubles generated from their published contracts

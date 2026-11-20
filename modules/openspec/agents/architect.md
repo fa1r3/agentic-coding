@@ -25,7 +25,7 @@ The user is an experienced software architect: do not explain basic architecture
 |---|---|
 | `AGENTS.md`, `openspec/config.yaml`, the files of each tool of the project (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `opencode.json`), `.gitignore` for `.f3/local` | f3 init |
 | the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
-| the Adopted practices section of `AGENTS.md`, `.claude/skills/practice-*` | f3 init, only by running `f3 practices apply` |
+| the Adopted practices section of `AGENTS.md`, `.claude/skills/f3-stack-*` | f3 init, only by running `f3 practices apply` |
 | design.md, tasks.md of a change | f3 design, f3 design-review |
 | review.md, validations/review.md of a change | f3 design-review |
 | validations/review.md of a change, as not-applicable | f3 design, on the light track |

@@ -139,11 +139,15 @@ if ! command -v openspec >/dev/null 2>&1; then
   echo "Warning: openspec is not in the PATH: install OpenSpec, which every f3 project uses." >&2
 fi
 
-# The prefix practice- is kept for the skills that f3 init copies from practices/ into a project: a skill
+# The prefix f3-stack- is kept for the skills that f3 init copies from practices/ into a project: a skill
 # of the toolkit with this prefix, installed in the personal folder, would hide the copy of the project
-# under Claude Code (D13).
-for d in "$TOOLKIT"/modules/*/skills/practice-*/; do
-  echo "The skill $(basename "$d") of $(dirname "$(dirname "$d")") starts with practice-, a prefix kept for the skills of practices/: rename it." >&2
+# under Claude Code (D13). A command with this prefix would share its name in the menu of Claude Code.
+for d in "$TOOLKIT"/modules/*/skills/f3-stack-*/; do
+  echo "The skill $(basename "$d") of $(dirname "$(dirname "$d")") starts with f3-stack-, a prefix kept for the skills of practices/: rename it." >&2
+  exit 1
+done
+for f in "$TOOLKIT"/modules/*/commands/f3-stack-*.md; do
+  echo "The command $(basename "$f" .md) of $(dirname "$(dirname "$f")") starts with f3-stack-, a prefix kept for the skills of practices/: rename it." >&2
   exit 1
 done
 

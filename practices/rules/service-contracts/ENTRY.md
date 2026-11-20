@@ -10,7 +10,7 @@ applies-when:
   archetypes: [service]
 requires: []
 conflicts: []
-pairs-with: [practice-openapi]
+pairs-with: [f3-stack-openapi]
 size-budget: 20
 ---
 

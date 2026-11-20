@@ -34,7 +34,7 @@ L'objectif : disposer d'un **référentiel** versionné dans le toolkit, dans le
 | D10 | **Granularité** : une entrée `rules` est indépendante de la techno ; sa déclinaison par techno va dans une skill liée par `pairs-with`. | Pas de duplication du principe entre entrées. |
 | D11 | **Budget de taille** : un plafond par entrée `rules` (`size-budget`) et un plafond global de la section Adopted practices. Le plafond par entrée est vérifié par les tests du toolkit ; le plafond global par `f3 practices select` avant l'écriture (refus), puis par `f3 state init` en mode mise à jour (avertissement). | AGENTS.md est chargé à chaque session (drift 5). |
 | D12 | **Pas de référentiel d'équipe ou d'entreprise en surcharge en V1.** Les identifiants des entrées restent uniques pour le permettre plus tard. | Simplicité. |
-| D13 | **Les skills de pratique sont copiées dans le projet, dans `.claude/skills/` seulement, avec un nom préfixé `practice-`.** | Seul dossier projet lu par les deux outils ; préfixe pour qu'aucune skill globale ne les masque (§4.5). |
+| D13 | **Les skills de pratique sont copiées dans le projet, dans `.claude/skills/` seulement, avec un nom préfixé `f3-stack-`.** | Seul dossier projet lu par les deux outils ; préfixe pour qu'aucune skill globale ne les masque (§4.5). Révisée le 2026-11-20 : préfixe `practice-` renommé `f3-stack-`, pour marquer une skill de f3 choisie par la stack du projet ; `install.sh` refuse aussi une commande du toolkit `f3-stack-*`, qui partagerait le menu `/` de Claude Code. Essayé le 2026-11-20 sur `practices-p9` (copie de `practices-p6`), sous l'agent developer : Claude Code 2.1.329 et OpenCode 2.2.5 chargent `f3-stack-angular-developer` par sa description et lisent ses références (preuves `evidence/practices/s11-f3-stack-*.jsonl`). |
 | D14 | **La règle 14 reste générale et inchangée ; le mécanisme d'e2e dépend du projet.** C'est la sous-section End-to-end tests de la section Stack qui dit comment le produit est lancé ou exécuté en mode test (par exemple, pour une bibliothèque, un harnais qui exécute le paquet construit). L'archétype et sa recette proposent ce mécanisme ; aucune phrase n'est ajoutée à la partie invariante. | Garder la philosophie actuelle (D4) ; la section Stack existe précisément pour ce qui dépend de la techno et du projet. |
 | D15 | **Pas de test des parcours qui traversent plusieurs services en V1.** Chaque service est testé seul, avec des doubles de ses voisins ; la pratique `service-contracts` exige contrat versionné, compatibilité ascendante et tests de contrat côté fournisseur. L'intégration réelle relève du déploiement. | D1 : chaque projet est indépendant. |
 | D16 | **Pas de mécanisme de remontée d'une règle de projet vers le référentiel en V1** : le référentiel évolue par des PR sur le toolkit. | Simplicité. |
@@ -45,7 +45,7 @@ L'objectif : disposer d'un **référentiel** versionné dans le toolkit, dans le
 | D21 | **Lecture de l'invariant par une bibliothèque**, écrite dans le champ `invariant` de l'entrée `library` : le paquet construit, installé comme le ferait un consommateur, est l'application lancée de la règle 14, et le harnais e2e n'en importe que l'API publique, jamais un module du dépôt ; chaque fonction ou classe de l'API publique est un entry point (règle 10) ; la composition root (règle 11) est la fabrique publique du paquet, qui reçoit les adaptateurs que seul le consommateur peut fournir et instancie les siens. | Tenir D5 sans dérogation et sans toucher à la règle 14 (D4, D14). |
 | D22 | **L'archétype et la recette sont des points de départ, cités sans suivi.** A-001 et A-002 citent leur `id@version`, et le marqueur d'AGENTS.md les liste aussi (`archetype:web-app@1.0.0, recipe:ts-fastify-htmx@1.0.0`). En mode mise à jour, `f3 state init` signale seulement qu'une version plus récente existe, à titre d'information, sans diff ni proposition de mise à jour. Seules les `rules` et les skills sont mises à jour par le thème Practices. | Une recette est adaptée au projet (D9) et ne peut pas être comparée à sa source ; l'archétype ne sert qu'à l'init. |
 | D23 | **Toutes les entrées du référentiel sont écrites en anglais** (archétypes, recettes, règles, skills). | Elles sont copiées telles quelles dans AGENTS.md et dans `.claude/skills/`, comme la partie invariante et les skills du toolkit, qui sont en anglais ; la langue de prose du projet ne concerne que les artefacts OpenSpec. |
-| D24 | **Une skill de pratique est chargée par le mécanisme natif des deux outils** : sa `description` dit quand la charger (« Load before writing an Angular component »). Le developer, l'ux et le tester reçoivent une consigne générale : charger les skills `practice-*` du projet dont la description correspond à la tâche. Le champ `loaded-by` d'une skill documente les agents concernés ; il ne pilote rien. | Aucune ligne de plus dans AGENTS.md (drift 5), aucune dépendance à l'architecte à chaque change. |
+| D24 | **Une skill de pratique est chargée par le mécanisme natif des deux outils** : sa `description` dit quand la charger (« Load before writing an Angular component »). Le developer, l'ux et le tester reçoivent une consigne générale : charger les skills `f3-stack-*` du projet dont la description correspond à la tâche. Le champ `loaded-by` d'une skill documente les agents concernés ; il ne pilote rien. | Aucune ligne de plus dans AGENTS.md (drift 5), aucune dépendance à l'architecte à chaque change. |
 | D25 | **Une entrée peut porter `status: draft`** : `f3 state init` et `f3 practices select` la listent comme non disponible, et l'architecte ne la propose pas. Une entrée passe en `stable` quand le workflow la prend en charge. | `service`, `library` et `ui-library` entrent au catalogue à l'étape 1, mais leur e2e n'est pris en charge qu'à l'étape 4 (§7). |
 | D26 | **Chaque clé de `workflow-impact` nomme la sous-section de la section Stack qu'elle alimente** (`e2e` → End-to-end tests, `ui` → User interface…) ; l'architecte l'y écrit, adaptée au projet, pendant la phase Stack. | L'archétype n'est lu qu'à l'init ; la section Stack est chargée à chaque session, et c'est déjà elle qui porte le mécanisme d'e2e (D14). |
 | D27 | **L'empreinte du texte importé est écrite avec sa version** : `source: f3 practices <id>@<version> sha256:<empreinte>` dans chaque skill importée, et `id@version#<empreinte courte>` pour chaque entrée `rules` du marqueur. `f3 state init` recalcule l'empreinte du texte du projet : si elle diffère, le texte a été modifié à la main. | Le référentiel ne garde que la version courante d'une entrée : après une montée de version, la comparaison du §3.5 n'a plus de texte d'origine. L'empreinte suffit, sans fichier de verrouillage (D17). |
@@ -80,11 +80,11 @@ practices/
 │   ├── accessibility/
 │   └── observability/
 └── skills/                     savoir-faire chargé à la demande, importé dans le projet
-    ├── practice-angular/
-    ├── practice-react/
-    ├── practice-sql-migrations/
-    ├── practice-openapi/
-    └── practice-owasp-api/
+    ├── f3-stack-angular/
+    ├── f3-stack-react/
+    ├── f3-stack-sql-migrations/
+    ├── f3-stack-openapi/
+    └── f3-stack-owasp-api/
 ```
 
 La partie invariante n'est **pas** une entrée du référentiel (D4) : elle reste dans `f3-standards`.
@@ -96,7 +96,7 @@ Quatre types, chacun avec une cible distincte, ce qui préserve « une informati
 | **archetype** | un type de projet : ce qui le caractérise, comment il applique la partie invariante, les questions qu'il ajoute à l'entretien, et des renvois vers les recettes, règles et skills qui lui conviennent (§3.6) | une entrée `arch/decisions.md` | pendant f3 init seulement |
 | **recipe** | une combinaison de stack éprouvée : organisation du dépôt (monorepo ou non, D7), arborescence des modules, outil d'enforcement, commande de vérification, runner e2e, serveur MCP d'observation | section Stack d'AGENTS.md + une entrée `arch/decisions.md` | toujours (via AGENTS.md) |
 | **rules** | 3 à 10 règles numérotées, chacune avec sa raison et un exemple, au format de la partie invariante, indépendantes de la techno (D10) | section Adopted practices d'AGENTS.md (§3.4) | toujours |
-| **skill** | savoir-faire long, propre à une techno : patterns, anti-patterns, exemples de code, checklists ; sa `description` dit quand la charger, et `loaded-by` documente les agents concernés (D24) | `.claude/skills/practice-<nom>/`, lu par les deux outils (D13) | à la demande, par l'agent dont la tâche correspond à la description (D24) |
+| **skill** | savoir-faire long, propre à une techno : patterns, anti-patterns, exemples de code, checklists ; sa `description` dit quand la charger, et `loaded-by` documente les agents concernés (D24) | `.claude/skills/f3-stack-<nom>/`, lu par les deux outils (D13) | à la demande, par l'agent dont la tâche correspond à la description (D24) |
 
 ### 3.3 Métadonnées d'une entrée
 
@@ -116,7 +116,7 @@ applies-when:
   languages: [typescript]
 requires: []                     # entrées dont elle dépend
 conflicts: []
-pairs-with: [practice-angular, practice-react]   # skills qui la détaillent (D10)
+pairs-with: [f3-stack-angular, f3-stack-react]   # skills qui la détaillent (D10)
 size-budget: 60                  # lignes max écrites dans AGENTS.md (D11)
 ---
 ```
@@ -184,7 +184,7 @@ interview:                       # questions ajoutées à l'entretien, au plus 3
   - In what form does this service publish its own contract?
 recipes: [python-uv-fastapi]
 practices: [service-contracts, observability, api-security]
-skills: [practice-openapi, practice-owasp-api]
+skills: [f3-stack-openapi, f3-stack-owasp-api]
 workflow-impact:                 # sous-section de la Stack alimentée par chaque clé (D26)
   e2e: the service is launched alone; its neighbours are doubles generated from their published contracts
   ui: no user interface unless the service exposes one
@@ -261,7 +261,7 @@ Précédence en cas de même nom :
 Conséquences :
 
 1. **Un seul dossier de destination : `.claude/skills/`.** C'est le seul dossier projet lu par les deux outils. `.agents/skills/` aurait été le choix neutre, mais Claude Code ne le documente pas.
-2. **Le préfixe `practice-`** évite qu'une skill globale masque la copie du projet. `install.sh` vérifie qu'aucune skill du toolkit ne porte ce préfixe.
+2. **Le préfixe `f3-stack-`** (`practice-` avant le 2026-11-20, D13) évite qu'une skill globale masque la copie du projet. `install.sh` vérifie qu'aucune skill ni commande du toolkit ne porte ce préfixe.
 3. **Effet de bord sur l'existant, hors périmètre** : quand le toolkit est installé pour les deux outils, OpenCode voit chaque skill f3 deux fois (`~/.claude/skills` et `~/.config/opencode/skills`). Les deux sont des liens vers le même fichier : sans conséquence aujourd'hui, mais `install.sh` pourrait n'installer les skills que dans `~/.claude/skills`. À noter à part.
 
 Vérifications de l'étape 1 (2026-11-19, Claude Code 2.1.328, OpenCode 2.2.5 dans le HOME jetable du banc d'essai, projet jetable avec une skill sonde `.claude/skills/practice-probe/`) :
@@ -288,17 +288,17 @@ Vérifications de l'étape 1 (2026-11-19, Claude Code 2.1.328, OpenCode 2.2.5 da
 | Fichier / élément | Modification |
 |---|---|
 | `practices/` (nouveau) | le catalogue, ses quatre types, `catalog.md` ; premières entrées : les six archétypes, une recette par stack déjà pratiquée, `frontend-architecture`, `service-contracts`, une skill front |
-| `install.sh` | lier `practices/` vers `~/.local/share/f3/practices/` ; l'inclure dans `--remove` ; vérifier qu'aucune skill du toolkit ne porte le préfixe `practice-` |
+| `install.sh` | lier `practices/` vers `~/.local/share/f3/practices/` ; l'inclure dans `--remove` ; vérifier qu'aucune skill du toolkit ne porte le préfixe `f3-stack-` |
 | `cli/lib/toolkit.mjs` | constante `PRACTICES_DIR` ; lecture des en-têtes des entrées (le parseur de frontmatter actuel ignore les listes : à étendre, ou à remplacer par une syntaxe plate) |
 | `cli/` (nouvelle commande `f3 practices`) | `select` (filtre `applies-when`, `requires`, `conflicts`, budget global) et `apply` (copie des règles et des skills, marqueur), en mode création comme en mise à jour (D20) |
 | `cli/lib/state.mjs` (entrée `init`) | nouveaux blocs : « Practices catalog » (id, kind, version, résumé, critères), « Practices adopted in the project » (lu dans le marqueur), « Practices updates available », taille de la section Adopted practices au regard du budget |
 | `modules/openspec/commands/f3-init.md` | phase Type de projet, qui reprend « la forme des applications » de la phase Stack actuelle ; report de `workflow-impact` dans la section Stack (D26) ; recettes dans la phase Stack ; phase Practices ; thème Practices en mode Update ; reconnaissance de l'archétype en adoption ; écriture des skills ; liste « Produces » |
 | `modules/openspec/skills/f3-standards/` | `agents-md.md` : section Adopted practices, sa place, son marqueur, la numérotation par code (D19), la règle de classement étendue ; la partie invariante n'est pas modifiée (D4, D14) ; `SKILL.md` : D1 (un projet = un dépôt indépendant) et skills importées comme nouvelle catégorie de fichiers du projet ; `arch-decisions.md` : exemples d'entrées archétype et pratiques adoptées |
-| `modules/openspec/agents/architect.md` | table « Writing scope » : section Adopted practices et skills `.claude/skills/practice-*`, écrites seulement par `f3 practices apply`, à f3 init ; méthode : consulter le référentiel avant de proposer une stack |
-| `modules/openspec/agents/developer.md`, `tester.md`, `modules/ux/agents/ux.md` | consigne générale : charger les skills `practice-*` du projet dont la description correspond à la tâche (D24) |
+| `modules/openspec/agents/architect.md` | table « Writing scope » : section Adopted practices et skills `.claude/skills/f3-stack-*`, écrites seulement par `f3 practices apply`, à f3 init ; méthode : consulter le référentiel avant de proposer une stack |
+| `modules/openspec/agents/developer.md`, `tester.md`, `modules/ux/agents/ux.md` | consigne générale : charger les skills `f3-stack-*` du projet dont la description correspond à la tâche (D24) |
 | `modules/openspec/skills/e2e-practice/` | e2e d'un `service` avec des doubles des voisins (D15) ; e2e d'un produit sans interface (bibliothèque, CLI) : objets d'accès au lieu de page objects, nommés d'après l'API publique ou les commandes (D14) |
 | `modules/openspec/commands/f3-design-review.md` | un des sous-agents de revue vérifie le design contre les pratiques adoptées |
-| `*.permission` | autoriser l'architecte à lancer `f3 practices select` et `f3 practices apply` ; aucune écriture directe dans `.claude/skills/` (D20). `tester.permission` : autoriser la lecture de `.claude/skills/practice-*`, que sa table de lecture refuse aujourd'hui (tout est refusé sauf une liste) |
+| `*.permission` | autoriser l'architecte à lancer `f3 practices select` et `f3 practices apply` ; aucune écriture directe dans `.claude/skills/` (D20). `tester.permission` : autoriser la lecture de `.claude/skills/f3-stack-*`, que sa table de lecture refuse aujourd'hui (tout est refusé sauf une liste) |
 | `cli/lib/toolkit.mjs` (`RESERVED`), `cli/f3.mjs` | `practices` devient une sous-commande réservée : aucune commande ne peut s'appeler `/f3-practices` |
 | `cli/test/` | fixtures d'un mini-référentiel ; validité du référentiel (renvois existants, codes uniques, `size-budget` tenu) ; tests de `f3 practices` (filtre, dépendances, conflits, budget, copie à l'identique, marqueur) et de `state init` (catalogue, détection de mise à jour) ; tests d'install |
 | `GUIDE.md`, `README.md` | sections 2 (principe D1), 4, 5.1, 5.2, 8 (step 0), 14 (adoption), 16 (limites) |

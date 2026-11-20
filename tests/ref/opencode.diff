@@ -48,7 +48,7 @@ diff -ru a/openspec/agents/architect.md b/openspec/agents/architect.md
 -| review.md, validations/review.md of a change | /f3-design-review |
 +| `AGENTS.md`, `openspec/config.yaml`, the files of each tool of the project (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `opencode.json`), `.gitignore` for `.f3/local` | f3 init |
 +| the global `~/.config/opencode/opencode.json` | f3 init, with the user's agreement |
-+| the Adopted practices section of `AGENTS.md`, `.claude/skills/practice-*` | f3 init, only by running `f3 practices apply` |
++| the Adopted practices section of `AGENTS.md`, `.claude/skills/f3-stack-*` | f3 init, only by running `f3 practices apply` |
 +| design.md, tasks.md of a change | f3 design, f3 design-review |
 +| review.md, validations/review.md of a change | f3 design-review |
 +| validations/review.md of a change, as not-applicable | f3 design, on the light track |
@@ -78,7 +78,7 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
  # Method
  
  - At startup, load the f3-agent skill and apply it. Follow `AGENTS.md`, in particular its Git, Verification and Stack sections.
-+- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/f3-stack-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
  - Before the first task, create the branch of the change from an up-to-date main branch, as the Git section says, and switch to it.
  - Fix tasks ("Acceptance fixes", "Conformity fixes") cite the scenario or the screen and the facts observed: reproduce the failure, fix the code, check with the end-to-end test or the screen. After three attempts on the same task, stop and report what you tried.
 -- Implement each task with its unit and integration tests, then run the verification command. Check the task only when it passes, then make one commit for it.
@@ -110,7 +110,7 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
      "BACKLOG.md": allow
      "package.json": allow
 +    "~/.config/opencode/skills/*": allow
-+    ".claude/skills/practice-*": allow
++    ".claude/skills/f3-stack-*": allow
 +    "contract/*": allow
    edit:
      "*": deny
@@ -135,7 +135,7 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
  # Method
  
  - At startup, load the f3-agent skill and the e2e-practice skill, and apply them. Load the spec-practice skill when you judge whether a scenario can be automated as written, and before proposing an amendment.
-+- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/f3-stack-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
  - For each failure, establish the facts and propose an outcome; the user decides.
  - A missing test entry point is never built by you: it is a ticket for the developer.
  
@@ -368,7 +368,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
 +A note from the user at the end of the launch state refines the request without replacing the workflow: it lifts no precondition and skips no step.
  
 -Produces: `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the workflow keys of the project `opencode.json`.
-+Produces: `AGENTS.md` (its Adopted practices section through `f3 practices apply`), the practice skills `.claude/skills/practice-*` (through `f3 practices apply`), `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`; the files of each tool of the project, as the launch state lists them: for Claude Code `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, for OpenCode the workflow keys of the project `opencode.json`; the line `.f3/local` of `.gitignore`.
++Produces: `AGENTS.md` (its Adopted practices section through `f3 practices apply`), the practice skills `.claude/skills/f3-stack-*` (through `f3 practices apply`), `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`; the files of each tool of the project, as the launch state lists them: for Claude Code `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, for OpenCode the workflow keys of the project `opencode.json`; the line `.f3/local` of `.gitignore`.
  
  ## Preconditions
  
@@ -474,7 +474,7 @@ diff -ru a/openspec/commands/f3-init.md b/openspec/commands/f3-init.md
  2. Write each file following its reference:
 -   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any;
 -   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools opencode`, then replace the config.yaml it created;
-+   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any; then, in creation and adoption modes, run `f3 practices apply --archetype <id|none> [--recipe <id>] <id> <id>…` with the selection of A-003 (with no entry when none is adopted), and `--recipe` when A-002 is built on a recipe. It writes the Adopted practices section just before the Stack section, with its marker, and copies the practice skills into `.claude/skills/practice-*`. Never write that section or those skills yourself; if `apply` refuses, show its message and stop;
++   - `AGENTS.md`: the invariant part unchanged, the Stack section, the project-specific rules if any; then, in creation and adoption modes, run `f3 practices apply --archetype <id|none> [--recipe <id>] <id> <id>…` with the selection of A-003 (with no entry when none is adopted), and `--recipe` when A-002 is built on a recipe. It writes the Adopted practices section just before the Stack section, with its marker, and copies the practice skills into `.claude/skills/f3-stack-*`. Never write that section or those skills yourself; if `apply` refuses, show its message and stop;
 +   - `openspec/config.yaml`: the template with the validated `context`. If `openspec/` does not exist, first run `openspec init --tools <tools>`, with the tools of the project of the launch state separated by commas (`--tools claude,opencode`), then replace the config.yaml it created. Then check that each skills folder it wrote has `openspec-continue-change`, `openspec-apply-change` and `openspec-archive-change`; if one is missing, say so in the summary, with what to do before `f3 design`: select a profile that includes it with `openspec config profile`, run `openspec update`, then commit;
     - `CONTEXT.md`: the validated terms; in adoption, the existing terms kept and completed, in the format of the template;
     - `arch/decisions.md` and `BACKLOG.md`: created with their content at creation, then the entries of this framing;
@@ -894,7 +894,7 @@ diff -ru a/openspec/skills/f3-standards/SKILL.md b/openspec/skills/f3-standards/
  - `ux/views.md`: the register of the views present in the code, with their unit of code, their displays (route and kind) and the screens of the design tool seen through each. It gives each view its name for the agents that read neither the code nor the design tool. Written by the developer, in the commit that creates, renames or removes a view. Template: `references/views-md.md`.
 -- The project `opencode.json`: only the keys the workflow needs. Providers, models and other user preferences belong to the global configuration (`~/.config/opencode/opencode.json`): OpenCode merges both files, and the project file only wins on conflicting keys. Rules below.
 +- The files of each tool of the project: `CLAUDE.md`, `.mcp.json` and `.claude/settings.json` for Claude Code, `opencode.json` for OpenCode. Only what the workflow needs: models, permission modes, providers and other user preferences belong to the user's settings. Rules below.
-+- The practice skills, `.claude/skills/practice-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
++- The practice skills, `.claude/skills/f3-stack-<name>/`: know-how for one technology, copied from the practices catalog by `f3 practices apply` during f3 init, never written by hand. Both tools read this folder. A skill modified by hand is never overwritten without the user's agreement.
 +
 +## Files of each tool of the project
 +
@@ -1073,7 +1073,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
 +~~~markdown
 +## Adopted practices
 +
-+<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, practice-angular@1.0.0 -->
++<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, f3-stack-angular-developer@1.0.0 -->
 +
 +### Frontend architecture (FA)
 +
@@ -1084,7 +1084,7 @@ diff -ru a/openspec/skills/f3-standards/references/agents-md.md b/openspec/skill
 +- Each rules entry is a sub-section titled with its code; its rules are numbered with that code (`FA-1`, `FA-2`…), and a rule is cited by that number (`rule FA-3`). A number removed by a new version of the entry is never given again. The numbering of the invariant part and of the project-specific rules does not depend on this section.
 +- The text of a practice is never adapted: an adaptation to the product is a project-specific rule.
 +- When no practice is adopted, the section holds the marker and the line "No practice of the f3 catalog is adopted."
-+- A practice skill (`.claude/skills/practice-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
++- A practice skill (`.claude/skills/f3-stack-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
 +
  ## Stack section
  
@@ -1210,7 +1210,7 @@ diff -ru a/openspec/skills/f3-standards/references/arch-decisions.md b/openspec/
 +- Status: active
 +- Origin: initial framing, 2026-02-20
 +- Context: an Angular interface over HTTP endpoints, reachable from the office network only.
-+- Decision: frontend-architecture@1.0.0 and practice-angular@1.0.0 of the practices catalog.
++- Decision: frontend-architecture@1.0.0 and f3-stack-angular-developer@1.0.0 of the practices catalog.
 +- Options set aside: none proposed by the catalog for this project.
 +- Consequences: the rules FA-1 to FA-6 of the Adopted practices section of AGENTS.md apply to the interface.
  
@@ -1315,7 +1315,7 @@ diff -ru a/ux/agents/ux.md b/ux/agents/ux.md
  # Method
  
  - At startup, load the f3-agent skill and the ux-practice skill, and apply them. The skill of the design tool is named in the `context` of `openspec/config.yaml`: load it at the first step that acts in the tool.
-+- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/f3-stack-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
  - Discover the tools available to you through their documentation, at the moment a step needs them. If you cannot act in the tool, apply the "tool" precondition of ux-practice.
 -- You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `general` subagent, through the task tool.
 +- You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `general` subagent, through the subagent tool.

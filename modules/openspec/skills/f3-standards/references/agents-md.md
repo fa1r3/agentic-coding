@@ -170,7 +170,7 @@ Written by `f3 practices apply`, never by hand, just before the Stack section:
 ~~~markdown
 ## Adopted practices
 
-<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, practice-angular@1.0.0 -->
+<!-- f3 practices: archetype:web-app@1.0.0, frontend-architecture@1.0.0#e16493801802, f3-stack-angular-developer@1.0.0 -->
 
 ### Frontend architecture (FA)
 
@@ -181,7 +181,7 @@ FA-1. **A view owns the state of its screen.** …
 - Each rules entry is a sub-section titled with its code; its rules are numbered with that code (`FA-1`, `FA-2`…), and a rule is cited by that number (`rule FA-3`). A number removed by a new version of the entry is never given again. The numbering of the invariant part and of the project-specific rules does not depend on this section.
 - The text of a practice is never adapted: an adaptation to the product is a project-specific rule.
 - When no practice is adopted, the section holds the marker and the line "No practice of the f3 catalog is adopted."
-- A practice skill (`.claude/skills/practice-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
+- A practice skill (`.claude/skills/f3-stack-<name>/`), copied by the same command, details the rules of a practice for one technology. Its header says its source (`source: f3 practices <id>@<version> sha256:<fingerprint>`). Agents load it by its description, when their task matches.
 
 ## Stack section
 

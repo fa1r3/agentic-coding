@@ -190,11 +190,20 @@ test('install.sh --remove removes every link of the toolkit for both tools, and 
   assert.ok(existsSync(t.at(...OPENCODE, 'agents', 'own.md')));
 });
 
-test('install.sh refuses a skill of the toolkit named practice-*, kept for the skills of practices/ (D13)', () => {
+test('install.sh refuses a skill of the toolkit named f3-stack-*, kept for the skills of practices/ (D13)', () => {
   const t = setup();
-  mkdirSync(join(t.root, 'modules', 'openspec', 'skills', 'practice-mine'), { recursive: true });
+  mkdirSync(join(t.root, 'modules', 'openspec', 'skills', 'f3-stack-mine'), { recursive: true });
   const r = t.install(['claude']);
   assert.equal(r.status, 1);
-  assert.match(r.stderr, /The skill practice-mine of .*modules\/openspec starts with practice-/);
+  assert.match(r.stderr, /The skill f3-stack-mine of .*modules\/openspec starts with f3-stack-/);
+  assert.ok(!existsSync(t.at(...CLAUDE)));
+});
+
+test('install.sh refuses a command of the toolkit named f3-stack-*, which would share the menu with the skills of practices/ (D13)', () => {
+  const t = setup();
+  writeFileSync(join(t.root, 'modules', 'openspec', 'commands', 'f3-stack-mine.md'), '---\ndescription: x\n---\n');
+  const r = t.install(['claude']);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /The command f3-stack-mine of .*modules\/openspec starts with f3-stack-/);
   assert.ok(!existsSync(t.at(...CLAUDE)));
 });

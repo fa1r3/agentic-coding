@@ -1,7 +1,7 @@
 ---
-id: practice-openapi
+id: f3-stack-openapi
 kind: skill
-name: practice-openapi
+name: f3-stack-openapi
 description: "OpenAPI know-how of the project: the published contract, its versioning, the generated client, provider contract tests, doubles of the neighbours. Load before changing contract/openapi.yaml, an endpoint of the contract, the client of a neighbour, or a double of a neighbour."
 version: 1.0.0
 status: stable

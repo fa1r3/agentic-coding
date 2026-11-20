@@ -308,7 +308,7 @@ The tool you choose has no effect on the versioned files of the project: `f3 ini
 | archetype | a type of project (`web-app`, `desktop-app`, `cli-tool`, `service`, `library`, `ui-library`): how it applies the invariant part, its questions, what it changes for the workflow | an entry of `arch/decisions.md` (A-001) |
 | recipe | a stack already practiced: a draft of the Stack section, and what the research must check | the Stack section, adapted, and A-002 |
 | rules | a few numbered rules, independent of any technology (`FA-1`…) | the Adopted practices section of `AGENTS.md`, copied as is |
-| skill | know-how for one technology, loaded on demand | `.claude/skills/practice-<name>/`, read by both tools |
+| skill | know-how for one technology, loaded on demand | `.claude/skills/f3-stack-<name>/`, read by both tools |
 
 An entry marked draft is listed but never proposed. The format of an entry is in `practices/README.md`, and the index in `practices/catalog.md`.
 
@@ -347,7 +347,7 @@ There are three families:
 | `.claude/settings.json` (Claude Code) | the hook that makes each f3 command run as its agent (`f3 guard-prompt`) | the architect, during `f3 init` | Claude Code | a step typed in the wrong session runs under the wrong agent |
 | `opencode.json` (OpenCode, project) | only the workflow keys: `instructions` (to load `CONTEXT.md`) and the MCP servers the project needs | the architect, during `f3 init` | OpenCode | agents miss the vocabulary or the tools; personal settings leak into the repository |
 | `.gitignore` | the line `.f3/local`: the tool of each user is not versioned (4.4) | the architect, during `f3 init` | Git | one user's tool is imposed on the others |
-| `.claude/skills/practice-*/` | the practice skills copied from the catalog (4.5), each with its source and fingerprint | `f3 practices apply`, during `f3 init` | the agent whose task matches the description of the skill, under both tools | agents fall back on their general habits for a technology |
+| `.claude/skills/f3-stack-*/` | the practice skills copied from the catalog (4.5), each with its source and fingerprint | `f3 practices apply`, during `f3 init` | the agent whose task matches the description of the skill, under both tools | agents fall back on their general habits for a technology |
 
 #### The files of each tool
 
@@ -593,7 +593,7 @@ The **practices phase**: the agent runs `f3 practices select` with the facts of 
 
 In update mode, the theme **Practices** shows the updates the launch state lists: a newer version (with `f3 practices diff`), an entry removed from the catalog, a text modified by hand, an entry of the archetype not adopted. Nothing is applied without your validation, and a text modified by hand is overwritten only with your agreement.
 
-**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the practice skills `.claude/skills/practice-*`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
+**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the practice skills `.claude/skills/f3-stack-*`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
 
 > **Claude Code.** At the first f3 session in the project, each developer trusts the folder and approves the servers of `.mcp.json`.
 

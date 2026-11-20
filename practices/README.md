@@ -25,7 +25,7 @@ Common to every entry:
 
 | Key | Meaning |
 |---|---|
-| `id` | kebab-case, unique in the catalog; a skill starts with `practice-` (D13) |
+| `id` | kebab-case, unique in the catalog; a skill starts with `f3-stack-`: a skill of f3, chosen by the stack of the project; no skill or command of the toolkit takes this prefix (D13) |
 | `kind` | `archetype`, `recipe`, `rules` or `skill`, as its folder |
 | `version` | `x.y.z`; raise it at every change of the text copied into a project |
 | `status` | `stable`, or `draft`: listed as not available and never proposed (D25) |

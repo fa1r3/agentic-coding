@@ -32,7 +32,7 @@ interview:
   - One question?
 recipes: [ts-web]
 practices: [frontend]
-skills: [practice-ng]
+skills: [f3-stack-ng]
 workflow-impact:
   e2e: a browser
 ---
@@ -72,7 +72,7 @@ status: stable
 summary: Frontend rules.
 applies-when:
   ui: yes
-pairs-with: [practice-ng]
+pairs-with: [f3-stack-ng]
 size-budget: 5
 ---
 
@@ -111,10 +111,10 @@ size-budget: 5
 
 LE-1. **Old.** Reason: old.
 `);
-  w('skills/practice-ng/SKILL.md', `---
-id: practice-ng
+  w('skills/f3-stack-ng/SKILL.md', `---
+id: f3-stack-ng
 kind: skill
-name: practice-ng
+name: f3-stack-ng
 description: "Load before writing an Angular component."
 version: 1.0.0
 status: stable
@@ -128,7 +128,7 @@ loaded-by: [developer]
 
 Use signals.
 `);
-  w('skills/practice-ng/references/more.md', 'More.\n');
+  w('skills/f3-stack-ng/references/more.md', 'More.\n');
   return { root, w };
 }
 
@@ -166,7 +166,7 @@ test('validation reports a broken reference, a reused code, a budget exceeded, a
   m.w('archetypes/web-app/ENTRY.md', readFileSync(join(m.root, 'archetypes/web-app/ENTRY.md'), 'utf8').replace('recipes: [ts-web]', 'recipes: [ts-gone]').replace('e2e: a browser', 'e2e: a browser\n  colour: red'));
   m.w('rules/legacy/ENTRY.md', readFileSync(join(m.root, 'rules/legacy/ENTRY.md'), 'utf8').replace('code: LE', 'code: FE').replace('LE-1.', 'LE-2.'));
   m.w('rules/frontend/ENTRY.md', readFileSync(join(m.root, 'rules/frontend/ENTRY.md'), 'utf8').replace('size-budget: 5', 'size-budget: 1'));
-  m.w('skills/practice-ng/SKILL.md', readFileSync(join(m.root, 'skills/practice-ng/SKILL.md'), 'utf8').replace('name: practice-ng', 'name: ng'));
+  m.w('skills/f3-stack-ng/SKILL.md', readFileSync(join(m.root, 'skills/f3-stack-ng/SKILL.md'), 'utf8').replace('name: f3-stack-ng', 'name: ng'));
   m.w('skills/ng/SKILL.md', '---\nid: ng\nkind: skill\nname: ng\ndescription: x\nversion: 1.0.0\nstatus: stable\nsummary: x\n---\n');
   const errors = validateCatalog(loadCatalog(m.root)).join('\n');
   assert.match(errors, /recipes: "ts-gone" is not a recipe entry/);
@@ -175,7 +175,7 @@ test('validation reports a broken reference, a reused code, a budget exceeded, a
   assert.match(errors, /is not numbered FE-1/);
   assert.match(errors, /2 lines, over its size-budget of 1/);
   assert.match(errors, /name "ng" differs from its id/);
-  assert.match(errors, /skills\/ng\/SKILL.md: a skill is named practice-<name>/);
+  assert.match(errors, /skills\/ng\/SKILL.md: a skill is named f3-stack-<name>/);
 });
 
 test('select: entries of the archetype first, criteria, unchecked facts, drafts, and no archetype', () => {
@@ -183,14 +183,14 @@ test('select: entries of the archetype first, criteria, unchecked facts, drafts,
   const catalog = loadCatalog(root);
   const r = select(catalog, { archetype: 'web-app', ui: 'yes', language: ['typescript'], framework: [], exposure: [] });
   assert.deepEqual(r.candidates.map((c) => [c.entry.id, c.archetype, c.unchecked]), [
-    ['frontend', true, []], ['practice-ng', true, ['frameworks']], ['security', false, ['exposure']],
+    ['frontend', true, []], ['f3-stack-ng', true, ['frameworks']], ['security', false, ['exposure']],
   ]);
   assert.deepEqual(r.setAside.map((s) => [s.entry.id, s.reasons]), [['legacy', ['languages: cobol']]]);
   const none = select(catalog, { archetype: 'none', ui: 'no', language: [], framework: ['angular'], exposure: ['private'] });
-  assert.deepEqual(none.candidates.map((c) => c.entry.id), ['legacy', 'practice-ng']);
+  assert.deepEqual(none.candidates.map((c) => c.entry.id), ['legacy', 'f3-stack-ng']);
   const out = cmd(['select', '--archetype', 'web-app', '--ui', 'yes', '--framework', 'angular'], { root });
   assert.equal(out.code, 0, out.err);
-  assert.match(out.out, /- rules frontend@1\.2\.0 \(FE, 2 lines\): Frontend rules\. \[proposed by the archetype; detailed by practice-ng\]/);
+  assert.match(out.out, /- rules frontend@1\.2\.0 \(FE, 2 lines\): Frontend rules\. \[proposed by the archetype; detailed by f3-stack-ng\]/);
   assert.match(out.out, /security@1\.0\.0.*\[compatible; requires frontend; conflicts with legacy; not checked, no fact given: exposure\]/);
   assert.match(cmd(['select', '--archetype', 'svc'], { root }).out, /Practices candidates for archetype svc/);
   assert.equal(cmd(['select', '--archetype', 'nope'], { root }).code, 1);
@@ -218,25 +218,25 @@ test('check refuses a missing requirement, a conflict, a draft, a kind that is n
 test('apply writes the section before the Stack section, the marker, the skills, and is idempotent', () => {
   const { root } = mini();
   const dir = project();
-  const r = cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend', 'practice-ng'], { root, projectDir: dir });
+  const r = cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend', 'f3-stack-ng'], { root, projectDir: dir });
   assert.equal(r.code, 0, r.err);
   const text = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
   assert.ok(text.startsWith('# AGENTS.md\n\n## Rules\n\n1. **Invariant.**\n\n## Adopted practices\n\n'), text);
   assert.ok(text.endsWith('\n\n## Stack\n\n### Modules\n\nnpm.\n'), text);
-  assert.match(text, /<!-- f3 practices: archetype:web-app@1\.0\.0, recipe:ts-web@2\.1\.0, frontend@1\.2\.0#[0-9a-f]{12}, practice-ng@1\.0\.0 -->/);
+  assert.match(text, /<!-- f3 practices: archetype:web-app@1\.0\.0, recipe:ts-web@2\.1\.0, frontend@1\.2\.0#[0-9a-f]{12}, f3-stack-ng@1\.0\.0 -->/);
   assert.match(text, /### Frontend \(FE\)\n\nFE-1\. \*\*Views own state\.\*\* Reason: one place\.\nFE-2\./);
-  const skill = readFileSync(join(dir, '.claude/skills/practice-ng/SKILL.md'), 'utf8');
-  assert.match(skill, /^---\nname: practice-ng\ndescription: "Load before writing an Angular component\."\nsource: f3 practices practice-ng@1\.0\.0 sha256:[0-9a-f]{64}\n---\n\n# Angular\n\nUse signals\.\n$/);
-  assert.equal(readFileSync(join(dir, '.claude/skills/practice-ng/references/more.md'), 'utf8'), 'More.\n');
-  assert.deepEqual(readMarker(text).map((i) => [i.role, i.id, i.version]), [['archetype', 'web-app', '1.0.0'], ['recipe', 'ts-web', '2.1.0'], ['entry', 'frontend', '1.2.0'], ['entry', 'practice-ng', '1.0.0']]);
+  const skill = readFileSync(join(dir, '.claude/skills/f3-stack-ng/SKILL.md'), 'utf8');
+  assert.match(skill, /^---\nname: f3-stack-ng\ndescription: "Load before writing an Angular component\."\nsource: f3 practices f3-stack-ng@1\.0\.0 sha256:[0-9a-f]{64}\n---\n\n# Angular\n\nUse signals\.\n$/);
+  assert.equal(readFileSync(join(dir, '.claude/skills/f3-stack-ng/references/more.md'), 'utf8'), 'More.\n');
+  assert.deepEqual(readMarker(text).map((i) => [i.role, i.id, i.version]), [['archetype', 'web-app', '1.0.0'], ['recipe', 'ts-web', '2.1.0'], ['entry', 'frontend', '1.2.0'], ['entry', 'f3-stack-ng', '1.0.0']]);
   assert.deepEqual(projectPractices(loadCatalog(root), dir).modified, []);
-  cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend', 'practice-ng'], { root, projectDir: dir });
+  cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend', 'f3-stack-ng'], { root, projectDir: dir });
   assert.equal(readFileSync(join(dir, 'AGENTS.md'), 'utf8'), text);
   // Without any practice, the section keeps the marker of the archetype, and the skill is removed.
   assert.equal(cmd(['apply', '--archetype', 'web-app'], { root, projectDir: dir }).code, 0);
   const none = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
   assert.match(none, /<!-- f3 practices: archetype:web-app@1\.0\.0 -->\n\nNo practice of the f3 catalog is adopted\.\n\n## Stack/);
-  assert.ok(!existsSync(join(dir, '.claude/skills/practice-ng')));
+  assert.ok(!existsSync(join(dir, '.claude/skills/f3-stack-ng')));
   // Without an archetype either, the marker says none.
   assert.equal(cmd(['apply', '--archetype', 'none'], { root, projectDir: dir }).code, 0);
   const empty = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
@@ -247,20 +247,20 @@ test('apply writes the section before the Stack section, the marker, the skills,
 test('apply keeps the text modified by hand unless --force names it', () => {
   const { root } = mini();
   const dir = project();
-  cmd(['apply', '--archetype', 'none', 'frontend', 'practice-ng'], { root, projectDir: dir });
-  const skill = join(dir, '.claude/skills/practice-ng/references/more.md');
+  cmd(['apply', '--archetype', 'none', 'frontend', 'f3-stack-ng'], { root, projectDir: dir });
+  const skill = join(dir, '.claude/skills/f3-stack-ng/references/more.md');
   writeFileSync(skill, 'Changed.\n');
   const agents = join(dir, 'AGENTS.md');
   writeFileSync(agents, readFileSync(agents, 'utf8').replace('Reason: one place.', 'Reason: one single place.'));
-  assert.deepEqual(projectPractices(loadCatalog(root), dir).modified.sort(), ['frontend: modified by hand', 'practice-ng: modified by hand']);
+  assert.deepEqual(projectPractices(loadCatalog(root), dir).modified.sort(), ['f3-stack-ng: modified by hand', 'frontend: modified by hand']);
   const r = cmd(['apply', '--archetype', 'none', 'frontend'], { root, projectDir: dir });
   assert.equal(r.code, 3);
-  assert.match(r.err, /skill practice-ng was modified by hand/);
+  assert.match(r.err, /skill f3-stack-ng was modified by hand/);
   assert.match(r.err, /the rules of frontend were modified by hand in AGENTS\.md/);
   assert.equal(readFileSync(skill, 'utf8'), 'Changed.\n');
-  const forced = cmd(['apply', '--archetype', 'none', '--force', 'frontend', '--force', 'practice-ng', 'frontend'], { root, projectDir: dir });
+  const forced = cmd(['apply', '--archetype', 'none', '--force', 'frontend', '--force', 'f3-stack-ng', 'frontend'], { root, projectDir: dir });
   assert.equal(forced.code, 0, forced.err);
-  assert.match(forced.out, /removed \.claude\/skills\/practice-ng\//);
+  assert.match(forced.out, /removed \.claude\/skills\/f3-stack-ng\//);
   assert.deepEqual(projectPractices(loadCatalog(root), dir).modified, []);
 });
 
@@ -278,9 +278,9 @@ test('apply refuses without AGENTS.md or its Stack section, and with an invalid 
 
 test('show prints entries with their header and body, and the other files of a skill (D28)', () => {
   const { root } = mini();
-  const r = cmd(['show', 'frontend', 'practice-ng'], { root });
+  const r = cmd(['show', 'frontend', 'f3-stack-ng'], { root });
   assert.equal(r.code, 0, r.err);
-  assert.match(r.out, /^=== rules\/frontend\/ENTRY\.md\n---\nid: frontend\n[\s\S]*FE-2\. \*\*Components display\.\*\* Reason: reuse\.\n\n=== skills\/practice-ng\/SKILL\.md\n/);
+  assert.match(r.out, /^=== rules\/frontend\/ENTRY\.md\n---\nid: frontend\n[\s\S]*FE-2\. \*\*Components display\.\*\* Reason: reuse\.\n\n=== skills\/f3-stack-ng\/SKILL\.md\n/);
   assert.match(r.out, /Use signals\.\n\(other files of the skill: references\/more\.md\)\n$/);
   assert.match(cmd(['show', 'nope'], { root }).err, /unknown entry: nope/);
   assert.equal(cmd(['show', 'frontend@1.2.0'], { root }).out, cmd(['show', 'frontend'], { root }).out);
@@ -295,12 +295,13 @@ test('practices is a reserved subcommand of f3', async () => {
 test('the guard of the tester lets it read the practice skills of the project, and nothing else of .claude/ (V-P4)', async () => {
   const { decide, loadPolicy } = await import('../lib/policy.mjs');
   const root = tempDir('f3-practices-guard-');
-  mkdirSync(join(root, '.claude/skills/practice-angular'), { recursive: true });
-  writeFileSync(join(root, '.claude/skills/practice-angular/SKILL.md'), 'x');
+  mkdirSync(join(root, '.claude/skills/f3-stack-angular-developer'), { recursive: true });
+  writeFileSync(join(root, '.claude/skills/f3-stack-angular-developer/SKILL.md'), 'x');
   const effect = (file) => decide('tester', loadPolicy('tester'), { tool: 'Read', input: { file_path: file } }, root)?.effect ?? 'none';
-  assert.equal(effect('.claude/skills/practice-angular/SKILL.md'), 'none');
+  assert.equal(effect('.claude/skills/f3-stack-angular-developer/SKILL.md'), 'none');
   assert.equal(effect('.claude/settings.json'), 'deny');
   assert.equal(effect('.claude/skills/openspec-apply-change/SKILL.md'), 'deny');
+  assert.equal(effect('.claude/skills/practice-x/SKILL.md'), 'deny'); // the former prefix (D13)
 });
 
 test('projectUpdates: adopted items, newer versions, removed entries, text modified by hand, entries of the archetype not adopted', async () => {
@@ -311,7 +312,7 @@ test('projectUpdates: adopted items, newer versions, removed entries, text modif
   cmd(['apply', '--archetype', 'web-app', '--recipe', 'ts-web', 'frontend'], { root: m.root, projectDir: dir });
   assert.deepEqual(projectUpdates(loadCatalog(m.root), dir), {
     adopted: ['archetype web-app@1.0.0', 'recipe ts-web@2.1.0', 'rules frontend@1.2.0'],
-    updates: ['practice-ng@1.0.0: proposed by the archetype, not adopted (arch/decisions.md says why before you propose it)'],
+    updates: ['f3-stack-ng@1.0.0: proposed by the archetype, not adopted (arch/decisions.md says why before you propose it)'],
   });
   const bump = (path, from, to) => m.w(path, readFileSync(join(m.root, path), 'utf8').replace(from, to));
   bump('rules/frontend/ENTRY.md', 'version: 1.2.0', 'version: 1.3.0');
@@ -331,12 +332,12 @@ test('projectUpdates: adopted items, newer versions, removed entries, text modif
 test('diff shows the text of the project against the catalog, for rules and skills', () => {
   const m = mini();
   const dir = project();
-  cmd(['apply', '--archetype', 'none', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir });
-  assert.equal(cmd(['diff', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir }).out, 'AGENTS.md (FE): identical\n.claude/skills/practice-ng/SKILL.md: identical\n.claude/skills/practice-ng/references/more.md: identical\n');
+  cmd(['apply', '--archetype', 'none', 'frontend', 'f3-stack-ng'], { root: m.root, projectDir: dir });
+  assert.equal(cmd(['diff', 'frontend', 'f3-stack-ng'], { root: m.root, projectDir: dir }).out, 'AGENTS.md (FE): identical\n.claude/skills/f3-stack-ng/SKILL.md: identical\n.claude/skills/f3-stack-ng/references/more.md: identical\n');
   m.w('rules/frontend/ENTRY.md', readFileSync(join(m.root, 'rules/frontend/ENTRY.md'), 'utf8').replace('Reason: reuse.', 'Reason: reuse everywhere.').replace('version: 1.2.0', 'version: 1.3.0'));
-  m.w('skills/practice-ng/references/new.md', 'New.\n');
-  const out = cmd(['diff', 'frontend', 'practice-ng'], { root: m.root, projectDir: dir }).out;
+  m.w('skills/f3-stack-ng/references/new.md', 'New.\n');
+  const out = cmd(['diff', 'frontend', 'f3-stack-ng'], { root: m.root, projectDir: dir }).out;
   assert.match(out, /--- project AGENTS\.md \(FE\)\n\+\+\+ catalog AGENTS\.md \(FE\)\n[\s\S]*-FE-2\. \*\*Components display\.\*\* Reason: reuse\.\n\+FE-2\. \*\*Components display\.\*\* Reason: reuse everywhere\./);
-  assert.match(out, /\+\+\+ catalog \.claude\/skills\/practice-ng\/references\/new\.md\n@@ -0,0 \+1 @@\n\+New\./);
+  assert.match(out, /\+\+\+ catalog \.claude\/skills\/f3-stack-ng\/references\/new\.md\n@@ -0,0 \+1 @@\n\+New\./);
   assert.match(cmd(['diff', 'ts-web'], { root: m.root, projectDir: dir }).err, /only rules and skills are copied/);
 });
