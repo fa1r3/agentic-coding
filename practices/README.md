@@ -41,11 +41,12 @@ Criteria of `applies-when`, a closed vocabulary (D20). Each one is an option of 
 | `ui` | `--ui` | `yes` (the product has a user interface) or `no` |
 | `languages` | `--language`, repeatable | languages of the stack, lower case: `typescript`, `python`… |
 | `frameworks` | `--framework`, repeatable | frameworks of the stack, lower case: `angular`, `fastify`, `electron`… |
+| `contracts` | `--contract`, repeatable | forms of the contracts the project publishes, lower case: `openapi`, `asyncapi`, `protobuf`… |
 | `exposure` | `--exposure`, repeatable | `none` (no network), `private` (a private network, the local machine), `public` (the internet) |
 
 By kind:
 
-- **archetype**: `invariant` (how it applies the invariant part, without exception, D5), `interview` (at most 3 questions), `recipes`, `practices` (rules entries), `skills`, `workflow-impact` (each key names the sub-section of the Stack section it feeds, D26: `modules`, `enforcement`, `entry-points`, `ui`, `transport`, `verification`, `e2e`, `observation`). Body: when to choose it, when not to, known pitfalls.
+- **archetype**: `invariant` (how it applies the invariant part, without exception, D5), `interview` (at most 3 questions), `recipes`, `practices` (rules entries), `skills` (generic skills only, valid whatever the frameworks the project chooses; a skill of a framework is proposed by its `applies-when`, never by an archetype), `workflow-impact` (each key names the sub-section of the Stack section it feeds, D26: `modules`, `enforcement`, `entry-points`, `ui`, `transport`, `verification`, `e2e`, `observation`). Body: when to choose it, when not to, known pitfalls.
 - **recipe**: `check` (what the web research must verify before proposing it, D9). Body: a draft of the Stack section, one sub-section per heading of the template of `agents-md.md`, which the architect adapts.
 - **rules**: `code` (2 to 4 capital letters, unique: the rules are numbered `<code>-1`, `<code>-2`…, D19; a number removed by a new version is never given again), `title`, `size-budget` (maximum lines of the body, D11), `pairs-with` (skills that detail them, D10). Body: 3 to 10 numbered rules, each with its reason and an example when two readings are possible, independent of any technology.
 - **skill**: `name` (its id) and `description` (when to load it: the tools load a skill by its description, D24), `loaded-by` (the agents concerned, for the reader only). Body and other files: the skill, copied with only `name`, `description` and its `source` line in its header (D17, D27).

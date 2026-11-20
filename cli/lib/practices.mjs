@@ -29,6 +29,7 @@ export const CRITERIA = {
   ui: { option: 'ui', values: ['yes', 'no'] },
   languages: { option: 'language', list: true },
   frameworks: { option: 'framework', list: true },
+  contracts: { option: 'contract', list: true },
   exposure: { option: 'exposure', list: true, values: ['none', 'private', 'public'] },
 };
 // The sub-sections of the Stack section that a key of workflow-impact feeds (D26).
@@ -646,7 +647,7 @@ export function catalogMarkdown(catalog) {
 // Command line.
 
 function parseArgs(args) {
-  const facts = { language: [], framework: [], exposure: [] };
+  const facts = { language: [], framework: [], contract: [], exposure: [] };
   const opts = { force: [], ids: [], check: null, recipe: null };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -661,6 +662,7 @@ function parseArgs(args) {
       if (!CRITERIA.ui.values.includes(facts.ui)) throw new PracticesError(`--ui is yes or no, not "${facts.ui}"`);
     } else if (a === '--language') facts.language.push(value());
     else if (a === '--framework') facts.framework.push(value());
+    else if (a === '--contract') facts.contract.push(value());
     else if (a === '--exposure') {
       const v = value();
       if (!CRITERIA.exposure.values.includes(v)) throw new PracticesError(`--exposure is one of ${CRITERIA.exposure.values.join(', ')}, not "${v}"`);
@@ -683,7 +685,7 @@ export function showEntry(entry) {
 }
 
 const USAGE = [
-  'Usage: f3 practices select --archetype <id|none> [--ui yes|no] [--language <l>]... [--framework <f>]... [--exposure none|private|public]... [--check <id,id,...>]',
+  'Usage: f3 practices select --archetype <id|none> [--ui yes|no] [--language <l>]... [--framework <f>]... [--contract <c>]... [--exposure none|private|public]... [--check <id,id,...>]',
   '       f3 practices apply --archetype <id|none> [--recipe <id>] [--force <id>]... <id> [<id>...]',
   '       f3 practices show <id> [<id>...]',
   '       f3 practices diff <id> [<id>...]',

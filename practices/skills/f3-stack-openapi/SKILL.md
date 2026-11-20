@@ -8,6 +8,7 @@ status: stable
 summary: How the rules of service-contracts are written with OpenAPI, with patterns, anti-patterns and a checklist.
 applies-when:
   archetypes: [service]
+  contracts: [openapi]
 loaded-by: [architect, developer, tester]
 ---
 

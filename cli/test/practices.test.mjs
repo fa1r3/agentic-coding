@@ -197,6 +197,34 @@ test('select: entries of the archetype first, criteria, unchecked facts, drafts,
   assert.equal(cmd(['select', '--archetype', 'web-app', '--ui', 'maybe'], { root }).code, 1);
 });
 
+test('select: the contracts criterion filters on the form of the published contract', () => {
+  const { root, w } = mini();
+  w('skills/f3-stack-oas/SKILL.md', `---
+id: f3-stack-oas
+kind: skill
+name: f3-stack-oas
+description: "Load before changing the OpenAPI contract."
+version: 1.0.0
+status: stable
+summary: OpenAPI.
+applies-when:
+  contracts: [openapi]
+loaded-by: [developer]
+---
+
+# OpenAPI
+`);
+  const catalog = loadCatalog(root);
+  const base = { archetype: 'none', ui: 'no', language: [], framework: [], exposure: [] };
+  assert.deepEqual(select(catalog, { ...base, contract: ['openapi'] }).candidates.find((c) => c.entry.id === 'f3-stack-oas')?.unchecked, []);
+  assert.deepEqual(select(catalog, { ...base, contract: ['protobuf'] }).setAside.find((s) => s.entry.id === 'f3-stack-oas')?.reasons, ['contracts: openapi']);
+  assert.deepEqual(select(catalog, base).candidates.find((c) => c.entry.id === 'f3-stack-oas')?.unchecked, ['contracts']);
+  const out = cmd(['select', '--archetype', 'none', '--contract', 'openapi'], { root });
+  assert.equal(out.code, 0, out.err);
+  assert.match(out.out, /with contract=openapi/);
+  assert.match(out.out, /skill f3-stack-oas@1\.0\.0: OpenAPI\. \[compatible\]/);
+});
+
 test('check refuses a missing requirement, a conflict, a draft, a kind that is not adopted, the global budget', () => {
   const m = mini();
   const catalog = loadCatalog(m.root);

@@ -317,7 +317,7 @@ The architect reaches the catalog only through the command `f3 practices`, since
 | Command | Does |
 |---|---|
 | `f3 practices show <id>…` | prints entries |
-| `f3 practices select --archetype <id\|none> [facts]` | lists the candidates for the project, from the archetype and the facts of the interview (interface, languages, frameworks, exposure) |
+| `f3 practices select --archetype <id\|none> [facts]` | lists the candidates for the project, from the archetype and the facts of the interview (interface, languages, frameworks, contracts, exposure) |
 | `f3 practices select … --check <id>,<id>` | refuses a selection with a conflict, a missing requirement, a draft, or a section over the global budget |
 | `f3 practices apply --archetype <id\|none> [--recipe <id>] <id>…` | writes the Adopted practices section and its marker, copies the skills; a text modified by hand is kept unless `--force <id>` |
 | `f3 practices diff <id>…` | the text of the project against the catalog, for an update |

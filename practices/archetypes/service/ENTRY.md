@@ -12,9 +12,9 @@ interview:
   - Which services does this service call, and in what form do they publish their contract?
   - Synchronous communication, asynchronous, or both?
   - In what form does this service publish its own contract?
-recipes: [python-uv-fastapi]
+recipes: []
 practices: [service-contracts]
-skills: [f3-stack-openapi]
+skills: []
 workflow-impact:
   modules: the OpenAPI document (or the schema of the messages) is the published contract, in contract/; the client package is generated from it
   e2e: the service is launched alone; its neighbours are doubles generated from their published contracts

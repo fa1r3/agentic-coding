@@ -11,9 +11,9 @@ invariant: >
 interview:
   - Does the interface render on the server, in the browser, or both?
   - Is the server reachable from the internet, or only from a private network?
-recipes: [ts-fastify-htmx]
+recipes: []
 practices: [frontend-architecture]
-skills: [f3-stack-angular-new-app, f3-stack-angular-developer]
+skills: []
 workflow-impact:
   e2e: the server is started in test mode by the runner; the tests drive a browser on it
   ui: the views of ux/views.md are the pages of the interface
