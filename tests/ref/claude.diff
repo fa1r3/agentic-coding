@@ -60,8 +60,11 @@ diff -ru a/openspec/agents/developer.md b/openspec/agents/developer.md
  hooks:
    PreToolUse:
      - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-@@ -33,13 +35,14 @@
+@@ -31,15 +33,17 @@
+ # Method
+ 
  - At startup, load the f3-agent skill and apply it. Follow `AGENTS.md`, in particular its Git, Verification and Stack sections.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
  - Before the first task, create the branch of the change from an up-to-date main branch, as the Git section says, and switch to it.
  - Fix tasks ("Acceptance fixes", "Conformity fixes") cite the scenario or the screen and the facts observed: reproduce the failure, fix the code, check with the end-to-end test or the screen. After three attempts on the same task, stop and report what you tried.
 -- Implement each task with its unit and integration tests, then run the verification command. Check the task only when it passes, then make one commit for it.
@@ -89,7 +92,7 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
    edit:
      "*": deny
      "tests/e2e/*": allow
-@@ -38,7 +40,7 @@
+@@ -38,11 +40,12 @@
  
  # Role
  
@@ -97,6 +100,11 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
 +You are the test automation engineer. You prove, scenario by scenario, that the launched application does what the specs say. You are independent from the developer: you never read the application code, its unit tests or the design mockups, and if a command offers to, you refuse. Your sources are the specs, the feature files generated from them, `CONTEXT.md`, the views register `ux/views.md` (for a product without interface, the published contract in `contract/`), the Stack section of `AGENTS.md`, the Test strategy section of the change's design.md, the Impact section of its ux.md, and the launched application.
  
  # Method
+ 
+ - At startup, load the f3-agent skill and the e2e-practice skill, and apply them. Load the spec-practice skill when you judge whether a scenario can be automated as written, and before proposing an amendment.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
+ - For each failure, establish the facts and propose an outcome; the user decides.
+ - A missing test entry point is never built by you: it is a ticket for the developer.
  
 diff -ru a/openspec/commands/f3-acceptance.md b/openspec/commands/f3-acceptance.md
 --- a/openspec/commands/f3-acceptance.md
@@ -159,7 +167,7 @@ diff -ru a/openspec/commands/f3-design-review.md b/openspec/commands/f3-design-r
  Review named in the prompt: "a design review before implementation". "High": would force guessing or redoing a part of the work. Reading, for every member: AGENTS.md, arch/decisions.md, openspec/config.yaml (its context), and in openspec/changes/$ARGUMENTS/: proposal.md, the files of specs/, design.md, tasks.md, and ux.md if it exists; the existing code only by passages, to check a precise point. Add to the prompt: "The passage is one of design.md or of the tasks; the consequence is what one would have to guess or redo during implementation, a scenario that would not be delivered, or an identifiable risk. If the correction requires changing the specs, say so."
  
 -- **Architect**: compliance of the design and of the task split with AGENTS.md (invariant part and Stack section: structure, dependencies, naming, place of each element) and with the active entries of arch/decisions.md; a decision that commits the following changes and is not recorded; consistency with the existing code, by targeted reads; consequences of the volumetry of the context (pagination, background processing, concurrent access, memory); technical choices without justification.
-+- **Architect**: compliance of the design and of the task split with AGENTS.md (invariant part and Stack section: structure, dependencies, naming, place of each element) and with the active entries of arch/decisions.md; a decision that commits the following changes and is not recorded; consistency with the existing code, by targeted reads; shared modules (rule 8 of AGENTS.md): does the change rewrite something that already exists elsewhere (a technical library, the shared kernel, another bounded context), and should it use it, plan its extraction into a technical library, or propose a shared kernel addition, a split or a merge; a technical library created in advance of a need of the change, or a task that puts a domain type into one or names a bounded context in it; a shared kernel addition whose type is not used with the same meaning by at least two bounded contexts, or is owned by one, unless it is a language utility without business meaning; consequences of the volumetry of the context (pagination, background processing, concurrent access, memory); technical choices without justification.
++- **Architect**: compliance of the design and of the task split with AGENTS.md (invariant part, Adopted practices section, Stack section: structure, dependencies, naming, place of each element; a departure from a practice rule cites its number, such as FA-3) and with the active entries of arch/decisions.md; a decision that commits the following changes and is not recorded; consistency with the existing code, by targeted reads; shared modules (rule 8 of AGENTS.md): does the change rewrite something that already exists elsewhere (a technical library, the shared kernel, another bounded context), and should it use it, plan its extraction into a technical library, or propose a shared kernel addition, a split or a merge; a technical library created in advance of a need of the change, or a task that puts a domain type into one or names a bounded context in it; a shared kernel addition whose type is not used with the same meaning by at least two bounded contexts, or is owned by one, unless it is a language utility without business meaning; consequences of the volumetry of the context (pagination, background processing, concurrent access, memory); technical choices without justification.
  - **Technical security**: the attack surfaces the design creates or modifies (local servers, file paths, external inputs, processes, new dependencies), input validation, isolation, secrets and logs, and the test entry points that must not be active outside test mode.
  - **Product**: traceability. For each scenario added or modified, the group that delivers it end to end, cited on its "Delivered scenarios:" line, without omission or duplicate; tasks that serve no scenario; the views and components of the Impact section of ux.md with their exact names; each view or component task ending with "Screens:"; the test entry points of the Test strategy present in the tasks; no task that writes an end-to-end test, a feature file, a step definition or a page object.
  
@@ -1049,7 +1057,15 @@ diff -ru a/ux/agents/ux.md b/ux/agents/ux.md
  hooks:
    PreToolUse:
      - matcher: "Edit|Write|MultiEdit|NotebookEdit|Read|Grep|Glob|Bash|Agent"
-@@ -29,7 +43,7 @@
+@@ -21,6 +35,7 @@
+ # Method
+ 
+ - At startup, load the f3-agent skill and the ux-practice skill, and apply them. The skill of the design tool is named in the `context` of `openspec/config.yaml`: load it at the first step that acts in the tool.
++- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
+ - Discover the tools available to you through their documentation, at the moment a step needs them. If you cannot act in the tool, apply the "tool" precondition of ux-practice.
+ - You do not drive the running application yourself: a step that needs screenshots of it delegates the capture to the built-in `general-purpose` subagent, through the Agent tool.
+ 
+@@ -29,7 +44,7 @@
  | File | When |
  |---|---|
  | `ux/`, except `ux/views.md` | the design commands |

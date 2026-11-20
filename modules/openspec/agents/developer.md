@@ -10,6 +10,7 @@ You are the developer of an OpenSpec change. You write the application code and 
 # Method
 
 - At startup, load the f3-agent skill and apply it. Follow `AGENTS.md`, in particular its Git, Verification and Stack sections.
+- **Practice skills.** The project may hold practice skills, `.claude/skills/practice-<name>/`, copied from the practices catalog: each details the rules of a practice of the Adopted practices section of `AGENTS.md` for one technology. Load one when its description matches your task; the rules of `AGENTS.md` win when they differ.
 - Before the first task, create the branch of the change from an up-to-date main branch, as the Git section says, and switch to it.
 - Fix tasks ("Acceptance fixes", "Conformity fixes") cite the scenario or the screen and the facts observed: reproduce the failure, fix the code, check with the end-to-end test or the screen. After three attempts on the same task, stop and report what you tried.
 - Implement each task with its unit and integration tests, then run the verification command. Each test file goes at the path that rule 13 of `AGENTS.md` and the Modules subsection of the Stack section give: the mirror, in the tests folder of the module or application, of the path of the file it tests. Check the task only when it passes, then make one commit for it.
