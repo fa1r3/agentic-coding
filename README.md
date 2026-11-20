@@ -6,6 +6,7 @@ The workflow is the same under both tools. The guide ([GUIDE.md](GUIDE.md)) says
 
 ## Principles
 
+- One f3 project is one repository; another project is reached only through a versioned package.
 - Each piece of information lives in one place: the product in the `context` of `openspec/config.yaml`, the code rules in `AGENTS.md`, the vocabulary in `CONTEXT.md`, the workflow in the schema, the agents and the commands.
 - What is specific to a tool is isolated in one place (for example the skill ux-penpot, next to the tool-independent ux-practice; or `tools/<tool>/`, for Claude Code and OpenCode).
 - Specs describe behavior; the design decides presentation; technical choices go into the design.md of a change and, when they commit the following changes, into `arch/decisions.md`.
@@ -17,6 +18,8 @@ The workflow is the same under both tools. The guide ([GUIDE.md](GUIDE.md)) says
 
 - `openspec`: the schema `f3`, the agents `analyst`, `architect`, `developer` and `tester`, the commands of the workflow, the skills `f3-agent` (shared working rules, the light and full tracks of a change, and review sessions), `f3-standards`, `spec-practice` and `e2e-practice`, and the script `f3-features.mjs`.
 - `ux`: the agent `ux`, the design commands, and the skills `ux-practice` and `ux-penpot`.
+
+The practices catalog, `practices/`, is not a module: archetypes, stack recipes, rules and practice skills that `f3 init` draws on, read through `f3 practices` and linked by `install.sh` to `~/.local/share/f3/practices/` (see the guide, section 4.5; format in `practices/README.md`).
 
 A module is a folder of `modules/`. It may contain `agents/`, `commands/`, `skills/` (each skill is a folder containing a `SKILL.md`), `scripts/` and `schemas/`. Everything in it is common to both tools. What differs between them (the frontmatter of the agents and commands, the names of the built-in subagents and tools) is in `tools/claude/` and `tools/opencode/`: the agents and commands are rendered for each tool into `build/<tool>`, a folder ignored by Git; the skills, scripts and schemas are not rendered.
 
@@ -87,5 +90,7 @@ This table is the **full track**. `f3 propose` calibrates each change with seven
 Each command inserts into its prompt, when you launch it, the output of a single shell command run in the project root: `f3 state <command>`. It reads the project: `git status`, `git branch`, `git rev-parse`, `git check-ignore`, the framing files and the folders of the change, `openspec --version`, `openspec schema which`, `openspec status`, and `f3-features --check`, which reads the specs and writes nothing. It writes only in the toolkit and the temporary directory: it renders the agents and commands again into `build/`, and removes the private launch file that `f3 <step>` wrote for the session. The argument of the command is passed to it between single quotes, and checked before it builds any path: pass only a change identifier.
 
 Under Claude Code, it is the only shell command a command may run without asking. Under OpenCode, a command typed in a session runs its injection without any permission check, and an apostrophe in the argument can run another command: launch the steps with `f3 <step>`, which only passes identifiers (see the guide, section 15.4).
+
+During `f3 init`, the architect also runs `f3 practices` (`show`, `select`, `apply`, `diff`, `catalog`): it reads the catalog of the toolkit; `apply` writes the Adopted practices section of `AGENTS.md` and copies the practice skills into `.claude/skills/practice-*`; `diff` runs `diff -u` on temporary copies.
 
 The script `f3-features.mjs` uses only the built-in modules of Node.js. It reads `openspec/specs/` and the delta specs of one change, and writes the feature files of `tests/e2e/features/`. It runs no other command.

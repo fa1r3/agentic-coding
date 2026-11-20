@@ -112,3 +112,17 @@ A full change, from `f3 propose` to `f3 archive`, under Claude Code; under OpenC
 - **Language of review records:** the members of a review are built-in exploration subagents that do not read the language of the project; their English reports went into a French record, and the chair then answered in English. The chair now writes a faithful translation.
 - **Archive precondition:** a `.gitignore` commit after the tested commit made the architect offer to archive anyway, which the command does not allow. `.gitignore` is now accepted and named; for any other file the architect stops without offering to go on.
 - **Smaller fixes:** the ux agent, which has no shell, was told to run `openspec instructions`; the guide now says how to keep double quotes in the prompt after `--`.
+
+## 2026-11-20: the practices catalog
+
+`f3 init` drew on nothing between the invariant part and the Stack section: the know-how of a type of project and of a stack was reinvented at each framing, or missing, and the agents fell back on their habits (drifts 14, 21, 22). The toolkit now has a catalog, `practices/`, read during `f3 init`. Reasons of the choices, from the design notes of the branch `docs/practices-catalog`:
+
+- **The type of project before the stack:** an archetype (`web-app`, `desktop-app`, `cli-tool`, `service`, `library`, `ui-library`) decides the shape of the modules, the deliverable and the end-to-end tests; the invariant part is never adapted to it: an archetype enters the catalog only if it applies the invariant part without exception, and says how.
+- **One project, one repository:** another project is an external system reached through a versioned package; no shared kernel between projects, and no test across services.
+- **Short rules always loaded, long know-how on demand:** rules entries are copied into `AGENTS.md` within a budget; the detail of a technology is a practice skill in `.claude/skills/practice-*`, the only project folder both tools read, loaded by its description.
+- **Numbering by practice code** (`FA-1`): adding or removing a practice renumbers no rule and breaks no reference.
+- **A command for what must be exact:** `f3 practices` filters the catalog, checks a selection, copies the text as is and writes the marker with a fingerprint of each text, which tells a change made by hand even after a new version. A copy made by an agent is not guaranteed to be exact, and `f3 state init` runs before the interview.
+- **The catalog read through the command only:** it is outside the project, so every read of a file would ask for a permission (gap E1 of the first framing).
+- **Recipes and archetypes are starting points:** cited with their version, never updated in a project; the web research stays mandatory.
+- **Content left to complete:** the logic is in place; `service`, `library`, `ui-library` and `service-contracts` stay drafts until their content is completed and tried on a change carried to acceptance.
+

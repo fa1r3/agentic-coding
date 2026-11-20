@@ -79,6 +79,8 @@ The product description is in one file, the code rules in another, the vocabular
 
 Why: two copies of a rule diverge, and an agent then follows whichever it reads first.
 
+The same holds between projects: **one f3 project is one repository**, with its own `openspec/`, its verification command and its pull requests. Another project is reached only through a versioned package, as an external system behind a port and an adapter; no type is shared between projects.
+
 ### 2.4 The agent analyzes and proposes; you decide
 
 Agents ask one question at a time, always with a recommended answer. When they disagree with you, they say it once, with their reason, and then accept your decision and record it.
@@ -181,6 +183,7 @@ agentic-toolkit/
 ├── build/                          the agents and commands rendered for each tool (ignored by Git)
 ├── tests/ref/                      the expected differences with the reference of each tool
 ├── retro/drift-log.md              the failures that shaped the toolkit, and their fixes
+├── practices/                      the practices catalog: archetypes, recipes, rules, practice skills (4.5)
 └── modules/
     ├── openspec/                   the workflow
     │   ├── agents/                 analyst, architect, developer, tester
@@ -296,6 +299,32 @@ The tool you choose has no effect on the versioned files of the project: `f3 ini
 
 ---
 
+### 4.5 The practices catalog
+
+`practices/` holds the know-how `f3 init` draws on, so that the architect does not reinvent it in each project. Four kinds of entries, each with one destination:
+
+| Kind | What it holds | Where it lands in the project |
+|---|---|---|
+| archetype | a type of project (`web-app`, `desktop-app`, `cli-tool`, `service`, `library`, `ui-library`): how it applies the invariant part, its questions, what it changes for the workflow | an entry of `arch/decisions.md` (A-001) |
+| recipe | a stack already practiced: a draft of the Stack section, and what the research must check | the Stack section, adapted, and A-002 |
+| rules | a few numbered rules, independent of any technology (`FA-1`…) | the Adopted practices section of `AGENTS.md`, copied as is |
+| skill | know-how for one technology, loaded on demand | `.claude/skills/practice-<name>/`, read by both tools |
+
+An entry marked draft is listed but never proposed. The format of an entry is in `practices/README.md`, and the index in `practices/catalog.md`.
+
+The architect reaches the catalog only through the command `f3 practices`, since it is outside the project:
+
+| Command | Does |
+|---|---|
+| `f3 practices show <id>…` | prints entries |
+| `f3 practices select --archetype <id\|none> [facts]` | lists the candidates for the project, from the archetype and the facts of the interview (interface, languages, frameworks, exposure) |
+| `f3 practices select … --check <id>,<id>` | refuses a selection with a conflict, a missing requirement, a draft, or a section over the global budget |
+| `f3 practices apply --archetype <id\|none> [--recipe <id>] <id>…` | writes the Adopted practices section and its marker, copies the skills; a text modified by hand is kept unless `--force <id>` |
+| `f3 practices diff <id>…` | the text of the project against the catalog, for an update |
+| `f3 practices catalog` | prints the index |
+
+The catalog evolves through pull requests on the toolkit. A project keeps what it imported; `f3 init` in update mode proposes the new versions (theme Practices).
+
 ## 5. The files of a project
 
 The workflow is a chain of files. Each step reads the files the previous steps wrote and writes its own; no step relies on what an agent remembers. This section describes every file: who writes it, who reads it, and what would break without it.
@@ -311,13 +340,14 @@ There are three families:
 | File | Role | Written by | Read by | Without it |
 |---|---|---|---|---|
 | `openspec/config.yaml` | the **product**: what it does, for whom, its volumes, its constraints, its design tool, its language; and `schema: f3` | the architect, during `f3 init` | every OpenSpec artifact (its `context` is injected into their instructions) | agents design for an imagined product: wrong volumes, wrong platform |
-| `AGENTS.md` | the **code rules**: an invariant part (architecture style, naming, tests, Git) and a Stack section (this project's technologies and commands) | the architect, during `f3 init` and the design steps | every agent, in every session | each agent applies its own habits; commands do not know how to verify or test |
+| `AGENTS.md` | the **code rules**: an invariant part (architecture style, naming, tests, Git), the adopted practices of the catalog, and a Stack section (this project's technologies and commands) | the architect, during `f3 init` and the design steps; the Adopted practices section only through `f3 practices apply` | every agent, in every session | each agent applies its own habits; commands do not know how to verify or test |
 | `CONTEXT.md` | the **vocabulary**: each business term, with the English term used in code | the analyst (and `f3 init`) | every agent, in every session | the same concept gets three names in code, specs and screens |
 | `CLAUDE.md` (Claude Code) | `@AGENTS.md` and `@CONTEXT.md`, so that every session loads the code rules and the vocabulary | the architect, during `f3 init` | Claude Code | agents miss the code rules (Claude Code reads `AGENTS.md` alone only when there is no `CLAUDE.md`) or the vocabulary |
 | `.mcp.json` (Claude Code) | the MCP servers the project needs: the observer of the running application, the design tool | the architect, during `f3 init`, when the Stack section decides a server | Claude Code | agents miss their tools |
 | `.claude/settings.json` (Claude Code) | the hook that makes each f3 command run as its agent (`f3 guard-prompt`) | the architect, during `f3 init` | Claude Code | a step typed in the wrong session runs under the wrong agent |
 | `opencode.json` (OpenCode, project) | only the workflow keys: `instructions` (to load `CONTEXT.md`) and the MCP servers the project needs | the architect, during `f3 init` | OpenCode | agents miss the vocabulary or the tools; personal settings leak into the repository |
 | `.gitignore` | the line `.f3/local`: the tool of each user is not versioned (4.4) | the architect, during `f3 init` | Git | one user's tool is imposed on the others |
+| `.claude/skills/practice-*/` | the practice skills copied from the catalog (4.5), each with its source and fingerprint | `f3 practices apply`, during `f3 init` | the agent whose task matches the description of the skill, under both tools | agents fall back on their general habits for a technology |
 
 #### The files of each tool
 
@@ -333,7 +363,7 @@ In a framed project, the launch state of **every** command adds a warning line, 
 
 Each warning tells you to run `f3 init`, theme Tools (step 0).
 
-### 5.2 The two parts of AGENTS.md
+### 5.2 The parts of AGENTS.md
 
 The **invariant part** is identical in every project. It states the architecture style (bounded contexts, a core module per bounded context that knows no technology, adapters behind ports, entry points that call exactly one use case, a composition root) and the standards (naming, single verification command, test responsibilities, Git). For example, its rule 12:
 
@@ -345,6 +375,8 @@ It also says what may be shared between bounded contexts, and only that (rule 8)
 - the **shared kernel** holds the value objects and enumerations that at least two bounded contexts use with the same meaning and that no bounded context owns (`Currency`, defined by ISO 4217), and the language utilities without business meaning that several core modules need. The question that decides is "who would decide a change of this type?": nobody in the product, the shared kernel; one bounded context, it stays there and an orchestration use case copies its value; several together, a bounded context is missing or a boundary is misplaced. Each addition, change or removal is proposed to you and recorded in `arch/decisions.md`, as are the creation, split or merge of a bounded context.
 
 Where these modules live, and how the dependency tool tells them apart, is said by the Stack section.
+
+The **Adopted practices section** follows the invariant part. It holds the rules entries of the catalog that `f3 init` adopted, copied as they are, each numbered with its code (`FA-1`, `FA-2`…) so that adding or removing a practice renumbers nothing. Its marker, `<!-- f3 practices: … -->`, lists the archetype, the recipe and each entry with its version and the fingerprint of its text: `f3 init` reads it to propose updates and to tell a text modified by hand. An adaptation to the product is never written there: it is a project-specific rule.
 
 The **Stack section** is written for the project during `f3 init`, from the stack decision. It answers fixed questions in fixed subsections, and the commands of the workflow refer to them by name:
 
@@ -359,7 +391,7 @@ The **Stack section** is written for the project during `f3 init`, from the stac
 | End-to-end tests | the runner, the test mode, and four commands: *generate the tests*, *export the step catalog*, *run the whole suite*, *run one capability*; how `@manual` scenarios are excluded; during a migration, how scenarios without step definitions are skipped | the analyst, the tester |
 | Observing the running application | how an agent sees and drives the running application outside the tests | the ux agent (conformity), the tester |
 
-How to classify a rule: ask which principle it expresses. If the principle belongs to the style, the invariant part already says it. If it follows from a technology, it goes into the Stack section. If it only makes sense for this product, it is a project-specific rule, with its reason.
+How to classify a rule: ask which principle it expresses. If the principle belongs to the style, the invariant part already says it. If a practice of the catalog states it, adopt the practice. If it follows from a technology, it goes into the Stack section. If it only makes sense for this product, it is a project-specific rule, with its reason.
 
 ### 5.3 The files of a change
 
@@ -543,16 +575,25 @@ Each step below gives: its purpose, the command, what you do, what it produces, 
 - **adoption**: files exist, but not in the f3 format (see section 14);
 - **update**: the project is already framed; you say which themes to review. The theme **Tools** writes the missing files of the tools of the project (5.1), aligns the MCP servers of their files on the Stack section, adds `.f3/local` to `.gitignore`, and rewrites the marker of AGENTS.md in its current form; it touches nothing else. The command proposes it first when the launch state reports a tool that lacks files, `.f3/local` not ignored by Git, MCP servers that differ, or the marker of AGENTS.md in its former form ("written by /f3-init").
 
-**What you do.** Answer an interview, one question at a time, each with a recommended answer: product, users, expected behavior, volumetry, platform and constraints, security and data, design tool, language, vocabulary. Then the **stack phase**:
+**What you do.** Answer an interview, one question at a time, each with a recommended answer: product, users, expected behavior, volumetry, platform and constraints, security and data, design tool, language, vocabulary. Then three phases.
+
+The **project type phase**: the agent reads the archetypes of the catalog (4.5) and recommends one, or none when the product fits no archetype; it asks the questions of the archetype; you decide, and the decision becomes entry A-001 of `arch/decisions.md`. A product made of several systems released on their own is several f3 projects: the agent proposes to frame one.
+
+The **stack phase**:
 
 1. the agent derives the technical constraints from your answers, and you correct them;
-2. it checks on the web the current state of each candidate technology (version, maintenance, license) and cites its sources;
-3. it presents two or three really different combinations, with how each answers the constraints, the architecture, the workflow (design tool, end-to-end driving, observation of the running app) and durability, and recommends one;
-4. you decide; the decision becomes entry A-001 of `arch/decisions.md`;
-5. it writes the Stack section of AGENTS.md, and you validate it;
-6. it adds a first backlog entry: set up the repository according to the Stack section, with its verification command. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
+2. it reads the recipes of the catalog that fit the archetype;
+3. it checks on the web the current state of each candidate technology (version, maintenance, license), and for a recipe each point it asks to check, and cites its sources;
+4. it presents two or three really different combinations, a recipe being one of them when it fits, with how each answers the constraints, the architecture, the workflow (design tool, end-to-end driving, observation of the running app) and durability, and recommends one;
+5. you decide; the decision becomes entry A-002;
+6. it writes the Stack section of AGENTS.md, from the recipe if one was chosen, with what the archetype changes for the workflow, and you validate it;
+7. it adds a first backlog entry: set up the repository according to the Stack section, with its verification command. The end-to-end test project is not part of it: the tester creates it at the first acceptance.
 
-**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
+The **practices phase**: the agent runs `f3 practices select` with the facts of your answers, proposes a selection with a reason per entry, and checks it; you decide, and the decision becomes entry A-003. The section and the skills are written by `f3 practices apply`, never by hand.
+
+In update mode, the theme **Practices** shows the updates the launch state lists: a newer version (with `f3 practices diff`), an entry removed from the catalog, a text modified by hand, an entry of the archetype not adopted. Nothing is applied without your validation, and a text modified by hand is overwritten only with your agreement.
+
+**Produces.** `AGENTS.md`, `openspec/config.yaml`, `CONTEXT.md`, `arch/decisions.md`, `BACKLOG.md`, the practice skills `.claude/skills/practice-*`, the files of each tool of the project (5.1), and the line `.f3/local` of `.gitignore`. If `openspec/` does not exist, it first runs `openspec init --tools <tools of the project>`. If it exists and a tool of the project has no OpenSpec skills, the theme Tools runs `openspec init --tools <tool>`, which adds only the files of that tool. Nothing is committed: you review `git diff` and commit.
 
 > **Claude Code.** At the first f3 session in the project, each developer trusts the folder and approves the servers of `.mcp.json`.
 
@@ -1130,7 +1171,9 @@ The `operations` guidance of `openspec/config.yaml` is advisory in OpenSpec: the
 
 - it reads the existing framing files, and only asks about what is missing or contradictory;
 - it describes the stack in place and records each structural choice in `arch/decisions.md`, asking you the reason of each one; without a reason, it writes "reason not documented";
-- it classifies each existing code rule by the principle it expresses: covered by the invariant part (dropped), technology (Stack section), product (project-specific rule), obsolete (dropped); you decide rule by rule;
+- it recognizes the archetype from the code and asks you to confirm it; a repository that holds several products linked otherwise than by packages is reported, with a backlog entry;
+- it classifies each existing code rule by the principle it expresses: covered by the invariant part (dropped), stated by a practice of the catalog (dropped, the practice proposed), technology (Stack section), product (project-specific rule), obsolete (dropped); you decide rule by rule;
+- it proposes the practices of the catalog as in creation; a gap between the code and an adopted practice becomes a backlog entry;
 - it checks the form of the existing scenarios, reads a sample against the spec-practice rules, and proposes a backlog entry to rewrite them if needed;
 - it lists the gaps between the existing code and the invariant rules, each as a proposed backlog entry.
 
@@ -1251,6 +1294,10 @@ Launched with `f3 <step>`, a command only ever receives identifiers as arguments
 - **The calibration is a judgment.** The light or full track rests on the analyst's reading of the seven criteria and on your decision; nothing checks it mechanically. A criterion missed at calibration is caught by the escalation of a later step while no task is checked, and by the acceptance after.
 - **Conformity needs an approved design step.** When the interface design of a change is closed as not-applicable, conformity does not run: a display coded without design in that change is only reported by the developer.
 - **Tokens are not synchronized automatically.** The design tool is the source; the code takes tokens over through a task of the change that creates or modifies them. A divergence between the two is caught by conformity, not by a mechanism.
+- **The practices catalog has no team or company layer.** It evolves only through pull requests on the toolkit, and nothing brings a rule of a project back into it.
+- **A product of several services is not tested across them.** Each service is tested alone, with doubles of its neighbours built from their published contracts; the real integration belongs to deployment.
+- **A practice skill depends on the skills folder of Claude Code.** The skills are copied into `.claude/skills/`, the only project folder both tools read.
+  > **OpenCode.** It stops reading `.claude/skills` when `OPENCODE_DISABLE_CLAUDE_CODE` or `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` is set (read in the code of OpenCode 2.2.5): keep them unset in projects with practice skills.
 - **A scenario cannot be removed alone from a modified requirement.** OpenSpec requires a `MODIFIED` requirement to keep all its existing scenarios. Renaming or dropping a scenario means removing and re-adding the requirement, or keeping its name.
 
 ---
