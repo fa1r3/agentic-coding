@@ -12,10 +12,11 @@ interview:
   - Which services does this service call, and in what form do they publish their contract?
   - Synchronous communication, asynchronous, or both?
   - In what form does this service publish its own contract?
-recipes: []
+recipes: [python-uv-fastapi]
 practices: [service-contracts]
-skills: []
+skills: [practice-openapi]
 workflow-impact:
+  modules: the OpenAPI document (or the schema of the messages) is the published contract, in contract/; the client package is generated from it
   e2e: the service is launched alone; its neighbours are doubles generated from their published contracts
   ui: no user interface unless the service exposes one
 ---
@@ -29,10 +30,10 @@ workflow-impact:
 ## When not to choose it
 
 - One product, one team, one deployment: prefer `web-app`, with bounded contexts inside the repository.
-- Several services described at once: each one is its own f3 project (D1); frame one at a time.
+- Several services described at once: each one is its own f3 project; frame one at a time.
 
 ## Known pitfalls
 
-- A shared library of types between services: it couples their releases; each service keeps its own types (D3).
-- Tests that need the real neighbours: the service is tested alone (D15); the real integration belongs to deployment.
+- A shared library of types between services: it couples their releases; each service keeps its own types.
+- Tests that need the real neighbours: the service is tested alone; the real integration belongs to deployment.
 - A breaking change of the contract inside a major version.

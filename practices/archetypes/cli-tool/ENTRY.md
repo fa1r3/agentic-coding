@@ -1,7 +1,7 @@
 ---
 id: cli-tool
 kind: archetype
-version: 1.0.0
+version: 1.1.0
 status: stable
 summary: A command line tool, run by a person or a script, with no graphical interface.
 invariant: >
@@ -15,6 +15,7 @@ recipes: []
 practices: []
 skills: []
 workflow-impact:
+  modules: the usage of each command, its output and its exit codes are the published contract, in contract/
   ui: no user interface and no design step; the output of each command is its contract
   e2e: the tests run the built executable with arguments and input, and check its output, its files and its exit code
   entry-points: each command is an entry point, one file per command with its arguments, input and output contracts

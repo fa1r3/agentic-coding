@@ -331,7 +331,7 @@ test('init lists the archetypes of the practices catalog, drafts marked, or says
   try {
     const out = inDir(bare, () => stateOf('init', '')).stdout;
     assert.match(out, /- Practices catalog: read an entry with f3 practices show <id>\n/);
-    assert.match(out, /- Archetypes:\n  cli-tool@1\.0\.0: A command line tool/);
+    assert.match(out, /- Archetypes:\n  cli-tool@\d+\.\d+\.\d+: A command line tool/);
     assert.match(out, /\n  service@1\.0\.0 \(draft: not available\): /);
     writeFileSync(join(practices, 'rules', 'frontend-architecture', 'ENTRY.md'), '---\nid: frontend-architecture\n');
     assert.match(inDir(bare, () => stateOf('init', '')).stdout, /- Practices catalog: invalid, f3 practices refuses it:/);

@@ -10,6 +10,7 @@ read:
   "package.json": allow
   "{{SKILLS}}/*": allow
   ".claude/skills/practice-*": allow
+  "contract/*": allow
 edit:
   "*": deny
   "tests/e2e/*": allow

@@ -37,5 +37,5 @@ workflow-impact:
 
 - The interface process with access to Node.js or the file system: keep it isolated, with only the handlers exposed through a preload bridge.
 - A path received from the interface and used as is by the main process: a path is a technical identifier (rule 12); the main process receives it only from a dialog entry point and converts it at once into a domain identity.
-- End-to-end tests that call the handlers instead of launching the application (drift 22).
+- End-to-end tests that call the handlers instead of launching the application.
 - Packaging and updates decided late: they shape the build from the first change.

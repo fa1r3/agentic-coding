@@ -25,7 +25,7 @@ workflow-impact:
 
 ## When to choose it
 
-- A design system or a set of components shared by several products, released on its own (D1).
+- A design system or a set of components shared by several products, released on its own.
 
 ## When not to choose it
 

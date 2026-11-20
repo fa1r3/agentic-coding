@@ -102,16 +102,17 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
  permission:
    read:
      "*": deny
-@@ -12,6 +12,8 @@
+@@ -12,6 +12,9 @@
      "ux/views.md": allow
      "BACKLOG.md": allow
      "package.json": allow
 +    "~/.config/opencode/skills/*": allow
 +    ".claude/skills/practice-*": allow
++    "contract/*": allow
    edit:
      "*": deny
      "tests/e2e/*": allow
-@@ -22,6 +24,10 @@
+@@ -22,13 +25,17 @@
      "openspec/changes/*/proposal.md": allow
      "CONTEXT.md": allow
      "BACKLOG.md": allow
@@ -122,7 +123,15 @@ diff -ru a/openspec/agents/tester.md b/openspec/agents/tester.md
    penpot_*: deny
    searxng_*: deny
  ---
-@@ -40,8 +46,8 @@
+ 
+ # Role
+ 
+-You are the test automation engineer. You prove, scenario by scenario, that the launched application does what the specs say. You are independent from the developer: you never read the application code, its unit tests or the design mockups, and if a command offers to, you refuse. Your sources are the specs, the feature files generated from them, `CONTEXT.md`, the views register `ux/views.md`, the Stack section of `AGENTS.md`, the Test strategy section of the change's design.md, the Impact section of its ux.md, and the launched application.
++You are the test automation engineer. You prove, scenario by scenario, that the launched application does what the specs say. You are independent from the developer: you never read the application code, its unit tests or the design mockups, and if a command offers to, you refuse. Your sources are the specs, the feature files generated from them, `CONTEXT.md`, the views register `ux/views.md` (for a product without interface, the published contract in `contract/`), the Stack section of `AGENTS.md`, the Test strategy section of the change's design.md, the Impact section of its ux.md, and the launched application.
+ 
+ # Method
+ 
+@@ -40,8 +47,8 @@
  
  | File | When |
  |---|---|
@@ -690,6 +699,14 @@ diff -ru a/openspec/schemas/f3/templates/clarification.md b/openspec/schemas/f3/
 diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/SKILL.md
 --- a/openspec/skills/e2e-practice/SKILL.md
 +++ b/openspec/skills/e2e-practice/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: e2e-practice
+-description: "Conventions of the end-to-end tests of an f3 project: feature files generated from the specs, step definitions, strict page objects named after the views of the views register, classification of failures, acceptance report. Load before writing, modifying, running or analyzing an end-to-end test, or reviewing a step definition."
++description: "Conventions of the end-to-end tests of an f3 project: feature files generated from the specs, step definitions, strict page objects named after the views of the views register, access objects for a product without interface, doubles of the neighbours of a service, classification of failures, acceptance report. Load before writing, modifying, running or analyzing an end-to-end test, or reviewing a step definition."
+ ---
+ 
+ # End-to-end test practice
 @@ -20,9 +20,9 @@
  
  ## Organization
@@ -702,6 +719,34 @@ diff -ru a/openspec/skills/e2e-practice/SKILL.md b/openspec/skills/e2e-practice/
  - `steps/`: the step definitions, one file per business concept of `CONTEXT.md`, named after its English term.
  - `pages/`: one page object per view, in a file named after the view (`pages/invoice-editor.ts` for the view `invoice-editor`). Component objects are in `pages/components/`, named after the component.
  - `support/`: the launch of the application in test mode, the test data builders that use the test entry points, and the fixtures that give step definitions their page objects.
+@@ -168,6 +168,27 @@
+ 
+ The last definition opens the invoice named by the sentence before reading its status: without that line, it would check the status of whatever invoice is displayed, which is not what the sentence says.
+ 
++## Products without a user interface
++
++A command line tool, a published package, or a service without screens has no view: its contract is its interface. The End-to-end tests subsection of the Stack section says how the product is launched or executed in test mode (the built executable, the built package installed by a harness, the service started alone).
++
++- **Access objects instead of page objects.** `tests/e2e/access/` holds one access object per command of a command line tool, or per entry of the public API of a package (an exported function, class or module), or per resource of the published contract of a service, named after the command, the entry or the resource (`access/issue-invoice.ts` for the command `issue-invoice`). Its methods are the calls the contract offers; its accessors read the outcome: output, exit code, files written, returned values, raised errors, responses.
++- **Only through the contract.** An access object runs the built executable with its arguments and input, calls the public API of the installed package, or sends requests to the started service, as a consumer would. It never imports a module of the repository; for a package, the harness of `support/` installs the built package and the access objects import it by its published name only.
++- **The rules of page objects apply otherwise**: no assertion about an expected result; THEN steps assert; a name that the Entry points subsection or the published contract does not give is a deviation to report.
++- The views register does not exist for such a product: the names come from the Entry points subsection of the Stack section and from the published contract, which lives in `contract/` at the root of the repository (the usage of the commands of a tool, the reference of the public API of a package, the OpenAPI document of a service), written by the developer with the change that alters it. The tester reads it, never the code.
++
++## Neighbours of a service
++
++A service is tested alone: each service it calls is replaced by a double built from the contract that service publishes, at the version the service depends on.
++
++- The doubles live in `tests/e2e/support/neighbours/`, one per neighbour, named after it, generated or configured from its published contract (for example a mock server started from its OpenAPI document). They are started by the runner with the service in test mode, at the addresses the Stack section gives.
++- A GIVEN step prepares what a neighbour answers through a test data builder of `support/` that configures its double; a THEN step that checks what the service sent to a neighbour reads the requests the double recorded.
++- A double answers only what the published contract allows: an answer the contract does not define is a deviation, reported with the contract version.
++
++## Playground of an interface components library
++
++For a library of interface components, the launched application is its playground (for example Storybook started in test mode). Each story is a view of `ux/views.md`, named after the component and the state it shows (`invoice-line--removable`), and gets a page object like any view. A component state that the specs name and no story shows is a deviation for the developer.
++
+ ## Classifying a failure
+ 
+ For each scenario that fails, establish the facts before proposing anything:
 diff -ru a/openspec/skills/f3-agent/SKILL.md b/openspec/skills/f3-agent/SKILL.md
 --- a/openspec/skills/f3-agent/SKILL.md
 +++ b/openspec/skills/f3-agent/SKILL.md

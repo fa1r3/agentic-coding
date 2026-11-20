@@ -13,10 +13,11 @@ invariant: >
 interview:
   - Who consumes the package, and through which package registry?
   - Which adapters must the consumer provide (storage, clock, network), and which does the package bring?
-recipes: []
+recipes: [ts-npm-library]
 practices: []
 skills: []
 workflow-impact:
+  modules: the reference of the public API is the published contract, in contract/
   e2e: a harness in tests/e2e/ installs the built package and calls only its public API
   ui: no user interface and no design step; the public API is the contract
   entry-points: the functions and classes of the public API, exported from one entry file
@@ -26,7 +27,7 @@ workflow-impact:
 
 ## When to choose it
 
-- Other projects depend on this code through a package manager, with their own release schedule (D1).
+- Other projects depend on this code through a package manager, with their own release schedule.
 - The package carries business rules; without any, see `ui-library` or a technical library inside a project.
 
 ## When not to choose it

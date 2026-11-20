@@ -31,7 +31,7 @@ workflow-impact:
 ## When not to choose it
 
 - The interface is installed on the machine, works offline or needs the file system: `desktop-app`.
-- The server is consumed by other products, which release on their own schedule: it is a `service`, and each consumer is its own project (D1).
+- The server is consumed by other products, which release on their own schedule: it is a `service`, and each consumer is its own project.
 - The product is a set of reusable components for other products: `ui-library`.
 
 ## Known pitfalls
