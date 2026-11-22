@@ -2,7 +2,7 @@
 id: service
 kind: archetype
 version: 1.0.0
-status: draft
+status: stable
 summary: A service deployed on its own, which publishes its contract and consumes those of other services through their packages.
 invariant: >
   The service is an Application. Every other service is an external system: a port of the project,
@@ -13,7 +13,7 @@ interview:
   - Synchronous communication, asynchronous, or both?
   - In what form does this service publish its own contract?
 recipes: []
-practices: [service-contracts]
+practices: [service-contracts, pattern-file-names]
 skills: []
 workflow-impact:
   modules: the OpenAPI document (or the schema of the messages) is the published contract, in contract/; the client package is generated from it

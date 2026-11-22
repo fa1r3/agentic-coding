@@ -2,7 +2,7 @@
 id: library
 kind: archetype
 version: 1.0.0
-status: draft
+status: stable
 summary: A published package with business rules (an SDK, an API client, a calculation engine), consumed by other projects.
 invariant: >
   The built package, installed as a consumer would install it, is the launched application of rule 14:
@@ -14,7 +14,7 @@ interview:
   - Who consumes the package, and through which package registry?
   - Which adapters must the consumer provide (storage, clock, network), and which does the package bring?
 recipes: [ts-npm-library]
-practices: []
+practices: [pattern-file-names]
 skills: []
 workflow-impact:
   modules: the reference of the public API is the published contract, in contract/

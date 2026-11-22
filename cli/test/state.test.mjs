@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, cpSync, existsSync, mkdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tempDir } from './tmp.mjs';
 
@@ -328,11 +328,13 @@ test('init lists the archetypes of the practices catalog, drafts marked, or says
   assert.match(inDir(bare, () => stateOf('init', '')).stdout, /- Practices catalog: absent from the toolkit\n/);
   const practices = join(ROOT, 'practices');
   cpSync(join(import.meta.dirname, '..', '..', 'practices'), practices, { recursive: true });
+  const library = join(practices, 'archetypes', 'library', 'ENTRY.md');
+  writeFileSync(library, readFileSync(library, 'utf8').replace(/^status: stable$/m, 'status: draft'));
   try {
     const out = inDir(bare, () => stateOf('init', '')).stdout;
     assert.match(out, /- Practices catalog: read an entry with f3 practices show <id>\n/);
     assert.match(out, /- Archetypes:\n  cli-tool@\d+\.\d+\.\d+: A command line tool/);
-    assert.match(out, /\n  service@1\.0\.0 \(draft: not available\): /);
+    assert.match(out, /\n  library@1\.0\.0 \(draft: not available\): /);
     assert.match(out, /- Practices adopted in the project: no AGENTS\.md\n/);
     writeFileSync(join(practices, 'rules', 'frontend-architecture', 'ENTRY.md'), '---\nid: frontend-architecture\n');
     assert.match(inDir(bare, () => stateOf('init', '')).stdout, /- Practices catalog: invalid, f3 practices refuses it:/);

@@ -12,7 +12,7 @@ interview:
   - Is it run mostly by a person, by scripts, or both?
   - Does it read or write files, the standard input and output, or the network?
 recipes: []
-practices: []
+practices: [pattern-file-names]
 skills: []
 workflow-impact:
   modules: the usage of each command, its output and its exit codes are the published contract, in contract/

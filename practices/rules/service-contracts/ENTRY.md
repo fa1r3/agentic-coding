@@ -4,7 +4,7 @@ kind: rules
 code: SC
 title: Service contracts
 version: 1.0.0
-status: draft
+status: stable
 summary: Publishing a versioned contract, keeping it compatible, and testing it on the side of the provider.
 applies-when:
   archetypes: [service]

@@ -12,7 +12,7 @@ interview:
   - On which operating systems is it installed, and how is it updated?
   - Which native features does it use (files and folders, dialogs, notifications, tray)?
 recipes: []
-practices: [frontend-architecture]
+practices: [frontend-architecture, pattern-file-names]
 skills: []
 workflow-impact:
   e2e: the runner launches the built application and drives its window, native dialogs included

@@ -12,7 +12,7 @@ interview:
   - Does the interface render on the server, in the browser, or both?
   - Is the server reachable from the internet, or only from a private network?
 recipes: []
-practices: [frontend-architecture]
+practices: [frontend-architecture, pattern-file-names]
 skills: []
 workflow-impact:
   e2e: the server is started in test mode by the runner; the tests drive a browser on it

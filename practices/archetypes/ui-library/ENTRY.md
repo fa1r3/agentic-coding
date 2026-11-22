@@ -2,7 +2,7 @@
 id: ui-library
 kind: archetype
 version: 1.0.0
-status: draft
+status: stable
 summary: A published library of interface components, with a playground, and no business rule.
 invariant: >
   Applied as is. Without business rules, the library has no bounded context and no use case: rules 1 to
@@ -13,7 +13,7 @@ interview:
   - Which projects consume the components, and with which interface framework?
   - Which design tool holds the components, and how are the design tokens published?
 recipes: []
-practices: [frontend-architecture]
+practices: [frontend-architecture, pattern-file-names]
 skills: []
 workflow-impact:
   e2e: the tests drive the playground started in test mode; each story is a view of ux/views.md

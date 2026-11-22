@@ -157,7 +157,6 @@ test('the practices catalog of the toolkit is valid, and catalog.md is its gener
   assert.deepEqual(validateCatalog(catalog), []);
   assert.equal(readFileSync(join(REAL, 'catalog.md'), 'utf8'), catalogMarkdown(catalog), 'run: node cli/f3.mjs practices catalog > practices/catalog.md');
   for (const id of ['web-app', 'desktop-app', 'cli-tool', 'service', 'library', 'ui-library']) assert.equal(catalog.entries.get(id)?.kind, 'archetype', id);
-  for (const id of ['service', 'library', 'ui-library']) assert.equal(catalog.entries.get(id).status, 'draft', id);
 });
 
 test('validation reports a broken reference, a reused code, a budget exceeded, a misnumbered rule, a bad skill', () => {
